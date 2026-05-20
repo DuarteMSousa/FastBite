@@ -24,10 +24,10 @@ class UserPushTokenRepository implements UserPushTokenRepositoryInterface
     {
         return UserPushToken::query()->updateOrCreate(
             [
-                'user_id' => $userId,
                 'token' => $data->token,
             ],
             [
+                'user_id' => $userId,
                 'provider' => $data->provider,
                 'platform' => $data->platform,
                 'is_active' => true,
@@ -42,6 +42,13 @@ class UserPushTokenRepository implements UserPushTokenRepositoryInterface
             ->where('user_id', $userId)
             ->where('token', $token)
             ->update(['is_active' => false]);
+    }
+
+    public function deactivate(UserPushToken $pushToken): UserPushToken
+    {
+        $pushToken->update(['is_active' => false]);
+
+        return $pushToken;
     }
 
     public function markUsed(UserPushToken $pushToken): UserPushToken

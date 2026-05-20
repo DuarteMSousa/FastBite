@@ -15,5 +15,7 @@ interface UserPushTokenRepositoryInterface
 
     public function deactivateByUserIdAndToken(string $userId, string $token): int;
 
+    public function deactivate(UserPushToken $pushToken): UserPushToken;
+
     public function markUsed(UserPushToken $pushToken): UserPushToken;
 }

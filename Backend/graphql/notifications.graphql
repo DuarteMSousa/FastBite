@@ -11,8 +11,12 @@ type MarkAllNotificationsReadPayload {
 
 input RegisterPushTokenInput {
   token: String!
-  provider: String = "expo"
+  provider: PushTokenProvider = EXPO
   platform: String
+}
+
+enum PushTokenProvider {
+  EXPO @enum(value: "expo")
 }
 
 type RegisterPushTokenPayload {

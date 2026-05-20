@@ -34,6 +34,10 @@ function platformName() {
   return Platform.OS
 }
 
+function expoProjectId() {
+  return Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId ?? null
+}
+
 async function ensureAndroidChannel() {
   if (Platform.OS !== 'android') {
     return
@@ -74,7 +78,10 @@ export async function registerDevicePushToken(session) {
     return null
   }
 
-  const token = (await Notifications.getExpoPushTokenAsync()).data
+  const projectId = expoProjectId()
+  const token = (
+    await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)
+  ).data
 
   const data = await graphqlRequest({
     query: REGISTER_PUSH_TOKEN_MUTATION,
@@ -82,7 +89,7 @@ export async function registerDevicePushToken(session) {
       userId,
       input: {
         token,
-        provider: 'expo',
+        provider: 'EXPO',
         platform: platformName(),
       },
     },

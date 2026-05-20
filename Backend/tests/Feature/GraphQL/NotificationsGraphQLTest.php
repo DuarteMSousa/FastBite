@@ -4,7 +4,10 @@ namespace Tests\Feature\GraphQL;
 
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\UserPushToken;
+use App\Services\NotificationService\NotificationServiceInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class NotificationsGraphQLTest extends TestCase
@@ -202,5 +205,130 @@ GRAPHQL;
             ->count();
 
         $this->assertSame(0, $unreadCount);
+    }
+
+    public function test_user_can_register_push_token(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Push User',
+            'email' => 'push_user@example.com',
+            'password' => 'password123',
+        ]);
+
+        $mutation = <<<'GRAPHQL'
+mutation RegisterPush($user_id: ID!) {
+  registerPushToken(user_id: $user_id, input: { token: "ExponentPushToken[test-token]", provider: EXPO, platform: "ios" }) {
+    ok
+    push_token_id
+    is_active
+  }
+}
+GRAPHQL;
+
+        $response = $this
+            ->actingAs($user)
+            ->postJson('/graphql', [
+                'query' => $mutation,
+                'variables' => ['user_id' => $user->id],
+            ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.registerPushToken.ok', true)
+            ->assertJsonPath('data.registerPushToken.is_active', true);
+
+        $this->assertDatabaseHas('user_push_tokens', [
+            'user_id' => $user->id,
+            'token' => 'ExponentPushToken[test-token]',
+            'provider' => 'expo',
+            'platform' => 'ios',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_registering_existing_push_token_moves_it_to_latest_user(): void
+    {
+        $firstUser = User::query()->create([
+            'name' => 'First Push User',
+            'email' => 'first_push_user@example.com',
+            'password' => 'password123',
+        ]);
+        $secondUser = User::query()->create([
+            'name' => 'Second Push User',
+            'email' => 'second_push_user@example.com',
+            'password' => 'password123',
+        ]);
+
+        UserPushToken::query()->create([
+            'user_id' => $firstUser->id,
+            'token' => 'ExponentPushToken[shared-token]',
+            'provider' => 'expo',
+            'platform' => 'ios',
+            'is_active' => true,
+            'last_used_at' => now()->subDay(),
+        ]);
+
+        $mutation = <<<'GRAPHQL'
+mutation RegisterPush($user_id: ID!) {
+  registerPushToken(user_id: $user_id, input: { token: "ExponentPushToken[shared-token]", provider: EXPO, platform: "android" }) {
+    ok
+    is_active
+  }
+}
+GRAPHQL;
+
+        $response = $this
+            ->actingAs($secondUser)
+            ->postJson('/graphql', [
+                'query' => $mutation,
+                'variables' => ['user_id' => $secondUser->id],
+            ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.registerPushToken.ok', true);
+
+        $this->assertSame(1, UserPushToken::query()->where('token', 'ExponentPushToken[shared-token]')->count());
+        $this->assertDatabaseHas('user_push_tokens', [
+            'user_id' => $secondUser->id,
+            'token' => 'ExponentPushToken[shared-token]',
+            'platform' => 'android',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_expo_device_not_registered_response_deactivates_push_token(): void
+    {
+        $user = User::query()->create([
+            'name' => 'Invalid Push User',
+            'email' => 'invalid_push_user@example.com',
+            'password' => 'password123',
+        ]);
+
+        $pushToken = UserPushToken::query()->create([
+            'user_id' => $user->id,
+            'token' => 'ExponentPushToken[stale-token]',
+            'provider' => 'expo',
+            'platform' => 'ios',
+            'is_active' => true,
+        ]);
+
+        Http::fake([
+            'https://exp.host/*' => Http::response([
+                'data' => [
+                    'status' => 'error',
+                    'message' => 'The device cannot receive push notifications anymore.',
+                    'details' => ['error' => 'DeviceNotRegistered'],
+                ],
+            ], 200),
+        ]);
+
+        app(NotificationServiceInterface::class)->sendPushNotification($pushToken->id, [
+            'title' => 'Teste',
+            'message' => 'Mensagem',
+        ]);
+
+        $pushToken->refresh();
+        $this->assertFalse($pushToken->is_active);
     }
 }

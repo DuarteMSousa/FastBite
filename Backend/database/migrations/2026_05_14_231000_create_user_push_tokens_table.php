@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('user_push_tokens', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('provider')->default('expo');
+            $table->enum('provider', ['expo'])->default('expo');
             $table->string('token')->unique();
             $table->string('platform')->nullable();
             $table->boolean('is_active')->default(true);
@@ -27,4 +27,3 @@ return new class extends Migration
         Schema::dropIfExists('user_push_tokens');
     }
 };
-

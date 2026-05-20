@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PushTokenProvider;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,7 @@ class UserPushToken extends Model
     protected function casts(): array
     {
         return [
+            'provider' => PushTokenProvider::class,
             'is_active' => 'boolean',
             'last_used_at' => 'datetime',
         ];
@@ -32,4 +34,3 @@ class UserPushToken extends Model
         return $this->belongsTo(User::class);
     }
 }
-

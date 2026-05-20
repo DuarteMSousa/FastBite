@@ -6,6 +6,7 @@ use App\Aspects\Transactional;
 use App\DTOs\Notification\CreateNotificationDTO;
 use App\Enums\NotificationType;
 use App\Enums\OutboxEventName;
+use App\Enums\PushTokenProvider;
 use App\Jobs\SendPushNotificationJob;
 use App\Models\Notification;
 use App\Notifications\UserSystemNotification;
@@ -92,10 +93,10 @@ class NotificationService implements NotificationServiceInterface
             return;
         }
 
-        if ($pushToken->provider !== 'expo') {
+        if ($pushToken->provider !== PushTokenProvider::EXPO) {
             Log::warning('push.provider.unsupported', [
                 'push_token_id' => $pushToken->id,
-                'provider' => $pushToken->provider,
+                'provider' => $pushToken->provider->value,
             ]);
 
             return;
@@ -114,7 +115,18 @@ class NotificationService implements NotificationServiceInterface
                 ],
             ]);
 
-        if (! $response->successful()) {
+        if ($this->responseMarksTokenInvalid($response->json())) {
+            $this->pushTokens->deactivate($pushToken);
+
+            Log::warning('push.token.deactivated', [
+                'push_token_id' => $pushToken->id,
+                'reason' => 'DeviceNotRegistered',
+            ]);
+
+            return;
+        }
+
+        if (! $response->successful() || $this->responseHasPushError($response->json())) {
             Log::warning('push.send.failed', [
                 'push_token_id' => $pushToken->id,
                 'status' => $response->status(),
@@ -125,6 +137,16 @@ class NotificationService implements NotificationServiceInterface
         }
 
         $this->pushTokens->markUsed($pushToken);
+    }
+
+    private function responseHasPushError(?array $body): bool
+    {
+        return ($body['data']['status'] ?? null) === 'error';
+    }
+
+    private function responseMarksTokenInvalid(?array $body): bool
+    {
+        return ($body['data']['details']['error'] ?? null) === 'DeviceNotRegistered';
     }
 
     private function createFromDTO(CreateNotificationDTO $dto): Notification
