@@ -5,6 +5,7 @@ import { RestaurantSideNav } from '../../features/restaurant/components/Restaura
 import { RestaurantLoginScreen } from '../../features/restaurant/screens/RestaurantLoginScreen'
 import { ConfirmDialog } from '../../components/common/ConfirmDialog'
 import { disconnectEchoClient } from '../../services/realtime/echoClient'
+import { refreshRestaurantSessionAccess } from '../../services/restaurantOpsService'
 
 const SESSION_STORAGE_KEY = 'fastbite_restaurant_session'
 
@@ -42,6 +43,32 @@ export function RestaurantWebShell() {
 
     window.localStorage.removeItem(SESSION_STORAGE_KEY)
   }, [session])
+
+  useEffect(() => {
+    const storedSession = loadStoredSession()
+    if (!storedSession?.devUserId && !storedSession?.userId) return undefined
+
+    let cancelled = false
+
+    async function refreshStoredSession() {
+      try {
+        const nextSession = await refreshRestaurantSessionAccess(storedSession)
+        if (!cancelled) {
+          setSession(nextSession)
+        }
+      } catch {
+        if (!cancelled) {
+          setSession(null)
+        }
+      }
+    }
+
+    refreshStoredSession()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   function handleLogin(nextSession) {
     setSession(nextSession)

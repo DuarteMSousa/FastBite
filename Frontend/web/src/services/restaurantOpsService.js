@@ -701,36 +701,29 @@ export async function bootstrapRestaurantSession({
   }
   const operatorName = authenticatedUser.name || trimmedEmail.split('@')[0] || 'manager'
 
-  const managedRestaurants = trimmedRestaurantId
-    ? (
-        await graphqlRequest({
-          query: RESTAURANT_QUERY,
-          variables: { id: trimmedRestaurantId },
-          ...requestOptions(requestSession),
-        })
-      )
-    : (
-        await graphqlRequest({
-          query: RESTAURANTS_BY_MANAGER_USER_QUERY,
-          variables: { userId: authenticatedUser.id },
-          ...requestOptions(requestSession),
-        })
-      ).getRestaurantsByManagerUserId
+  const [managedRestaurantsData, managerChainData] = await Promise.all([
+    graphqlRequest({
+      query: RESTAURANTS_BY_MANAGER_USER_QUERY,
+      variables: { userId: authenticatedUser.id },
+      ...requestOptions(requestSession),
+    }),
+    graphqlRequest({
+      query: CHAIN_BY_MANAGER_USER_QUERY,
+      variables: { userId: authenticatedUser.id },
+      ...requestOptions(requestSession),
+    }),
+  ])
 
-  const managerChain = trimmedRestaurantId
-    ? null
-    : (
-        await graphqlRequest({
-          query: CHAIN_BY_MANAGER_USER_QUERY,
-          variables: { userId: authenticatedUser.id },
-          ...requestOptions(requestSession),
-        })
-      ).getRestaurantChainByManagerUserId
-
+  const managedRestaurants = managedRestaurantsData.getRestaurantsByManagerUserId ?? []
+  const managerChain = managerChainData.getRestaurantChainByManagerUserId
   const resolvedRestaurant = trimmedRestaurantId
-    ? managedRestaurants.getRestaurantById
-    : managedRestaurants?.[0]
+    ? managedRestaurants.find((entry) => entry.id === trimmedRestaurantId)
+    : managedRestaurants[0]
   const isChainManager = Boolean(managerChain?.id)
+
+  if (trimmedRestaurantId && !resolvedRestaurant) {
+    throw new Error('Nao tens acesso a esse restaurante.')
+  }
 
   if (!resolvedRestaurant?.id) {
     return {
@@ -758,6 +751,67 @@ export async function bootstrapRestaurantSession({
     token: trimmedToken,
     isChainManager,
   }
+}
+
+export async function refreshRestaurantSessionAccess(session) {
+  const userId = session?.userId || session?.devUserId
+
+  if (!userId) {
+    return session
+  }
+
+  const requestSession = {
+    devUserId: session?.devUserId || userId,
+    token: session?.token ?? '',
+  }
+
+  const [managedRestaurantsData, managerChainData] = await Promise.all([
+    graphqlRequest({
+      query: RESTAURANTS_BY_MANAGER_USER_QUERY,
+      variables: { userId },
+      ...requestOptions(requestSession),
+    }),
+    graphqlRequest({
+      query: CHAIN_BY_MANAGER_USER_QUERY,
+      variables: { userId },
+      ...requestOptions(requestSession),
+    }),
+  ])
+
+  const managedRestaurants = managedRestaurantsData.getRestaurantsByManagerUserId ?? []
+  const managerChain = managerChainData.getRestaurantChainByManagerUserId
+  const isChainManager = Boolean(managerChain?.id)
+  const resolvedRestaurant = isChainManager
+    ? managedRestaurants.find((entry) => entry.id === session?.restaurantId) ?? managedRestaurants[0]
+    : managedRestaurants[0]
+
+  if (!resolvedRestaurant?.id) {
+    throw new Error('Nao tens nenhum restaurante associado.')
+  }
+
+  return {
+    ...session,
+    restaurant: resolvedRestaurant.name || session?.restaurant || 'Unidade',
+    restaurantId: resolvedRestaurant.id,
+    chainId: resolvedRestaurant.chain_id ?? managerChain?.id ?? null,
+    userId,
+    devUserId: requestSession.devUserId,
+    isChainManager,
+  }
+}
+
+function assertRestaurantAccess(session, restaurantId) {
+  const requestedRestaurantId = String(restaurantId ?? session?.restaurantId ?? '').trim()
+
+  if (!requestedRestaurantId) {
+    throw new Error('Sem restaurantId na sessao.')
+  }
+
+  if (!session?.isChainManager && requestedRestaurantId !== session?.restaurantId) {
+    throw new Error('Gestores locais so podem aceder ao seu restaurante.')
+  }
+
+  return requestedRestaurantId
 }
 
 export async function registerRestaurantUser({
@@ -1386,9 +1440,10 @@ export async function deleteChainCategory({ session, categoryId }) {
 }
 
 export async function fetchRestaurantProfile({ session, restaurantId }) {
+  const resolvedRestaurantId = assertRestaurantAccess(session, restaurantId)
   const data = await graphqlRequest({
     query: RESTAURANT_QUERY,
-    variables: { id: restaurantId ?? session.restaurantId },
+    variables: { id: resolvedRestaurantId },
     ...requestOptions(session),
   })
 
@@ -1406,6 +1461,10 @@ export async function fetchRestaurantChainProfile({ session, chainId }) {
 }
 
 export async function fetchChainRestaurants({ session, chainId }) {
+  if (!session?.isChainManager) {
+    return []
+  }
+
   const data = await graphqlRequest({
     query: CHAIN_RESTAURANTS_QUERY,
     variables: { chainId: chainId ?? session.chainId },
@@ -1416,6 +1475,7 @@ export async function fetchChainRestaurants({ session, chainId }) {
 }
 
 export async function updateRestaurantProfile({ session, restaurantId, input }) {
+  const resolvedRestaurantId = assertRestaurantAccess(session, restaurantId)
   const payload = {
     name: input.name?.trim(),
     opening_hours: input.opening_hours?.trim(),
@@ -1431,7 +1491,7 @@ export async function updateRestaurantProfile({ session, restaurantId, input }) 
 
   const data = await graphqlRequest({
     query: UPDATE_RESTAURANT_MUTATION,
-    variables: { id: restaurantId, input: payload },
+    variables: { id: resolvedRestaurantId, input: payload },
     ...requestOptions(session),
   })
 

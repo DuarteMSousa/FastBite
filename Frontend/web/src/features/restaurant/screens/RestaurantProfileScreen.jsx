@@ -30,6 +30,7 @@ function ratingAverage(restaurant) {
 }
 
 export function RestaurantProfileScreen({ session, onSessionChange }) {
+  const isChainManager = Boolean(session?.isChainManager)
   const [restaurants, setRestaurants] = useState([])
   const [selectedRestaurantId, setSelectedRestaurantId] = useState(session.restaurantId)
   const [restaurant, setRestaurant] = useState(null)
@@ -50,11 +51,12 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
   const load = useCallback(async () => {
     try {
       setLoading(true)
+      const canManageChain = isChainManager && session.chainId
       const [chainData, restaurantList, restaurantData] = await Promise.all([
-        session.chainId
+        canManageChain
           ? fetchRestaurantChainProfile({ session, chainId: session.chainId })
           : Promise.resolve(null),
-        session.chainId
+        canManageChain
           ? fetchChainRestaurants({ session, chainId: session.chainId })
           : Promise.resolve([]),
         fetchRestaurantProfile({ session, restaurantId: selectedRestaurantId }),
@@ -71,7 +73,7 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
     } finally {
       setLoading(false)
     }
-  }, [selectedRestaurantId, session])
+  }, [isChainManager, selectedRestaurantId, session])
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -84,6 +86,11 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
   }
 
   function handleSelectRestaurant(nextRestaurantId) {
+    if (!isChainManager && nextRestaurantId !== session.restaurantId) {
+      setErrorText('Gestores locais so podem aceder ao seu restaurante.')
+      return
+    }
+
     setSelectedRestaurantId(nextRestaurantId)
     const nextRestaurant = restaurants.find((entry) => entry.id === nextRestaurantId)
     if (nextRestaurant) {
@@ -154,6 +161,11 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
   }
 
   async function handleSaveChain() {
+    if (!isChainManager) {
+      setErrorText('Apenas gestores de cadeia podem alterar a cadeia.')
+      return
+    }
+
     if (!chainNameDraft.trim()) {
       setErrorText('Preenche o nome da cadeia.')
       return
@@ -188,44 +200,46 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
       {infoText ? <p className="rb-success-note">{infoText}</p> : null}
 
       <div className="rb-profile-grid">
-        <article className="rb-table-card">
-          <div className="rb-table-head">
-            <h3>Cadeia</h3>
-          </div>
-          <div className="rb-profile-panel">
-            <div className="rb-login-form">
-              <label>
-                Nome da cadeia
-                <input
-                  value={chainNameDraft}
-                  onChange={(event) => setChainNameDraft(event.target.value)}
-                  placeholder="Ex: FastBite"
-                />
-              </label>
-              <div className="rb-form-actions">
-                <button
-                  type="button"
-                  className="rb-btn-accept rb-btn-small"
-                  onClick={handleSaveChain}
-                  disabled={savingChain || !session.chainId}
-                >
-                  {savingChain ? 'A guardar...' : 'Guardar cadeia'}
-                </button>
+        {isChainManager ? (
+          <article className="rb-table-card">
+            <div className="rb-table-head">
+              <h3>Cadeia</h3>
+            </div>
+            <div className="rb-profile-panel">
+              <div className="rb-login-form">
+                <label>
+                  Nome da cadeia
+                  <input
+                    value={chainNameDraft}
+                    onChange={(event) => setChainNameDraft(event.target.value)}
+                    placeholder="Ex: FastBite"
+                  />
+                </label>
+                <div className="rb-form-actions">
+                  <button
+                    type="button"
+                    className="rb-btn-accept rb-btn-small"
+                    onClick={handleSaveChain}
+                    disabled={loading || savingChain || !session.chainId}
+                  >
+                    {savingChain ? 'A guardar...' : 'Guardar cadeia'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rb-detail-row">
+                <span>ID da cadeia</span>
+                <code className="rb-mono" title={chain?.id ?? session.chainId ?? '-'}>
+                  {chain?.id ?? session.chainId ?? '-'}
+                </code>
+              </div>
+              <div className="rb-detail-row">
+                <span>Unidades</span>
+                <strong>{restaurants.length}</strong>
               </div>
             </div>
-
-            <div className="rb-detail-row">
-              <span>ID da cadeia</span>
-              <code className="rb-mono" title={chain?.id ?? session.chainId ?? '-'}>
-                {chain?.id ?? session.chainId ?? '-'}
-              </code>
-            </div>
-            <div className="rb-detail-row">
-              <span>Unidades</span>
-              <strong>{restaurants.length}</strong>
-            </div>
-          </div>
-        </article>
+          </article>
+        ) : null}
 
         <article className="rb-table-card">
           <div className="rb-table-head">
@@ -237,6 +251,7 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
               <select
                 value={selectedRestaurantId}
                 onChange={(event) => handleSelectRestaurant(event.target.value)}
+                disabled={loading || !isChainManager}
               >
                 {restaurants.length === 0 ? (
                   <option value={selectedRestaurantId}>{session.restaurant}</option>
@@ -373,7 +388,7 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
               type="button"
               className="rb-btn-accept rb-btn-small"
               onClick={handleSaveRestaurant}
-              disabled={savingRestaurant || !selectedRestaurantId}
+              disabled={loading || savingRestaurant || !selectedRestaurantId}
             >
               {savingRestaurant ? 'A guardar...' : 'Guardar restaurante'}
             </button>
