@@ -5,37 +5,33 @@ namespace App\Services\ReviewService;
 use App\Aspects\Transactional;
 use App\DTOs\Review\CreateReviewDTO;
 use App\DTOs\Review\UpdateReviewDTO;
-use App\Enums\OrderStatus;
-use App\Enums\ReviewTargetType;
-use App\Models\Order;
 use App\Models\Review;
+use App\Repositories\ReviewRepository\ReviewRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class ReviewService implements ReviewServiceInterface
 {
+    private ReviewRepositoryInterface $reviews;
+
+    public function __construct(?ReviewRepositoryInterface $reviews = null)
+    {
+        $this->reviews = $reviews ?? app(ReviewRepositoryInterface::class);
+    }
+
     public function getReviewsByUserId(string $userId, int $page, int $perPage)
     {
-        return Review::query()
-            ->where('user_id', $userId)
-            ->orderByDesc('created_at')
-            ->paginate($perPage, ['*'], 'page', $page)
-            ->items();
+        return $this->reviews->findByUserId($userId, $page, $perPage)->items();
     }
 
     public function getReviewsByTarget(string $targetType, string $targetId, int $page, int $perPage)
     {
-        return Review::query()
-            ->where('target_type', $targetType)
-            ->where('target_id', $targetId)
-            ->orderByDesc('created_at')
-            ->paginate($perPage, ['*'], 'page', $page)
-            ->items();
+        return $this->reviews->findByTargetEntity($targetId, $targetType, $page, $perPage)->items();
     }
 
     #[Transactional]
     public function updateReview(string $userId, string $reviewId, UpdateReviewDTO $data): ?Review
     {
-        $review = Review::query()->where('user_id', $userId)->find($reviewId);
+        $review = $this->reviews->findByUserIdAndId($userId, $reviewId);
 
         if (! $review) {
             return null;
@@ -43,22 +39,13 @@ class ReviewService implements ReviewServiceInterface
 
         $input = array_filter($data->toArray(), static fn ($value) => $value !== null);
         $this->validateInput([...$review->toArray(), ...$input]);
-        $review->fill(array_filter([
-            'rating' => $data->rating,
-            'comment' => $data->comment,
-        ], static fn ($value) => $value !== null));
-        $review->save();
-
-        return $review;
+        return $this->reviews->updateReview($reviewId, $data);
     }
 
     #[Transactional]
     public function deleteReview(string $userId, string $reviewId): bool
     {
-        return (bool) Review::query()
-            ->where('user_id', $userId)
-            ->whereKey($reviewId)
-            ->delete();
+        return $this->reviews->deleteReviewByUserId($userId, $reviewId);
     }
 
     #[Transactional]
@@ -68,30 +55,12 @@ class ReviewService implements ReviewServiceInterface
         $this->assertUserCanReviewTarget($data);
         $this->assertNotDuplicate($data);
 
-        return Review::query()->create([
-            'user_id' => $data->user_id,
-            'rating' => $data->rating,
-            'comment' => $data->comment,
-            'target_type' => $data->target_type->value,
-            'target_id' => $data->target_id,
-        ]);
+        return $this->reviews->createReview($data);
     }
 
     private function assertUserCanReviewTarget(CreateReviewDTO $data): void
     {
-        $query = Order::query()
-            ->where('user_id', $data->user_id)
-            ->where('status', OrderStatus::DELIVERED->value);
-
-        if ($data->target_type === ReviewTargetType::RESTAURANT) {
-            $query->where('restaurant_id', $data->target_id);
-        } else {
-            $query->whereHas('delivery', function ($subQuery) use ($data): void {
-                $subQuery->where('courier_id', $data->target_id);
-            });
-        }
-
-        if (! $query->exists()) {
+        if (! $this->reviews->userCanReviewTarget($data->user_id, $data->target_type->value, $data->target_id)) {
             throw ValidationException::withMessages([
                 'target_id' => 'You can only review after a delivered order with this target.',
             ]);
@@ -100,13 +69,7 @@ class ReviewService implements ReviewServiceInterface
 
     private function assertNotDuplicate(CreateReviewDTO $data): void
     {
-        $exists = Review::query()
-            ->where('user_id', $data->user_id)
-            ->where('target_type', $data->target_type->value)
-            ->where('target_id', $data->target_id)
-            ->exists();
-
-        if ($exists) {
+        if ($this->reviews->existsForTarget($data->user_id, $data->target_type->value, $data->target_id)) {
             throw ValidationException::withMessages([
                 'target_id' => 'You have already reviewed this target.',
             ]);

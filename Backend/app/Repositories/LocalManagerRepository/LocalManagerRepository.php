@@ -9,7 +9,7 @@ class LocalManagerRepository implements LocalManagerRepositoryInterface
 {
     public function findByUserId(string $userId)
     {
-        return LocalManager::where('user_id', $userId)->first();
+        return LocalManager::with(['restaurant.chain', 'restaurant.address'])->where('user_id', $userId)->first();
     }
 
     public function findByRestaurantId(string $restaurantId)
@@ -20,6 +20,14 @@ class LocalManagerRepository implements LocalManagerRepositoryInterface
     public function createLocalManager(CreateLocalManagerDTO $data)
     {
         return LocalManager::create($data->toArray());
+    }
+
+    public function updateOrCreate(string $userId, string $restaurantId)
+    {
+        return LocalManager::updateOrCreate(
+            ['user_id' => $userId],
+            ['restaurant_id' => $restaurantId],
+        )->load(['user', 'restaurant']);
     }
 
     public function deleteLocalManager(string $userId)

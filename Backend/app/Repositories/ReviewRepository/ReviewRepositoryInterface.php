@@ -12,11 +12,18 @@ interface ReviewRepositoryInterface
 
     public function findByTargetEntity(string $targetEntityId,string $targetEntityType, int $pageNumber,int $pageSize);
 
+    public function findByUserIdAndId(string $userId, string $reviewId);
+
+    public function userCanReviewTarget(string $userId, string $targetType, string $targetId): bool;
+
+    public function existsForTarget(string $userId, string $targetType, string $targetId): bool;
+
     public function createReview(CreateReviewDTO $data);
 
     public function updateReview(string $id, UpdateReviewDTO $data);
 
     public function deleteReview(string $id);
-}
 
+    public function deleteReviewByUserId(string $userId, string $reviewId): bool;
+}
 

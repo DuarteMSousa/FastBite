@@ -13,11 +13,28 @@ class ProductRepository implements ProductRepositoryInterface
         return Product::with(['optionGroups.options'])->find($id);
     }
 
+    public function exists(string $id): bool
+    {
+        return Product::whereKey($id)->exists();
+    }
+
     public function findByCategoryId(string $categoryId)
     {
         return Product::with(['optionGroups.options'])
             ->where('category_id', $categoryId)
             ->get();
+    }
+
+    public function findOptionGroups(string $productId)
+    {
+        return Product::with('optionGroups.options')->findOrFail($productId)->optionGroups;
+    }
+
+    public function belongsToChain(string $productId, string $chainId): bool
+    {
+        return Product::whereKey($productId)
+            ->whereHas('category', fn ($query) => $query->where('chain_id', $chainId))
+            ->exists();
     }
 
     public function createProduct(CreateProductDTO $data)

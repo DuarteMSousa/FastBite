@@ -6,8 +6,7 @@ use App\Aspects\Transactional;
 use App\DTOs\Tracking\UpdateCourierLocationDTO;
 use App\Enums\OutboxEventName;
 use App\Models\CourierPositionHistory;
-use App\Models\Delivery;
-use App\Models\Order;
+use App\Repositories\TrackingRepository\TrackingRepositoryInterface;
 use App\Services\CourierService\CourierServiceInterface;
 use App\Services\OutboxService;
 use Illuminate\Support\Str;
@@ -15,12 +14,16 @@ use Illuminate\Validation\ValidationException;
 
 class TrackingService implements TrackingServiceInterface
 {
+    private TrackingRepositoryInterface $tracking;
+
+    public function __construct(?TrackingRepositoryInterface $tracking = null)
+    {
+        $this->tracking = $tracking ?? app(TrackingRepositoryInterface::class);
+    }
+
     public function orderTracking(string $userId, string $orderId): array
     {
-        $order = Order::query()
-            ->with(['delivery.courier', 'delivery.positionHistory'])
-            ->where('user_id', $userId)
-            ->find($orderId);
+        $order = $this->tracking->findOrderForUserTracking($userId, $orderId);
 
         if (! $order) {
             throw ValidationException::withMessages([
@@ -34,28 +37,25 @@ class TrackingService implements TrackingServiceInterface
             'order' => $order,
             'delivery' => $delivery,
             'courier' => $delivery?->courier,
-            'last_position' => $delivery?->positionHistory()->orderByDesc('timestamp')->first(),
+            'last_position' => $delivery ? $this->tracking->findLastPositionForDelivery($delivery->id) : null,
             'eta_seconds' => null,
         ];
     }
 
     public function deliveryTracking(string $deliveryId): array
     {
-        $delivery = Delivery::query()->with(['courier', 'positionHistory'])->findOrFail($deliveryId);
+        $delivery = $this->tracking->findDeliveryForTracking($deliveryId);
 
         return [
             'delivery' => $delivery,
-            'last_position' => $delivery->positionHistory()->orderByDesc('timestamp')->first(),
+            'last_position' => $this->tracking->findLastPositionForDelivery($delivery->id),
             'eta_seconds' => null,
         ];
     }
 
     public function courierLastPosition(string $courierId): ?CourierPositionHistory
     {
-        return CourierPositionHistory::query()
-            ->whereHas('delivery', fn ($query) => $query->where('courier_id', $courierId))
-            ->orderByDesc('timestamp')
-            ->first();
+        return $this->tracking->findLastPositionForCourier($courierId);
     }
 
     #[Transactional]
@@ -67,9 +67,7 @@ class TrackingService implements TrackingServiceInterface
             ]);
         }
 
-        $delivery = Delivery::query()
-            ->where('courier_id', $data->courier_id)
-            ->findOrFail($data->delivery_id);
+        $delivery = $this->tracking->findDeliveryForCourierOrFail($data->courier_id, $data->delivery_id);
 
         app(CourierServiceInterface::class)->updateCourierLocation(
             $data->courier_id,
@@ -78,12 +76,7 @@ class TrackingService implements TrackingServiceInterface
         );
 
         $timestamp = $data->recorded_at ?? now()->toIso8601String();
-        CourierPositionHistory::query()->create([
-            'delivery_id' => $delivery->id,
-            'latitude' => $data->latitude,
-            'longitude' => $data->longitude,
-            'timestamp' => $timestamp,
-        ]);
+        $this->tracking->createPosition($delivery->id, $data->latitude, $data->longitude, $timestamp);
 
         app(OutboxService::class)->enqueue('delivery', $delivery->id, OutboxEventName::COURIER_POSITION_UPDATED->value, [
             'eventId' => (string) Str::uuid(),

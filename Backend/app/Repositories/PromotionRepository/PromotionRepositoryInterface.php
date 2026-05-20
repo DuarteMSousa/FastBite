@@ -13,6 +13,8 @@ interface PromotionRepositoryInterface
 
     public function getByChainId(string $chainId);
 
+    public function getActiveByChainId(string $chainId);
+
     public function createPromotion(CreatePromotionDTO $data);
 
     public function updatePromotion(string $id, UpdatePromotionDTO $data);

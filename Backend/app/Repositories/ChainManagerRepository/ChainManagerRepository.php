@@ -9,7 +9,7 @@ class ChainManagerRepository implements ChainManagerRepositoryInterface
 {
     public function findByUserId(string $userId)
     {
-        return ChainManager::where('user_id', $userId)->first();
+        return ChainManager::with('chain')->where('user_id', $userId)->first();
     }
 
     public function findByChainId(string $chainId)
@@ -20,6 +20,14 @@ class ChainManagerRepository implements ChainManagerRepositoryInterface
     public function createChainManager(CreateChainManagerDTO $data)
     {
         return ChainManager::create($data->toArray());
+    }
+
+    public function updateOrCreate(string $userId, string $chainId)
+    {
+        return ChainManager::updateOrCreate(
+            ['user_id' => $userId],
+            ['chain_id' => $chainId],
+        )->load(['user', 'chain']);
     }
 
     public function deleteChainManager(string $userId)

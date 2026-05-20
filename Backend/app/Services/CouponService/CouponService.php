@@ -6,33 +6,48 @@ use App\Aspects\Transactional;
 use App\DTOs\Campaigns\Coupon\CreateCouponDTO;
 use App\DTOs\Campaigns\Coupon\UpdateCouponDTO;
 use App\Enums\DiscountTarget;
-use App\Models\Category;
 use App\Models\Coupon;
-use App\Models\Product;
-use App\Models\RestaurantChain;
+use App\Repositories\CategoryRepository\CategoryRepositoryInterface;
+use App\Repositories\CouponRepository\CouponRepositoryInterface;
+use App\Repositories\ProductRepository\ProductRepositoryInterface;
+use App\Repositories\RestaurantChainRepository\RestaurantChainRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class CouponService implements CouponServiceInterface
 {
-    private array $with = ['promotionItems'];
+    private CouponRepositoryInterface $coupons;
+
+    private RestaurantChainRepositoryInterface $chains;
+
+    private CategoryRepositoryInterface $categories;
+
+    private ProductRepositoryInterface $products;
+
+    public function __construct(
+        ?CouponRepositoryInterface $coupons = null,
+        ?RestaurantChainRepositoryInterface $chains = null,
+        ?CategoryRepositoryInterface $categories = null,
+        ?ProductRepositoryInterface $products = null,
+    ) {
+        $this->coupons = $coupons ?? app(CouponRepositoryInterface::class);
+        $this->chains = $chains ?? app(RestaurantChainRepositoryInterface::class);
+        $this->categories = $categories ?? app(CategoryRepositoryInterface::class);
+        $this->products = $products ?? app(ProductRepositoryInterface::class);
+    }
 
     public function getCouponsByChainId(string $chainId)
     {
-        return Coupon::query()
-            ->with($this->with)
-            ->where('chain_id', $chainId)
-            ->orderByDesc('created_at')
-            ->get();
+        return $this->coupons->findByChainId($chainId);
     }
 
     public function getCouponByCode(string $code): ?Coupon
     {
-        return Coupon::query()->with($this->with)->where('code', $code)->first();
+        return $this->coupons->findByCode($code);
     }
 
     public function getCouponById(string $id): ?Coupon
     {
-        return Coupon::query()->with($this->with)->find($id);
+        return $this->coupons->findById($id);
     }
 
     #[Transactional]
@@ -41,16 +56,16 @@ class CouponService implements CouponServiceInterface
         $items = $data->items?->toArray() ?? [];
         $this->validateCoupon($data->chain_id, $data->target, $data->discount, $items);
 
-        $coupon = Coupon::query()->create($this->payload($data));
-        $this->replaceItems($coupon, $items);
+        $coupon = $this->coupons->createCoupon($data);
+        $this->coupons->replaceItems($coupon->id, $items);
 
-        return $coupon->load($this->with);
+        return $this->coupons->findById($coupon->id);
     }
 
     #[Transactional]
     public function updateCoupon(string $id, UpdateCouponDTO $data): ?Coupon
     {
-        $coupon = Coupon::query()->with($this->with)->find($id);
+        $coupon = $this->coupons->findById($id);
 
         if (! $coupon) {
             return null;
@@ -69,21 +84,21 @@ class CouponService implements CouponServiceInterface
 
         $this->validateCoupon($coupon->chain_id, $target, $data->discount ?? $coupon->discount, $itemsForValidation);
 
-        $coupon->update(array_filter($this->payload($data), static fn ($value) => $value !== null));
+        $this->coupons->updateCoupon($id, $data);
 
         if (in_array($target, [DiscountTarget::ORDER, DiscountTarget::DELIVERY], true)) {
-            $coupon->promotionItems()->delete();
+            $this->coupons->replaceItems($id, []);
         } elseif ($items !== null) {
-            $this->replaceItems($coupon, $items);
+            $this->coupons->replaceItems($id, $items);
         }
 
-        return $coupon->refresh()->load($this->with);
+        return $this->coupons->findById($id);
     }
 
     #[Transactional]
     public function deleteCoupon(string $id): bool
     {
-        return (bool) Coupon::query()->whereKey($id)->delete();
+        return $this->coupons->deleteCoupon($id);
     }
 
     private function payload(CreateCouponDTO|UpdateCouponDTO $data): array
@@ -99,42 +114,11 @@ class CouponService implements CouponServiceInterface
         ];
     }
 
-    private function replaceItems(Coupon $coupon, array $items): void
-    {
-        $keptIds = [];
-
-        foreach ($items as $item) {
-            $payload = ['item_id' => $item['item_id']];
-
-            if (! empty($item['id'])) {
-                $promotionItem = $coupon->promotionItems()->whereKey($item['id'])->first();
-
-                if ($promotionItem) {
-                    $promotionItem->update($payload);
-                } else {
-                    $promotionItem = $coupon->promotionItems()->create($payload);
-                }
-            } else {
-                $promotionItem = $coupon->promotionItems()->create($payload);
-            }
-
-            $keptIds[] = $promotionItem->id;
-        }
-
-        if ($items === []) {
-            $coupon->promotionItems()->delete();
-
-            return;
-        }
-
-        $coupon->promotionItems()->whereNotIn('id', $keptIds)->delete();
-    }
-
     private function validateCoupon(string $chainId, DiscountTarget $target, ?float $discount, array $items): void
     {
         $errors = [];
 
-        if (! RestaurantChain::query()->whereKey($chainId)->exists()) {
+        if (! $this->chains->exists($chainId)) {
             $errors['chain_id'][] = 'Restaurant chain does not exist.';
         }
 
@@ -159,17 +143,12 @@ class CouponService implements CouponServiceInterface
                 continue;
             }
 
-            if ($target === DiscountTarget::CATEGORY && ! Category::query()->where('chain_id', $chainId)->whereKey($itemId)->exists()) {
+            if ($target === DiscountTarget::CATEGORY && ! $this->categories->belongsToChain($itemId, $chainId)) {
                 $errors["items.{$index}.item_id"][] = 'Category does not belong to coupon chain.';
             }
 
             if ($target === DiscountTarget::PRODUCT) {
-                $belongsToChain = Product::query()
-                    ->whereKey($itemId)
-                    ->whereHas('category', fn ($query) => $query->where('chain_id', $chainId))
-                    ->exists();
-
-                if (! $belongsToChain) {
+                if (! $this->products->belongsToChain($itemId, $chainId)) {
                     $errors["items.{$index}.item_id"][] = 'Product does not belong to coupon chain.';
                 }
             }

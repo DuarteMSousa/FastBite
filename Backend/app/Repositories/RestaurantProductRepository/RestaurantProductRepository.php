@@ -8,16 +8,37 @@ use App\Models\RestaurantProduct;
 
 class RestaurantProductRepository implements RestaurantProductRepositoryInterface
 {
+    private array $with = ['product.optionGroups.options', 'restaurant'];
+
     public function findById(string $id)
     {
-        return RestaurantProduct::with(['restaurant', 'product'])->find($id);
+        return RestaurantProduct::with($this->with)->find($id);
+    }
+
+    public function findByIdOrFail(string $id)
+    {
+        return RestaurantProduct::with(['product.optionGroups.options'])->findOrFail($id);
     }
 
     public function findByRestaurantId(string $restaurantId)
     {
-        return RestaurantProduct::with(['product.category'])
+        return RestaurantProduct::with($this->with)
             ->where('restaurant_id', $restaurantId)
             ->orderBy('created_at')
+            ->get();
+    }
+
+    public function findCategoriesByRestaurantId(string $restaurantId)
+    {
+        $categoryIds = $this->findByRestaurantId($restaurantId)
+            ->pluck('product.category_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return \App\Models\Category::with('products.optionGroups.options')
+            ->whereIn('id', $categoryIds)
+            ->orderBy('name')
             ->get();
     }
 
@@ -29,7 +50,7 @@ class RestaurantProductRepository implements RestaurantProductRepositoryInterfac
             'local_price' => $data->local_price,
             'is_available' => $data->is_available,
             'estimated_preparation_time_min' => $data->estimated_preparation_time_min,
-        ]);
+        ])->load($this->with);
     }
 
     public function updateRestaurantProduct(string $id, UpdateRestaurantProductDTO $data)
@@ -46,7 +67,7 @@ class RestaurantProductRepository implements RestaurantProductRepositoryInterfac
             'estimated_preparation_time_min' => $data->estimated_preparation_time_min,
         ]);
 
-        return $restaurantProduct;
+        return $restaurantProduct->load($this->with);
     }
 
     public function deleteRestaurantProduct(string $id)

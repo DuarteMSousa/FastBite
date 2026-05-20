@@ -11,7 +11,11 @@ interface CouponRepositoryInterface
 
     public function findByCode(string $code);
 
+    public function findByChainIdAndCode(string $chainId, string $code);
+
     public function findByChainId(string $chainId);
+
+    public function replaceItems(string $couponId, array $items): void;
 
     public function createCoupon(CreateCouponDTO $data);
 

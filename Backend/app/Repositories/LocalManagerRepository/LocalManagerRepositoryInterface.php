@@ -12,5 +12,7 @@ interface LocalManagerRepositoryInterface
 
     public function createLocalManager(CreateLocalManagerDTO $data);
 
+    public function updateOrCreate(string $userId, string $restaurantId);
+
     public function deleteLocalManager(string $userId);
 }

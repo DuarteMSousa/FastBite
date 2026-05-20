@@ -9,11 +9,14 @@ interface RestaurantChainRepositoryInterface
 {
     public function findById(string $id);
 
+    public function findAll(int $limit = 100);
+
+    public function exists(string $id): bool;
+
     public function createRestaurantChain(CreateRestaurantChainDTO $data);
 
     public function updateRestaurantChain(string $id, UpdateRestaurantChainDTO $data);
 
     public function deleteRestaurantChain(string $id);
 }
-
 

@@ -6,17 +6,21 @@ use App\Aspects\Transactional;
 use App\DTOs\UserAddress\CreateUserAddressDTO;
 use App\DTOs\UserAddress\UpdateUserAddressDTO;
 use App\Models\UserAddress;
+use App\Repositories\UserAddressRepository\UserAddressRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class UserAddressService implements UserAddressServiceInterface
 {
+    private UserAddressRepositoryInterface $addresses;
+
+    public function __construct(?UserAddressRepositoryInterface $addresses = null)
+    {
+        $this->addresses = $addresses ?? app(UserAddressRepositoryInterface::class);
+    }
+
     public function getUserAddressesByUserId(string $userId)
     {
-        return UserAddress::query()
-            ->where('user_id', $userId)
-            ->orderByDesc('is_default')
-            ->orderBy('label')
-            ->get();
+        return $this->addresses->findByUserId($userId);
     }
 
     #[Transactional]
@@ -26,18 +30,15 @@ class UserAddressService implements UserAddressServiceInterface
             $this->clearDefault($userId);
         }
 
-        return UserAddress::query()->create([
-            'user_id' => $userId,
-            ...$this->createPayload($data),
-        ]);
+        $this->createPayload($data);
+
+        return $this->addresses->createForUser($userId, $data);
     }
 
     #[Transactional]
     public function updateUserAddress(string $userId, string $addressId, UpdateUserAddressDTO $data): ?UserAddress
     {
-        $address = UserAddress::query()
-            ->where('user_id', $userId)
-            ->find($addressId);
+        $address = $this->addresses->findByUserIdAndId($userId, $addressId);
 
         if (! $address) {
             return null;
@@ -48,44 +49,31 @@ class UserAddressService implements UserAddressServiceInterface
         }
 
         $this->validateInput([...$address->toArray(), ...array_filter($data->toArray(), static fn ($value) => $value !== null)]);
-        $address->fill($this->updatePayload($data));
-        $address->save();
-
-        return $address;
+        return $this->addresses->updateForUser($userId, $addressId, $data);
     }
 
     #[Transactional]
     public function deleteUserAddress(string $userId, string $addressId): bool
     {
-        return (bool) UserAddress::query()
-            ->where('user_id', $userId)
-            ->whereKey($addressId)
-            ->delete();
+        return $this->addresses->deleteForUser($userId, $addressId);
     }
 
     #[Transactional]
     public function setDefaultUserAddress(string $userId, string $addressId): ?UserAddress
     {
-        $address = UserAddress::query()
-            ->where('user_id', $userId)
-            ->find($addressId);
+        $address = $this->addresses->findByUserIdAndId($userId, $addressId);
 
         if (! $address) {
             return null;
         }
 
         $this->clearDefault($userId);
-        $address->is_default = true;
-        $address->save();
-
-        return $address;
+        return $this->addresses->setDefault($userId, $addressId);
     }
 
     private function clearDefault(string $userId): void
     {
-        UserAddress::query()
-            ->where('user_id', $userId)
-            ->update(['is_default' => false]);
+        $this->addresses->clearDefault($userId);
     }
 
     private function createPayload(CreateUserAddressDTO $data): array

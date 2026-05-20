@@ -9,7 +9,11 @@ interface RestaurantProductRepositoryInterface
 {
     public function findById(string $id);
 
+    public function findByIdOrFail(string $id);
+
     public function findByRestaurantId(string $restaurantId);
+
+    public function findCategoriesByRestaurantId(string $restaurantId);
 
     public function createRestaurantProduct(CreateRestaurantProductDTO $data);
 

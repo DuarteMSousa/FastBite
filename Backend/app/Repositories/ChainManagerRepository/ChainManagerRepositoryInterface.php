@@ -12,5 +12,7 @@ interface ChainManagerRepositoryInterface
 
     public function createChainManager(CreateChainManagerDTO $data);
 
+    public function updateOrCreate(string $userId, string $chainId);
+
     public function deleteChainManager(string $userId);
 }

@@ -8,39 +8,45 @@ use App\DTOs\Cart\AddCartItemDTO;
 use App\DTOs\Cart\UpdateCartItemDTO;
 use App\Models\Cart;
 use App\Models\CartItem;
-use App\Models\ProductOption;
 use App\Models\RestaurantProduct;
+use App\Repositories\CartRepository\CartRepositoryInterface;
+use App\Repositories\RestaurantProductRepository\RestaurantProductRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class CartService implements CartServiceInterface
 {
     private array $with = ['items.restaurantProduct.product', 'items.options.productOption'];
 
+    private CartRepositoryInterface $carts;
+
+    private RestaurantProductRepositoryInterface $restaurantProducts;
+
+    public function __construct(
+        ?CartRepositoryInterface $carts = null,
+        ?RestaurantProductRepositoryInterface $restaurantProducts = null,
+    ) {
+        $this->carts = $carts ?? app(CartRepositoryInterface::class);
+        $this->restaurantProducts = $restaurantProducts ?? app(RestaurantProductRepositoryInterface::class);
+    }
+
     public function getCartByUserId(string $userId): Cart
     {
-        return Cart::query()
-            ->firstOrCreate(['user_id' => $userId], ['total' => 0])
-            ->load($this->with);
+        return $this->carts->findOrCreateByUserId($userId);
     }
 
     public function getCartByUserIdAndCartId(string $userId, string $cartId): ?Cart
     {
-        return Cart::query()
-            ->with($this->with)
-            ->where('user_id', $userId)
-            ->find($cartId);
+        return $this->carts->findByUserIdAndCartId($userId, $cartId);
     }
 
     #[Transactional]
     public function addCartItem(string $clientUserId, AddCartItemDTO $data): Cart
     {
         $cart = $this->getCartByUserId($clientUserId);
-        $restaurantProduct = RestaurantProduct::query()
-            ->with(['product.optionGroups.options'])
-            ->findOrFail($data->restaurant_product_id);
+        $restaurantProduct = $this->restaurantProducts->findByIdOrFail($data->restaurant_product_id);
 
         $optionIds = $data->option_ids;
-        $options = ProductOption::query()->whereIn('id', $optionIds)->get();
+        $options = $this->carts->findProductOptionsByIds($optionIds);
         $this->validateRestaurantProductCanBeAdded($cart, $restaurantProduct);
         $this->validateOptionsForProduct($restaurantProduct, $optionIds, $options);
 
@@ -52,20 +58,8 @@ class CartService implements CartServiceInterface
             $quantity
         );
 
-        $item = CartItem::query()->create([
-            'cart_id' => $cart->id,
-            'restaurant_product_id' => $restaurantProduct->id,
-            'quantity' => $quantity,
-            'unit_price' => $unitPrice,
-            'total_price' => $lineTotal,
-        ]);
-
-        foreach ($options as $option) {
-            $item->options()->create([
-                'product_option_id' => $option->id,
-                'extra_price' => $option->extra_price,
-            ]);
-        }
+        $item = $this->carts->createCartItem($cart->id, $restaurantProduct->id, $quantity, (float) $unitPrice, $lineTotal);
+        $this->carts->replaceCartItemOptions($item->id, $options);
 
         return $this->recalculateCartTotal($cart->id);
     }
@@ -73,22 +67,12 @@ class CartService implements CartServiceInterface
     #[Transactional]
     public function updateCartItem(string $clientUserId, string $cartItemId, UpdateCartItemDTO $data): Cart
     {
-        $item = CartItem::query()
-            ->with('restaurantProduct.product.optionGroups.options')
-            ->whereHas('cart', fn ($query) => $query->where('user_id', $clientUserId))
-            ->findOrFail($cartItemId);
+        $item = $this->carts->findItemByUserIdOrFail($clientUserId, $cartItemId);
 
         if ($data->option_ids !== null) {
-            $item->options()->delete();
-            $options = ProductOption::query()->whereIn('id', $data->option_ids)->get();
+            $options = $this->carts->findProductOptionsByIds($data->option_ids);
             $this->validateOptionsForProduct($item->restaurantProduct, $data->option_ids, $options);
-
-            foreach ($options as $option) {
-                $item->options()->create([
-                    'product_option_id' => $option->id,
-                    'extra_price' => $option->extra_price,
-                ]);
-            }
+            $this->carts->replaceCartItemOptions($item->id, $options);
         } else {
             $options = $item->options;
         }
@@ -99,10 +83,7 @@ class CartService implements CartServiceInterface
             $options->pluck('extra_price'),
             $quantity
         );
-        $item->update([
-            'quantity' => $quantity,
-            'total_price' => $lineTotal,
-        ]);
+        $this->carts->updateCartItemTotals($item->id, $quantity, $lineTotal);
 
         return $this->recalculateCartTotal($item->cart_id);
     }
@@ -110,11 +91,9 @@ class CartService implements CartServiceInterface
     #[Transactional]
     public function removeCartItem(string $userId, string $cartItemId): Cart
     {
-        $item = CartItem::query()
-            ->whereHas('cart', fn ($query) => $query->where('user_id', $userId))
-            ->findOrFail($cartItemId);
+        $item = $this->carts->findItemByUserIdOrFail($userId, $cartItemId);
         $cartId = $item->cart_id;
-        $item->delete();
+        $this->carts->deleteCartItem($item->id);
 
         return $this->recalculateCartTotal($cartId);
     }
@@ -123,8 +102,7 @@ class CartService implements CartServiceInterface
     public function clearCart(string $userId): bool
     {
         $cart = $this->getCartByUserId($userId);
-        $cart->items()->delete();
-        $cart->update(['total' => 0]);
+        $this->carts->clearCart($cart->id);
 
         return true;
     }
@@ -132,10 +110,9 @@ class CartService implements CartServiceInterface
     #[Transactional]
     public function recalculateCartTotal(string $cartId): Cart
     {
-        $cart = Cart::query()->with($this->with)->findOrFail($cartId);
-        $cart->update(['total' => PricingCalculator::calculateSubtotal($cart->items->pluck('total_price'))]);
+        $cart = $this->carts->findById($cartId);
 
-        return $cart->refresh()->load($this->with);
+        return $this->carts->updateTotal($cartId, PricingCalculator::calculateSubtotal($cart->items->pluck('total_price')));
     }
 
     private function validateRestaurantProductCanBeAdded(Cart $cart, RestaurantProduct $restaurantProduct): void

@@ -46,6 +46,18 @@ class PaymentRepository implements PaymentRepositoryInterface
         ]);
     }
 
+    public function createForOrder(string $orderId, string $method, string $status, float $amount, mixed $paidAt = null, mixed $expiredAt = null): Payment
+    {
+        return Payment::query()->create([
+            'order_id' => $orderId,
+            'method' => $method,
+            'status' => $status,
+            'amount' => $amount,
+            'paid_at' => $paidAt,
+            'expired_at' => $expiredAt,
+        ]);
+    }
+
     public function updatePayment(Payment $payment, UpdatePaymentDTO $data): Payment
     {
         $payment->update(array_filter([

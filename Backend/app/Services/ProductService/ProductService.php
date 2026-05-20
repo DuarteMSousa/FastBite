@@ -5,14 +5,23 @@ namespace App\Services\ProductService;
 use App\Aspects\Transactional;
 use App\DTOs\Product\CreateProductDTO;
 use App\DTOs\Product\UpdateProductDTO;
-use App\Models\Category;
-use App\Models\Product;
+use App\Repositories\CategoryRepository\CategoryRepositoryInterface;
 use App\Repositories\ProductRepository\ProductRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class ProductService implements ProductServiceInterface
 {
-    public function __construct(private ProductRepositoryInterface $productRepository) {}
+    private ProductRepositoryInterface $productRepository;
+
+    private CategoryRepositoryInterface $categories;
+
+    public function __construct(
+        ?ProductRepositoryInterface $productRepository = null,
+        ?CategoryRepositoryInterface $categories = null,
+    ) {
+        $this->productRepository = $productRepository ?? app(ProductRepositoryInterface::class);
+        $this->categories = $categories ?? app(CategoryRepositoryInterface::class);
+    }
 
     public function getProductById(string $id)
     {
@@ -26,10 +35,7 @@ class ProductService implements ProductServiceInterface
 
     public function getProductOptionGroups(string $productId)
     {
-        return Product::query()
-            ->with('optionGroups.options')
-            ->findOrFail($productId)
-            ->optionGroups;
+        return $this->productRepository->findOptionGroups($productId);
     }
 
     #[Transactional]
@@ -58,7 +64,7 @@ class ProductService implements ProductServiceInterface
     {
         $errors = [];
 
-        if (! Category::query()->whereKey($data->category_id)->exists()) {
+        if (! $this->categories->exists($data->category_id)) {
             $errors['category_id'][] = 'Category does not exist.';
         }
 
@@ -77,7 +83,7 @@ class ProductService implements ProductServiceInterface
     {
         $errors = [];
 
-        if (! Product::query()->whereKey($id)->exists()) {
+        if (! $this->productRepository->exists($id)) {
             $errors['id'][] = 'Product does not exist.';
         }
 

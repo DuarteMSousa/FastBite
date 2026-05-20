@@ -13,11 +13,33 @@ interface CartRepositoryInterface
 
     public function findByUserId(string $userId);
 
+    public function findOrCreateByUserId(string $userId);
+
+    public function findByUserIdAndCartId(string $userId, string $cartId);
+
+    public function findCheckoutCart(string $userId, ?string $cartId);
+
+    public function findItemByUserIdOrFail(string $userId, string $cartItemId);
+
+    public function replaceCartItemOptions(string $cartItemId, $options): void;
+
     public function createCart(CreateCartDTO $data);
 
     public function addCartItem(string $cartId, AddCartItemDTO $data, float $unitPrice, float $totalPrice);
 
+    public function createCartItem(string $cartId, string $restaurantProductId, int $quantity, float $unitPrice, float $totalPrice);
+
+    public function createCartItemOption(string $cartItemId, string $productOptionId, float $extraPrice);
+
     public function updateCartItem(string $cartItemId, UpdateCartItemDTO $data, float $totalPrice);
+
+    public function updateCartItemTotals(string $cartItemId, int $quantity, float $totalPrice);
+
+    public function clearCart(string $cartId): void;
+
+    public function updateTotal(string $cartId, float $total);
+
+    public function findProductOptionsByIds(array $ids);
 
     public function addCartItemOption(CartItemOptionDTO $data);
 

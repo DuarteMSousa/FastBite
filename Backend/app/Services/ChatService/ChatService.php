@@ -8,71 +8,64 @@ use App\DTOs\Chat\SendMessageDTO;
 use App\Enums\OrderStatus;
 use App\Enums\OutboxEventName;
 use App\Models\Chat;
-use App\Models\ChatParticipant;
 use App\Models\Message;
 use App\Models\User;
+use App\Repositories\ChatRepository\ChatRepositoryInterface;
+use App\Repositories\UserRepository\UserRepositoryInterface;
 use App\Services\OutboxService;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ChatService implements ChatServiceInterface
 {
+    private ChatRepositoryInterface $chats;
+
+    private UserRepositoryInterface $users;
+
+    public function __construct(
+        ?ChatRepositoryInterface $chats = null,
+        ?UserRepositoryInterface $users = null,
+    ) {
+        $this->chats = $chats ?? app(ChatRepositoryInterface::class);
+        $this->users = $users ?? app(UserRepositoryInterface::class);
+    }
+
     public function getChatsByOrderId(string $orderId)
     {
-        return Chat::query()
-            ->with(['participants', 'messages'])
-            ->where('order_id', $orderId)
-            ->orderBy('created_at')
-            ->get();
+        return $this->chats->findByOrderId($orderId);
     }
 
     public function getChatById(string $id): ?Chat
     {
-        return Chat::query()->with(['participants', 'messages'])->find($id);
+        return $this->chats->findById($id);
     }
 
     public function getMessagesByChatId(string $chatId, int $page, int $perPage)
     {
-        return Message::query()
-            ->where('chat_id', $chatId)
-            ->orderByDesc('timestamp')
-            ->paginate($perPage, ['*'], 'page', $page)
-            ->items();
+        return $this->chats->findMessages($chatId, $page, $perPage);
     }
 
     public function getParticipantsByChatId(string $chatId)
     {
-        return ChatParticipant::query()
-            ->where('chat_id', $chatId)
-            ->orderBy('joined_at')
-            ->get();
+        return $this->chats->findParticipants($chatId);
     }
 
     #[Transactional]
     public function createOrderChat(CreateOrderChatDTO $data): Chat
     {
-        $chat = Chat::query()->create([
-            'order_id' => $data->order_id,
-            'type' => $data->type->value,
-        ]);
-
         foreach ($data->participant_user_ids as $userId) {
-            $user = User::query()->findOrFail($userId);
-            $chat->participants()->create([
-                'user_id' => $user->id,
-                'joined_at' => now(),
+            $this->users->findById($userId) ?? throw ValidationException::withMessages([
+                'participant_user_ids' => 'One or more users do not exist.',
             ]);
         }
 
-        return $chat->load(['participants', 'messages']);
+        return $this->chats->createOrderChat($data);
     }
 
     #[Transactional]
     public function sendChatMessage(string $senderUserId, SendMessageDTO $data): Message
     {
-        $chat = Chat::query()
-            ->with(['order.restaurant.localManager', 'order.restaurant.chain.chainManagers'])
-            ->findOrFail($data->chat_id);
+        $chat = $this->chats->findByIdOrFail($data->chat_id);
 
         if ($chat->closed_at !== null) {
             throw ValidationException::withMessages([
@@ -86,15 +79,18 @@ class ChatService implements ChatServiceInterface
             ]);
         }
 
-        $participant = ChatParticipant::query()
-            ->where('chat_id', $data->chat_id)
-            ->where('user_id', $senderUserId)
-            ->first();
+        $participant = $this->chats->findParticipant($data->chat_id, $senderUserId);
 
         // Auto-adicionar managers autorizados que ainda nao sejam participantes.
         // Espelha a logica de authorization do canal broadcast chat.{chatId}.
         if (! $participant) {
-            $sender = User::query()->findOrFail($senderUserId);
+            $sender = $this->users->findById($senderUserId);
+
+            if (! $sender) {
+                throw ValidationException::withMessages([
+                    'sender_user_id' => 'User does not exist.',
+                ]);
+            }
 
             if (! $this->isAuthorizedManagerForChat($sender, $chat)) {
                 throw ValidationException::withMessages([
@@ -102,19 +98,10 @@ class ChatService implements ChatServiceInterface
                 ]);
             }
 
-            $participant = ChatParticipant::query()->create([
-                'chat_id' => $data->chat_id,
-                'user_id' => $sender->id,
-                'joined_at' => now(),
-            ]);
+            $participant = $this->chats->addParticipant($data->chat_id, $sender->id);
         }
 
-        $message = Message::query()->create([
-            'chat_id' => $data->chat_id,
-            'sender_participant_id' => $participant->id,
-            'content' => $data->content,
-            'timestamp' => now(),
-        ]);
+        $message = $this->chats->createMessage($data->chat_id, $participant->id, $data->content);
 
         app(OutboxService::class)->enqueue('chat', $chat->id, OutboxEventName::CHAT_MESSAGE_SENT->value, [
             'eventId' => (string) Str::uuid(),

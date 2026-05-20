@@ -28,6 +28,21 @@ class PromotionRepository implements PromotionRepositoryInterface
             ->get();
     }
 
+    public function getActiveByChainId(string $chainId)
+    {
+        $now = now();
+
+        return Promotion::with(['promotionItems'])
+            ->where('chain_id', $chainId)
+            ->where(function ($query) use ($now): void {
+                $query->whereNull('start_date')->orWhere('start_date', '<=', $now);
+            })
+            ->where(function ($query) use ($now): void {
+                $query->whereNull('end_date')->orWhere('end_date', '>=', $now);
+            })
+            ->get();
+    }
+
     public function createPromotion(CreatePromotionDTO $data)
     {
         return Promotion::create([

@@ -13,6 +13,16 @@ class RestaurantChainRepository implements RestaurantChainRepositoryInterface
         return RestaurantChain::find($id);
     }
 
+    public function findAll(int $limit = 100)
+    {
+        return RestaurantChain::orderBy('name')->limit($limit)->get();
+    }
+
+    public function exists(string $id): bool
+    {
+        return RestaurantChain::whereKey($id)->exists();
+    }
+
     public function createRestaurantChain(CreateRestaurantChainDTO $data)
     {
         return RestaurantChain::create($data->toArray());

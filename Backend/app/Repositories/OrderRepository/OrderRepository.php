@@ -4,7 +4,10 @@ namespace App\Repositories\OrderRepository;
 
 use App\DTOs\Order\CreateOrderDTO;
 use App\DTOs\Order\UpdateOrderDTO;
+use App\Enums\OrderStatus;
 use App\Models\Order;
+use App\Models\OrderEvent;
+use App\Models\OrderItem;
 
 class OrderRepository implements OrderRepositoryInterface
 {
@@ -22,10 +25,51 @@ class OrderRepository implements OrderRepositoryInterface
         return Order::with($this->defaultRelations)->find($id);
     }
 
+    public function findByIdOrFail(string $id, bool $lock = false): Order
+    {
+        $query = Order::with($this->defaultRelations);
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->findOrFail($id);
+    }
+
+    public function findByUserIdAndId(string $userId, string $orderId)
+    {
+        return Order::with($this->defaultRelations)
+            ->where('user_id', $userId)
+            ->find($orderId);
+    }
+
+    public function findByUserIdAndIdOrFail(string $userId, string $orderId): Order
+    {
+        return Order::with($this->defaultRelations)
+            ->where('user_id', $userId)
+            ->findOrFail($orderId);
+    }
+
+    public function findByRestaurantIdAndId(string $restaurantId, string $orderId)
+    {
+        return Order::with($this->defaultRelations)
+            ->where('restaurant_id', $restaurantId)
+            ->find($orderId);
+    }
+
     public function findByUserId(string $userId, int $pageNumber, int $pageSize)
     {
         return Order::with($this->defaultRelations)
             ->where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->paginate($pageSize, ['*'], 'page', $pageNumber);
+    }
+
+    public function findByUserIdFiltered(string $userId, ?array $statuses, int $pageNumber, int $pageSize)
+    {
+        return Order::with($this->defaultRelations)
+            ->where('user_id', $userId)
+            ->when($statuses, fn ($query) => $query->whereIn('status', $statuses))
             ->orderByDesc('created_at')
             ->paginate($pageSize, ['*'], 'page', $pageNumber);
     }
@@ -36,6 +80,24 @@ class OrderRepository implements OrderRepositoryInterface
             ->where('restaurant_id', $restaurantId)
             ->orderByDesc('created_at')
             ->paginate($pageSize, ['*'], 'page', $pageNumber);
+    }
+
+    public function findByRestaurantIdFiltered(string $restaurantId, ?array $statuses, int $pageNumber, int $pageSize)
+    {
+        return Order::with($this->defaultRelations)
+            ->where('restaurant_id', $restaurantId)
+            ->when($statuses, fn ($query) => $query->whereIn('status', $statuses))
+            ->orderByDesc('created_at')
+            ->paginate($pageSize, ['*'], 'page', $pageNumber);
+    }
+
+    public function findActiveByRestaurantId(string $restaurantId)
+    {
+        return Order::with($this->defaultRelations)
+            ->where('restaurant_id', $restaurantId)
+            ->whereNotIn('status', [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value])
+            ->orderBy('created_at')
+            ->get();
     }
 
     public function findByUserIdWithFilters(string $userId, int $limit, ?array $statuses = null)
@@ -50,6 +112,40 @@ class OrderRepository implements OrderRepositoryInterface
         }
 
         return $query->get();
+    }
+
+    public function getEvents(string $orderId)
+    {
+        return OrderEvent::where('order_id', $orderId)
+            ->orderBy('timestamp')
+            ->get();
+    }
+
+    public function findOrderItemOrFail(string $orderItemId)
+    {
+        return OrderItem::with('order.items')->findOrFail($orderItemId);
+    }
+
+    public function updateOrderItemStatus(string $orderItemId, string $status)
+    {
+        $item = OrderItem::with('order.items')->findOrFail($orderItemId);
+        $item->update(['status' => $status]);
+
+        return $item;
+    }
+
+    public function addDiscount(Order $order, array $discount): void
+    {
+        $order->discounts()->create($discount);
+    }
+
+    public function addEvent(Order $order, string $eventType, mixed $timestamp, array $payload): void
+    {
+        $order->events()->create([
+            'event_type' => $eventType,
+            'timestamp' => $timestamp,
+            'payload' => $payload,
+        ]);
     }
 
     public function createOrder(CreateOrderDTO $data)

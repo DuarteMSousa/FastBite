@@ -13,6 +13,8 @@ use App\Models\OrderAddress;
 use App\Models\Promotion;
 use App\Models\Restaurant;
 use App\Models\UserAddress;
+use App\Repositories\CouponRepository\CouponRepositoryInterface;
+use App\Repositories\PromotionRepository\PromotionRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class OrderPricingService
@@ -22,6 +24,18 @@ class OrderPricingService
     private const DELIVERY_FEE_PER_KM = 0.45;
 
     private const DELIVERY_MAX_FEE = 6.00;
+
+    private PromotionRepositoryInterface $promotions;
+
+    private CouponRepositoryInterface $coupons;
+
+    public function __construct(
+        ?PromotionRepositoryInterface $promotions = null,
+        ?CouponRepositoryInterface $coupons = null,
+    ) {
+        $this->promotions = $promotions ?? app(PromotionRepositoryInterface::class);
+        $this->coupons = $coupons ?? app(CouponRepositoryInterface::class);
+    }
 
     /**
      * @return array{subtotal: float, discount_total: float, delivery_fee: float, total: float, discounts: array<int, array<string, mixed>>, coupon: Coupon|null}
@@ -95,18 +109,7 @@ class OrderPricingService
 
     private function activePromotions(string $chainId)
     {
-        $now = now();
-
-        return Promotion::query()
-            ->with('promotionItems')
-            ->where('chain_id', $chainId)
-            ->where(function ($query) use ($now): void {
-                $query->whereNull('start_date')->orWhere('start_date', '<=', $now);
-            })
-            ->where(function ($query) use ($now): void {
-                $query->whereNull('end_date')->orWhere('end_date', '>=', $now);
-            })
-            ->get();
+        return $this->promotions->getActiveByChainId($chainId);
     }
 
     /**
@@ -165,11 +168,7 @@ class OrderPricingService
 
     private function validCoupon(string $chainId, string $code, float $subtotal): Coupon
     {
-        $coupon = Coupon::query()
-            ->with('promotionItems')
-            ->where('chain_id', $chainId)
-            ->where('code', $code)
-            ->first();
+        $coupon = $this->coupons->findByChainIdAndCode($chainId, $code);
 
         if (! $coupon) {
             throw ValidationException::withMessages(['coupon_code' => 'Coupon not found.']);

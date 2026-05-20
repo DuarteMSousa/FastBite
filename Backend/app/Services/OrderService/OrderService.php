@@ -21,12 +21,12 @@ use App\Jobs\AssignCourierToDeliveryJob;
 use App\Jobs\ExpirePendingPaymentJob;
 use App\Models\Cart;
 use App\Models\Order;
-use App\Models\OrderEvent;
-use App\Models\OrderItem;
-use App\Models\Payment;
 use App\Models\Restaurant;
 use App\Models\UserAddress;
+use App\Repositories\CartRepository\CartRepositoryInterface;
 use App\Repositories\OrderRepository\OrderRepositoryInterface;
+use App\Repositories\PaymentRepository\PaymentRepositoryInterface as PaymentRepositoryContract;
+use App\Repositories\UserAddressRepository\UserAddressRepositoryInterface;
 use App\Services\CartService\CartServiceInterface;
 use App\Services\DeliveryService\DeliveryServiceInterface;
 use App\Services\OrderPricingService;
@@ -49,76 +49,60 @@ class OrderService implements OrderServiceInterface
         'delivery.events',
     ];
 
+    private OrderRepositoryInterface $orders;
+
+    private CartRepositoryInterface $carts;
+
+    private PaymentRepositoryContract $payments;
+
+    private UserAddressRepositoryInterface $addresses;
+
+    public function __construct(
+        ?OrderRepositoryInterface $orders = null,
+        ?CartRepositoryInterface $carts = null,
+        ?PaymentRepositoryContract $payments = null,
+        ?UserAddressRepositoryInterface $addresses = null,
+    ) {
+        $this->orders = $orders ?? app(OrderRepositoryInterface::class);
+        $this->carts = $carts ?? app(CartRepositoryInterface::class);
+        $this->payments = $payments ?? app(PaymentRepositoryContract::class);
+        $this->addresses = $addresses ?? app(UserAddressRepositoryInterface::class);
+    }
+
     public function getClientOrders(string $userId, ?array $statuses = null, int $page = 1, int $perPage = 20)
     {
-        $query = Order::query()
-            ->with($this->with)
-            ->where('user_id', $userId)
-            ->orderByDesc('created_at');
-
-        if ($statuses) {
-            $query->whereIn('status', $statuses);
-        }
-
-        return $query->paginate($perPage, ['*'], 'page', $page)->items();
+        return $this->orders->findByUserIdFiltered($userId, $statuses, $page, $perPage)->items();
     }
 
     public function getClientOrder(string $userId, string $orderId): ?Order
     {
-        return Order::query()
-            ->with($this->with)
-            ->where('user_id', $userId)
-            ->find($orderId);
+        return $this->orders->findByUserIdAndId($userId, $orderId);
     }
 
     public function getRestaurantOrders(string $restaurantId, ?array $statuses = null, int $page = 1, int $perPage = 20)
     {
-        $query = Order::query()
-            ->with($this->with)
-            ->where('restaurant_id', $restaurantId)
-            ->orderByDesc('created_at');
-
-        if ($statuses) {
-            $query->whereIn('status', $statuses);
-        }
-
-        return $query->paginate($perPage, ['*'], 'page', $page)->items();
+        return $this->orders->findByRestaurantIdFiltered($restaurantId, $statuses, $page, $perPage)->items();
     }
 
     public function getActiveRestaurantOrders(string $restaurantId)
     {
-        return Order::query()
-            ->with($this->with)
-            ->where('restaurant_id', $restaurantId)
-            ->whereNotIn('status', [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value])
-            ->orderBy('created_at')
-            ->get();
+        return $this->orders->findActiveByRestaurantId($restaurantId);
     }
 
     public function getRestaurantOrder(string $restaurantId, string $orderId): ?Order
     {
-        return Order::query()
-            ->with($this->with)
-            ->where('restaurant_id', $restaurantId)
-            ->find($orderId);
+        return $this->orders->findByRestaurantIdAndId($restaurantId, $orderId);
     }
 
     public function getOrderEvents(string $orderId)
     {
-        return OrderEvent::query()
-            ->where('order_id', $orderId)
-            ->orderBy('timestamp')
-            ->get();
+        return $this->orders->getEvents($orderId);
     }
 
     #[Transactional]
     public function checkoutOrder(string $clientUserId, CheckoutDTO $data): array
     {
-        $cart = Cart::query()
-            ->with(['items.restaurantProduct.product.category', 'items.options.productOption'])
-            ->where('user_id', $clientUserId)
-            ->when($data->cart_id, fn($query, $cartId) => $query->whereKey($cartId))
-            ->firstOrFail();
+        $cart = $this->carts->findCheckoutCart($clientUserId, $data->cart_id);
 
         if ($cart->items->isEmpty()) {
             throw new \RuntimeException('Cart is empty.');
@@ -134,13 +118,13 @@ class OrderService implements OrderServiceInterface
         $paymentStatus = $method === PaymentMethod::CASH ? PaymentStatus::COMPLETED : PaymentStatus::PENDING;
         $orderStatus = $paymentStatus === PaymentStatus::COMPLETED ? OrderStatus::CONFIRMED : OrderStatus::PENDING;
 
-        $order = app(OrderRepositoryInterface::class)->createOrder(
+        $order = $this->orders->createOrder(
             $this->checkoutCreateOrderDTO($clientUserId, $restaurant, $address, $cart, $pricing, $orderStatus)
         );
         $cartItemToOrderItem = $this->mapCartItemsToOrderItems($cart, $order);
 
         foreach ($pricing['discounts'] as $discount) {
-            $order->discounts()->create([
+            $this->orders->addDiscount($order, [
                 'name_snapshot' => $discount['name_snapshot'],
                 'description_snapshot' => $discount['description_snapshot'] ?? null,
                 'discount_amount' => $discount['discount_amount'],
@@ -154,13 +138,14 @@ class OrderService implements OrderServiceInterface
             ]);
         }
 
-        $payment = $order->payment()->create([
-            'method' => $method->value,
-            'status' => $paymentStatus->value,
-            'amount' => $pricing['total'],
-            'paid_at' => $paymentStatus === PaymentStatus::COMPLETED ? now() : null,
-            'expired_at' => $paymentStatus === PaymentStatus::PENDING ? now()->addMinutes(10) : null,
-        ]);
+        $payment = $this->payments->createForOrder(
+            $order->id,
+            $method->value,
+            $paymentStatus->value,
+            $pricing['total'],
+            $paymentStatus === PaymentStatus::COMPLETED ? now() : null,
+            $paymentStatus === PaymentStatus::PENDING ? now()->addMinutes(10) : null,
+        );
 
         $this->recordEvent($order, OrderEventType::ORDER_CREATED, [
             'paymentStatus' => $paymentStatus->value,
@@ -170,25 +155,24 @@ class OrderService implements OrderServiceInterface
             $this->recordEvent($order, OrderEventType::ORDER_CONFIRMED);
         }
 
-        $payment->events()->create([
-            'event_type' => PaymentEventType::PAYMENT_CREATED->value,
-            'timestamp' => now(),
-            'payload' => [],
-        ]);
+        $this->payments->createEvent($payment, new \App\DTOs\Payment\CreatePaymentEventDTO(
+            PaymentEventType::PAYMENT_CREATED,
+            now(),
+            [],
+        ));
 
         if ($paymentStatus === PaymentStatus::COMPLETED) {
-            $payment->events()->create([
-                'event_type' => PaymentEventType::PAYMENT_COMPLETED->value,
-                'timestamp' => now(),
-                'payload' => [],
-            ]);
+            $this->payments->createEvent($payment, new \App\DTOs\Payment\CreatePaymentEventDTO(
+                PaymentEventType::PAYMENT_COMPLETED,
+                now(),
+                [],
+            ));
         } else {
             ExpirePendingPaymentJob::dispatch($payment->id)
                 ->delay($payment->expired_at)
                 ->afterCommit();
         }
-        $cart->items()->delete();
-        $cart->update(['total' => 0]);
+        $this->carts->clearCart($cart->id);
 
         return [
             'order' => $order->load($this->with),
@@ -199,7 +183,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function cancelOrderByClient(string $userId, string $orderId, ?string $reason): Order
     {
-        $order = Order::query()->where('user_id', $userId)->findOrFail($orderId);
+        $order = $this->orders->findByUserIdAndIdOrFail($userId, $orderId);
 
         if ($order->status === OrderStatus::CANCELLED) {
             return $order->load($this->with);
@@ -214,7 +198,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function cancelOrderBySystem(string $orderId, string $reason): Order
     {
-        $order = Order::query()->findOrFail($orderId);
+        $order = $this->orders->findByIdOrFail($orderId);
 
         if (in_array($order->status, [OrderStatus::DELIVERED, OrderStatus::CANCELLED], true)) {
             return $order->load($this->with);
@@ -231,7 +215,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function acceptOrderByRestaurant(string $orderId): Order
     {
-        $order = Order::query()->findOrFail($orderId);
+        $order = $this->orders->findByIdOrFail($orderId);
 
         $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
         $order->loadMissing(['restaurant.address', 'address']);
@@ -245,7 +229,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function rejectOrderByRestaurant(string $orderId, ?string $reason): Order
     {
-        $order = Order::query()->findOrFail($orderId);
+        $order = $this->orders->findByIdOrFail($orderId);
 
         $this->recordEvent($order, OrderEventType::ORDER_REJECTED, ['reason' => $reason]);
         $order = $this->transition($order, OrderStatus::CANCELLED, OrderEventType::ORDER_CANCELLED, ['reason' => $reason]);
@@ -257,7 +241,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function startPreparingOrder(string $orderId): Order
     {
-        $order = Order::query()->findOrFail($orderId);
+        $order = $this->orders->findByIdOrFail($orderId);
 
         $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
         $order->loadMissing(['restaurant.address', 'address']);
@@ -271,8 +255,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function updateOrderItemStatus(string $orderItemId, string $status): Order
     {
-        $item = OrderItem::query()->with('order.items')->findOrFail($orderItemId);
-        $item->update(['status' => $status]);
+        $item = $this->orders->updateOrderItemStatus($orderItemId, $status);
         $order = $item->order->refresh()->load('items');
 
         $statuses = $order->items->pluck('status');
@@ -296,7 +279,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function markOrderReady(string $orderId): Order
     {
-        $order = Order::query()->findOrFail($orderId);
+        $order = $this->orders->findByIdOrFail($orderId);
 
         return $this->transition($order, OrderStatus::READY, OrderEventType::ORDER_READY);
     }
@@ -304,23 +287,21 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function repeatClientOrder(string $userId, string $orderId): Cart
     {
-        $order = Order::query()->with('items.options')->where('user_id', $userId)->findOrFail($orderId);
+        $order = $this->orders->findByUserIdAndIdOrFail($userId, $orderId);
         $cart = app(CartServiceInterface::class)->getCartByUserId($userId);
-        $cart->items()->delete();
+        $this->carts->clearCart($cart->id);
 
         foreach ($order->items as $item) {
-            $cartItem = $cart->items()->create([
-                'restaurant_product_id' => $item->restaurant_product_id,
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'total_price' => $item->total_price,
-            ]);
+            $cartItem = $this->carts->createCartItem(
+                $cart->id,
+                $item->restaurant_product_id,
+                (int) $item->quantity,
+                (float) $item->unit_price,
+                (float) $item->total_price,
+            );
 
             foreach ($item->options as $option) {
-                $cartItem->options()->create([
-                    'product_option_id' => $option->product_option_id,
-                    'extra_price' => $option->extra_price,
-                ]);
+                $this->carts->createCartItemOption($cartItem->id, $option->product_option_id, (float) $option->extra_price);
             }
         }
 
@@ -365,7 +346,7 @@ class OrderService implements OrderServiceInterface
 
     private function transition(Order $order, OrderStatus $status, OrderEventType $eventType, array $payload = []): Order
     {
-        $order = Order::query()->lockForUpdate()->findOrFail($order->id);
+        $order = $this->orders->findByIdOrFail($order->id, lock: true);
         OrderStateFactory::from($order->status)->transition($order, $status);
         $this->recordEvent($order, $eventType, $payload);
 
@@ -380,9 +361,7 @@ class OrderService implements OrderServiceInterface
             ]);
         }
 
-        return UserAddress::query()
-            ->where('user_id', $clientUserId)
-            ->findOrFail($addressId);
+        return $this->addresses->findByUserIdAndIdOrFail($clientUserId, $addressId);
     }
 
     private function validateCheckoutCart(Cart $cart, string $restaurantId, UserAddress $address): void
@@ -497,7 +476,7 @@ class OrderService implements OrderServiceInterface
 
     private function cancelPaymentForOrder(string $orderId, string $reason): void
     {
-        $payment = Payment::query()->where('order_id', $orderId)->first();
+        $payment = $this->payments->getByOrderId($orderId);
 
         if (! $payment) {
             return;
@@ -553,11 +532,7 @@ class OrderService implements OrderServiceInterface
             ],
         ];
 
-        $order->events()->create([
-            'event_type' => $eventType->value,
-            'timestamp' => $occurredAt,
-            'payload' => $eventPayload,
-        ]);
+        $this->orders->addEvent($order, $eventType->value, $occurredAt, $eventPayload);
 
         app(OutboxService::class)->enqueue('order', $order->id, $eventType->value, $eventPayload);
         NotificationEventRecorded::dispatch($eventType, $eventPayload);

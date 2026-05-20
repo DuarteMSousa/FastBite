@@ -5,27 +5,38 @@ namespace App\Services\RestaurantProductService;
 use App\Aspects\Transactional;
 use App\DTOs\Product\CreateRestaurantProductDTO;
 use App\DTOs\Product\UpdateRestaurantProductDTO;
-use App\Models\Category;
-use App\Models\Product;
-use App\Models\Restaurant;
 use App\Models\RestaurantProduct;
+use App\Repositories\ProductRepository\ProductRepositoryInterface;
+use App\Repositories\RestaurantProductRepository\RestaurantProductRepositoryInterface;
+use App\Repositories\RestaurantRepository\RestaurantRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class RestaurantProductService implements RestaurantProductServiceInterface
 {
-    private array $with = ['product.optionGroups.options', 'restaurant'];
+    private RestaurantProductRepositoryInterface $restaurantProducts;
+
+    private RestaurantRepositoryInterface $restaurants;
+
+    private ProductRepositoryInterface $products;
+
+    public function __construct(
+        ?RestaurantProductRepositoryInterface $restaurantProducts = null,
+        ?RestaurantRepositoryInterface $restaurants = null,
+        ?ProductRepositoryInterface $products = null,
+    ) {
+        $this->restaurantProducts = $restaurantProducts ?? app(RestaurantProductRepositoryInterface::class);
+        $this->restaurants = $restaurants ?? app(RestaurantRepositoryInterface::class);
+        $this->products = $products ?? app(ProductRepositoryInterface::class);
+    }
 
     public function getRestaurantProductById(string $id): ?RestaurantProduct
     {
-        return RestaurantProduct::query()->with($this->with)->find($id);
+        return $this->restaurantProducts->findById($id);
     }
 
     public function getRestaurantProductsByRestaurantId(string $restaurantId)
     {
-        return RestaurantProduct::query()
-            ->with($this->with)
-            ->where('restaurant_id', $restaurantId)
-            ->get();
+        return $this->restaurantProducts->findByRestaurantId($restaurantId);
     }
 
     public function getRestaurantCategoriesByRestaurantId(string $restaurantId)
@@ -35,14 +46,9 @@ class RestaurantProductService implements RestaurantProductServiceInterface
 
     public function getRestaurantMenu(string $restaurantId): array
     {
-        $restaurant = Restaurant::query()->with(['chain', 'address'])->findOrFail($restaurantId);
+        $restaurant = $this->restaurants->findByIdOrFail($restaurantId);
         $products = $this->getRestaurantProductsByRestaurantId($restaurantId);
-        $categoryIds = $products->pluck('product.category_id')->filter()->unique()->values();
-        $categories = Category::query()
-            ->with('products.optionGroups.options')
-            ->whereIn('id', $categoryIds)
-            ->orderBy('name')
-            ->get();
+        $categories = $this->restaurantProducts->findCategoriesByRestaurantId($restaurantId);
 
         return [
             'restaurant' => $restaurant,
@@ -62,19 +68,13 @@ class RestaurantProductService implements RestaurantProductServiceInterface
     {
         $this->validateInput($data->toArray());
 
-        return RestaurantProduct::query()->create([
-            'restaurant_id' => $data->restaurant_id,
-            'product_id' => $data->product_id,
-            'local_price' => $data->local_price,
-            'is_available' => $data->is_available,
-            'estimated_preparation_time_min' => $data->estimated_preparation_time_min,
-        ])->load($this->with);
+        return $this->restaurantProducts->createRestaurantProduct($data);
     }
 
     #[Transactional]
     public function updateRestaurantProduct(string $id, UpdateRestaurantProductDTO $data): ?RestaurantProduct
     {
-        $restaurantProduct = RestaurantProduct::query()->find($id);
+        $restaurantProduct = $this->restaurantProducts->findById($id);
 
         if (! $restaurantProduct) {
             return null;
@@ -82,26 +82,18 @@ class RestaurantProductService implements RestaurantProductServiceInterface
 
         $input = array_filter($data->toArray(), static fn ($value) => $value !== null);
         $this->validateInput([...$restaurantProduct->toArray(), ...$input]);
-        $restaurantProduct->update(array_filter([
-            'restaurant_id' => $data->restaurant_id,
-            'product_id' => $data->product_id,
-            'local_price' => $data->local_price,
-            'is_available' => $data->is_available,
-            'estimated_preparation_time_min' => $data->estimated_preparation_time_min,
-        ], static fn ($value) => $value !== null));
-
-        return $restaurantProduct->load($this->with);
+        return $this->restaurantProducts->updateRestaurantProduct($id, $data);
     }
 
     private function validateInput(array $input): void
     {
         $errors = [];
 
-        if (empty($input['restaurant_id']) || ! Restaurant::query()->whereKey($input['restaurant_id'])->exists()) {
+        if (empty($input['restaurant_id']) || ! $this->restaurants->exists($input['restaurant_id'])) {
             $errors['restaurant_id'][] = 'Restaurant does not exist.';
         }
 
-        if (empty($input['product_id']) || ! Product::query()->whereKey($input['product_id'])->exists()) {
+        if (empty($input['product_id']) || ! $this->products->exists($input['product_id'])) {
             $errors['product_id'][] = 'Product does not exist.';
         }
 

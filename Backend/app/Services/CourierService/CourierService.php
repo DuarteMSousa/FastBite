@@ -7,13 +7,23 @@ use App\DTOs\Courier\CreateCourierDTO;
 use App\DTOs\Courier\UpdateCourierDTO;
 use App\Enums\CourierStatus;
 use App\Models\Courier;
-use App\Models\User;
 use App\Repositories\CourierRepository\CourierRepositoryInterface;
+use App\Repositories\UserRepository\UserRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class CourierService implements CourierServiceInterface
 {
-    public function __construct(private CourierRepositoryInterface $couriers) {}
+    private CourierRepositoryInterface $couriers;
+
+    private UserRepositoryInterface $users;
+
+    public function __construct(
+        ?CourierRepositoryInterface $couriers = null,
+        ?UserRepositoryInterface $users = null,
+    ) {
+        $this->couriers = $couriers ?? app(CourierRepositoryInterface::class);
+        $this->users = $users ?? app(UserRepositoryInterface::class);
+    }
 
     public function getCourierByUserId(string $userId): ?Courier
     {
@@ -28,7 +38,7 @@ class CourierService implements CourierServiceInterface
     #[Transactional]
     public function ensureCourierProfile(string $userId): Courier
     {
-        if (! User::query()->whereKey($userId)->exists()) {
+        if (! $this->users->exists($userId)) {
             throw ValidationException::withMessages([
                 'user_id' => ['User does not exist.'],
             ]);

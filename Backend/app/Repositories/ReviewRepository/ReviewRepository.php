@@ -2,9 +2,12 @@
 
 namespace App\Repositories\ReviewRepository;
 
-use App\Models\Review;
 use App\DTOs\Review\CreateReviewDTO;
 use App\DTOs\Review\UpdateReviewDTO;
+use App\Enums\OrderStatus;
+use App\Enums\ReviewTargetType;
+use App\Models\Order;
+use App\Models\Review;
 
 class ReviewRepository implements ReviewRepositoryInterface
 {
@@ -16,6 +19,7 @@ class ReviewRepository implements ReviewRepositoryInterface
     public function findByUserId(string $userId, int $pageNumber, int $pageSize)
     {
         return Review::where("user_id", $userId)
+            ->orderByDesc('created_at')
             ->paginate($pageSize, ['*'], 'page', $pageNumber);
     }
 
@@ -23,7 +27,35 @@ class ReviewRepository implements ReviewRepositoryInterface
     {
         return Review::where('target_id', $targetEntityId)
             ->where('target_type', $targetEntityType)
+            ->orderByDesc('created_at')
             ->paginate($pageSize, ['*'], 'page', $pageNumber);
+    }
+
+    public function findByUserIdAndId(string $userId, string $reviewId)
+    {
+        return Review::where('user_id', $userId)->find($reviewId);
+    }
+
+    public function userCanReviewTarget(string $userId, string $targetType, string $targetId): bool
+    {
+        $query = Order::where('user_id', $userId)
+            ->where('status', OrderStatus::DELIVERED->value);
+
+        if ($targetType === ReviewTargetType::RESTAURANT->value) {
+            $query->where('restaurant_id', $targetId);
+        } else {
+            $query->whereHas('delivery', fn ($subQuery) => $subQuery->where('courier_id', $targetId));
+        }
+
+        return $query->exists();
+    }
+
+    public function existsForTarget(string $userId, string $targetType, string $targetId): bool
+    {
+        return Review::where('user_id', $userId)
+            ->where('target_type', $targetType)
+            ->where('target_id', $targetId)
+            ->exists();
     }
 
     public function createReview(CreateReviewDTO $data)
@@ -49,5 +81,12 @@ class ReviewRepository implements ReviewRepositoryInterface
             return true;
         }
         return false;
+    }
+
+    public function deleteReviewByUserId(string $userId, string $reviewId): bool
+    {
+        return (bool) Review::where('user_id', $userId)
+            ->whereKey($reviewId)
+            ->delete();
     }
 }

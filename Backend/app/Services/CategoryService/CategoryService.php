@@ -6,34 +6,37 @@ use App\Aspects\Transactional;
 use App\DTOs\Category\CreateCategoryDTO;
 use App\DTOs\Category\UpdateCategoryDTO;
 use App\Models\Category;
-use App\Models\RestaurantChain;
+use App\Repositories\CategoryRepository\CategoryRepositoryInterface;
+use App\Repositories\RestaurantChainRepository\RestaurantChainRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class CategoryService implements CategoryServiceInterface
 {
+    private CategoryRepositoryInterface $categories;
+
+    private RestaurantChainRepositoryInterface $chains;
+
+    public function __construct(
+        ?CategoryRepositoryInterface $categories = null,
+        ?RestaurantChainRepositoryInterface $chains = null,
+    ) {
+        $this->categories = $categories ?? app(CategoryRepositoryInterface::class);
+        $this->chains = $chains ?? app(RestaurantChainRepositoryInterface::class);
+    }
+
     public function getCategoriesByChainId(string $chainId)
     {
-        return Category::query()
-            ->with('products.optionGroups.options')
-            ->where('chain_id', $chainId)
-            ->orderBy('name')
-            ->get();
+        return $this->categories->findByRestaurantChainId($chainId);
     }
 
     public function getCategoryById(string $id): ?Category
     {
-        return Category::query()->with('products.optionGroups.options')->find($id);
+        return $this->categories->findById($id);
     }
 
     public function getAllCategories(?string $chainId = null, int $limit = 100)
     {
-        $query = Category::query()->with('products.optionGroups.options');
-
-        if ($chainId !== null) {
-            $query->where('chain_id', $chainId);
-        }
-
-        return $query->orderBy('name')->limit($limit)->get();
+        return $this->categories->findAll($chainId, $limit);
     }
 
     #[Transactional]
@@ -41,16 +44,13 @@ class CategoryService implements CategoryServiceInterface
     {
         $this->validateInput($data->toArray());
 
-        return Category::query()->create([
-            'chain_id' => $data->chain_id,
-            'name' => $data->name,
-        ])->load('products.optionGroups.options');
+        return $this->categories->createCategory($data);
     }
 
     #[Transactional]
     public function updateCategory(string $id, UpdateCategoryDTO $data): ?Category
     {
-        $category = Category::query()->find($id);
+        $category = $this->categories->findById($id);
 
         if (! $category) {
             return null;
@@ -58,18 +58,13 @@ class CategoryService implements CategoryServiceInterface
 
         $input = array_filter($data->toArray(), static fn ($value) => $value !== null);
         $this->validateInput([...$category->toArray(), ...$input], $id);
-        $category->update(array_filter([
-            'chain_id' => $data->chain_id,
-            'name' => $data->name,
-        ], static fn ($value) => $value !== null));
-
-        return $category->load('products.optionGroups.options');
+        return $this->categories->updateCategory($id, $data);
     }
 
     #[Transactional]
     public function deleteCategory(string $id): bool
     {
-        return (bool) Category::query()->whereKey($id)->delete();
+        return $this->categories->deleteCategory($id);
     }
 
     private function validateInput(array $input, ?string $ignoreId = null): void
@@ -80,7 +75,7 @@ class CategoryService implements CategoryServiceInterface
             $errors['name'][] = 'Category name is required.';
         }
 
-        if (empty($input['chain_id']) || ! RestaurantChain::query()->whereKey($input['chain_id'])->exists()) {
+        if (empty($input['chain_id']) || ! $this->chains->exists($input['chain_id'])) {
             $errors['chain_id'][] = 'Restaurant chain does not exist.';
         }
 

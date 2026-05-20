@@ -8,6 +8,8 @@ use App\Repositories\CategoryRepository\CategoryRepository;
 use App\Repositories\CategoryRepository\CategoryRepositoryInterface;
 use App\Repositories\ChainManagerRepository\ChainManagerRepository;
 use App\Repositories\ChainManagerRepository\ChainManagerRepositoryInterface;
+use App\Repositories\ChatRepository\ChatRepository;
+use App\Repositories\ChatRepository\ChatRepositoryInterface;
 use App\Repositories\CouponRepository\CouponRepository;
 use App\Repositories\CouponRepository\CouponRepositoryInterface;
 use App\Repositories\DeliveryOfferRepository\DeliveryOfferRepository;
@@ -40,8 +42,12 @@ use App\Repositories\RestaurantChainRepository\RestaurantChainRepository;
 use App\Repositories\RestaurantChainRepository\RestaurantChainRepositoryInterface;
 use App\Repositories\UserRepository\UserRepository;
 use App\Repositories\UserRepository\UserRepositoryInterface;
+use App\Repositories\TrackingRepository\TrackingRepository;
+use App\Repositories\TrackingRepository\TrackingRepositoryInterface;
 use App\Repositories\UserPushTokenRepository\UserPushTokenRepository;
 use App\Repositories\UserPushTokenRepository\UserPushTokenRepositoryInterface;
+use App\Repositories\UserAddressRepository\UserAddressRepository;
+use App\Repositories\UserAddressRepository\UserAddressRepositoryInterface;
 use App\Repositories\ReviewRepository\ReviewRepository;
 use App\Repositories\ReviewRepository\ReviewRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
@@ -56,6 +62,7 @@ class AppRepositoryProvider extends ServiceProvider
         $this->app->bind(CartRepositoryInterface::class, CartRepository::class);
         $this->app->bind(CategoryRepositoryInterface::class, CategoryRepository::class);
         $this->app->bind(ChainManagerRepositoryInterface::class, ChainManagerRepository::class);
+        $this->app->bind(ChatRepositoryInterface::class, ChatRepository::class);
         $this->app->bind(CouponRepositoryInterface::class, CouponRepository::class);
         $this->app->bind(DeliveryOfferRepositoryInterface::class, DeliveryOfferRepository::class);
         $this->app->bind(DeliveryRepositoryInterface::class, DeliveryRepository::class);
@@ -72,7 +79,9 @@ class AppRepositoryProvider extends ServiceProvider
         $this->app->bind(RestaurantRepositoryInterface::class, RestaurantRepository::class);
         $this->app->bind(RestaurantProductRepositoryInterface::class, RestaurantProductRepository::class);
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
+        $this->app->bind(TrackingRepositoryInterface::class, TrackingRepository::class);
         $this->app->bind(UserPushTokenRepositoryInterface::class, UserPushTokenRepository::class);
+        $this->app->bind(UserAddressRepositoryInterface::class, UserAddressRepository::class);
         $this->app->bind(ReviewRepositoryInterface::class, ReviewRepository::class);
     }
 

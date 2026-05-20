@@ -11,8 +11,11 @@ use App\Models\LocalManager;
 use App\Models\Restaurant;
 use App\Models\RestaurantAddress;
 use App\Models\RestaurantChain;
-use App\Models\User;
+use App\Repositories\ChainManagerRepository\ChainManagerRepositoryInterface;
+use App\Repositories\LocalManagerRepository\LocalManagerRepositoryInterface;
 use App\Repositories\RestaurantRepository\RestaurantRepositoryInterface;
+use App\Repositories\RestaurantChainRepository\RestaurantChainRepositoryInterface;
+use App\Repositories\UserRepository\UserRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class RestaurantService implements RestaurantServiceInterface
@@ -21,7 +24,29 @@ class RestaurantService implements RestaurantServiceInterface
 
     private array $with = ['chain', 'address'];
 
-    public function __construct(private RestaurantRepositoryInterface $restaurantRepository) {}
+    private RestaurantRepositoryInterface $restaurantRepository;
+
+    private RestaurantChainRepositoryInterface $chains;
+
+    private ChainManagerRepositoryInterface $chainManagers;
+
+    private LocalManagerRepositoryInterface $localManagers;
+
+    private UserRepositoryInterface $users;
+
+    public function __construct(
+        ?RestaurantRepositoryInterface $restaurantRepository = null,
+        ?RestaurantChainRepositoryInterface $chains = null,
+        ?ChainManagerRepositoryInterface $chainManagers = null,
+        ?LocalManagerRepositoryInterface $localManagers = null,
+        ?UserRepositoryInterface $users = null,
+    ) {
+        $this->restaurantRepository = $restaurantRepository ?? app(RestaurantRepositoryInterface::class);
+        $this->chains = $chains ?? app(RestaurantChainRepositoryInterface::class);
+        $this->chainManagers = $chainManagers ?? app(ChainManagerRepositoryInterface::class);
+        $this->localManagers = $localManagers ?? app(LocalManagerRepositoryInterface::class);
+        $this->users = $users ?? app(UserRepositoryInterface::class);
+    }
 
     public function searchRestaurants(SearchRestaurantsDTO $filters)
     {
@@ -30,7 +55,7 @@ class RestaurantService implements RestaurantServiceInterface
 
     public function getRestaurantById(string $id): ?Restaurant
     {
-        return Restaurant::query()->with($this->with)->find($id);
+        return $this->restaurantRepository->findById($id);
     }
 
     #[Transactional]
@@ -39,19 +64,10 @@ class RestaurantService implements RestaurantServiceInterface
         $this->validateInput($data->toArray());
         $this->validateAddressInput($data);
 
-        $restaurant = Restaurant::query()->create([
-            'chain_id' => $data->chain_id,
-            'name' => $data->name,
-            'opening_hours' => $data->opening_hours,
-            'closing_hours' => $data->closing_hours,
-            'delivery_radius' => $data->delivery_radius,
-        ]);
+        $restaurant = $this->restaurantRepository->createRestaurant($data);
 
         if ($this->hasAddressInput($data)) {
-            RestaurantAddress::query()->create([
-                'restaurant_id' => $restaurant->id,
-                ...$this->addressPayload($data),
-            ]);
+            $this->restaurantRepository->upsertAddress($restaurant->id, $this->addressPayload($data));
         }
 
         return $restaurant->load($this->with);
@@ -60,7 +76,7 @@ class RestaurantService implements RestaurantServiceInterface
     #[Transactional]
     public function updateRestaurant(string $id, UpdateRestaurantDTO $data): ?Restaurant
     {
-        $restaurant = Restaurant::query()->find($id);
+        $restaurant = $this->restaurantRepository->findById($id);
 
         if (! $restaurant) {
             return null;
@@ -69,13 +85,7 @@ class RestaurantService implements RestaurantServiceInterface
         $input = array_filter($data->toArray(), static fn ($value) => $value !== null);
         $this->validateInput([...$restaurant->toArray(), ...$input], true);
         $this->validateAddressUpdateInput($restaurant, $data);
-        $restaurant->update(array_filter([
-            'chain_id' => $data->chain_id,
-            'name' => $data->name,
-            'opening_hours' => $data->opening_hours,
-            'closing_hours' => $data->closing_hours,
-            'delivery_radius' => $data->delivery_radius,
-        ], static fn ($value) => $value !== null));
+        $restaurant = $this->restaurantRepository->updateRestaurant($id, $data);
 
         $this->updateAddress($restaurant, $data);
 
@@ -85,23 +95,19 @@ class RestaurantService implements RestaurantServiceInterface
     #[Transactional]
     public function deleteRestaurant(string $id): bool
     {
-        return (bool) Restaurant::query()->whereKey($id)->delete();
+        return $this->restaurantRepository->deleteRestaurant($id);
     }
 
     public function getRestaurantsByChainId(string $chainId)
     {
-        return Restaurant::query()
-            ->with($this->with)
-            ->where('chain_id', $chainId)
-            ->orderBy('name')
-            ->get();
+        return $this->restaurantRepository->findByChainId($chainId);
     }
 
     public function getRestaurantByLocalManagerUserId(string $userId): ?Restaurant
     {
-        $manager = LocalManager::query()->where('user_id', $userId)->first();
+        $manager = $this->localManagers->findByUserId($userId);
 
-        return $manager?->restaurant()->with($this->with)->first();
+        return $manager?->restaurant;
     }
 
     public function getRestaurantByManagerUserId(string $userId): ?Restaurant
@@ -111,81 +117,60 @@ class RestaurantService implements RestaurantServiceInterface
 
     public function getRestaurantsByManagerUserId(string $userId)
     {
-        $localManager = LocalManager::query()
-            ->with(['restaurant.chain', 'restaurant.address'])
-            ->where('user_id', $userId)
-            ->whereNotNull('restaurant_id')
-            ->first();
+        $localManager = $this->localManagers->findByUserId($userId);
 
         if ($localManager?->restaurant) {
             return collect([$localManager->restaurant]);
         }
 
-        $chainManager = ChainManager::query()
-            ->where('user_id', $userId)
-            ->whereNotNull('chain_id')
-            ->first();
+        $chainManager = $this->chainManagers->findByUserId($userId);
 
         if (! $chainManager) {
             return collect();
         }
 
-        return Restaurant::query()
-            ->with($this->with)
-            ->where('chain_id', $chainManager->chain_id)
-            ->orderBy('name')
-            ->get();
+        return $this->restaurantRepository->findByChainId($chainManager->chain_id);
     }
 
     public function getRestaurantChainByManagerUserId(string $userId): ?RestaurantChain
     {
-        return ChainManager::query()
-            ->where('user_id', $userId)
-            ->whereNotNull('chain_id')
-            ->first()
-            ?->chain;
+        return $this->chainManagers->findByUserId($userId)?->chain;
     }
 
     #[Transactional]
     public function assignChainManager(string $userId, string $chainId): ChainManager
     {
-        if (! User::query()->whereKey($userId)->exists()) {
+        if (! $this->users->exists($userId)) {
             throw ValidationException::withMessages([
                 'user_id' => ['User does not exist.'],
             ]);
         }
 
-        if (! RestaurantChain::query()->whereKey($chainId)->exists()) {
+        if (! $this->chains->exists($chainId)) {
             throw ValidationException::withMessages([
                 'chain_id' => ['Restaurant chain does not exist.'],
             ]);
         }
 
-        return ChainManager::query()->updateOrCreate(
-            ['user_id' => $userId],
-            ['chain_id' => $chainId],
-        )->load(['user', 'chain']);
+        return $this->chainManagers->updateOrCreate($userId, $chainId);
     }
 
     #[Transactional]
     public function assignLocalManager(string $userId, string $restaurantId): LocalManager
     {
-        if (! User::query()->whereKey($userId)->exists()) {
+        if (! $this->users->exists($userId)) {
             throw ValidationException::withMessages([
                 'user_id' => ['User does not exist.'],
             ]);
         }
 
-        if (! Restaurant::query()->whereKey($restaurantId)->exists()) {
+        if (! $this->restaurantRepository->exists($restaurantId)) {
             throw ValidationException::withMessages([
                 'restaurant_id' => ['Restaurant does not exist.'],
             ]);
         }
 
-        return LocalManager::query()->updateOrCreate(
-            ['user_id' => $userId],
-            ['restaurant_id' => $restaurantId],
-        )->load(['user', 'restaurant']);
+        return $this->localManagers->updateOrCreate($userId, $restaurantId);
     }
 
     private function validateInput(array $input, bool $isUpdate = false): void
@@ -198,7 +183,7 @@ class RestaurantService implements RestaurantServiceInterface
             }
         }
 
-        if (empty($input['chain_id']) || ! RestaurantChain::query()->whereKey($input['chain_id'])->exists()) {
+        if (empty($input['chain_id']) || ! $this->chains->exists($input['chain_id'])) {
             $errors['chain_id'][] = 'Restaurant chain does not exist.';
         }
 
@@ -260,10 +245,7 @@ class RestaurantService implements RestaurantServiceInterface
             return;
         }
 
-        RestaurantAddress::query()->updateOrCreate(
-            ['restaurant_id' => $restaurant->id],
-            $this->addressPayload($data, $restaurant->address),
-        );
+        $this->restaurantRepository->upsertAddress($restaurant->id, $this->addressPayload($data, $restaurant->address));
     }
 
     private function addressPayload(object $data, ?RestaurantAddress $fallbackAddress = null): array

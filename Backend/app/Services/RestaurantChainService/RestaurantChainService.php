@@ -6,18 +6,26 @@ use App\Aspects\Transactional;
 use App\DTOs\RestaurantChain\CreateRestaurantChainDTO;
 use App\DTOs\RestaurantChain\UpdateRestaurantChainDTO;
 use App\Models\RestaurantChain;
+use App\Repositories\RestaurantChainRepository\RestaurantChainRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class RestaurantChainService implements RestaurantChainServiceInterface
 {
+    private RestaurantChainRepositoryInterface $chains;
+
+    public function __construct(?RestaurantChainRepositoryInterface $chains = null)
+    {
+        $this->chains = $chains ?? app(RestaurantChainRepositoryInterface::class);
+    }
+
     public function getRestaurantChainById(string $id): ?RestaurantChain
     {
-        return RestaurantChain::query()->find($id);
+        return $this->chains->findById($id);
     }
 
     public function getAllRestaurantChains(int $limit = 100)
     {
-        return RestaurantChain::query()->orderBy('name')->limit($limit)->get();
+        return $this->chains->findAll($limit);
     }
 
     #[Transactional]
@@ -25,13 +33,13 @@ class RestaurantChainService implements RestaurantChainServiceInterface
     {
         $this->validateInput($data->toArray());
 
-        return RestaurantChain::query()->create(['name' => $data->name]);
+        return $this->chains->createRestaurantChain($data);
     }
 
     #[Transactional]
     public function updateRestaurantChain(string $id, UpdateRestaurantChainDTO $data): ?RestaurantChain
     {
-        $chain = RestaurantChain::query()->find($id);
+        $chain = $this->chains->findById($id);
 
         if (! $chain) {
             return null;
@@ -39,15 +47,13 @@ class RestaurantChainService implements RestaurantChainServiceInterface
 
         $input = array_filter($data->toArray(), static fn ($value) => $value !== null);
         $this->validateInput([...$chain->toArray(), ...$input]);
-        $chain->update(['name' => $data->name ?? $chain->name]);
-
-        return $chain;
+        return $this->chains->updateRestaurantChain($id, $data);
     }
 
     #[Transactional]
     public function deleteRestaurantChain(string $id): bool
     {
-        return (bool) RestaurantChain::query()->whereKey($id)->delete();
+        return $this->chains->deleteRestaurantChain($id);
     }
 
     private function validateInput(array $input): void
