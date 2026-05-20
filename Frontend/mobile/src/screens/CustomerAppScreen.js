@@ -58,7 +58,7 @@ import {
   fetchRestaurantMenu,
   fetchRestaurants,
   payPaymentNow,
-  markAllClientNotificationsRead,
+  markAllNotificationsAsRead,
   markClientNotificationRead,
   removeCartItem,
   repeatClientOrderToCart,
@@ -712,7 +712,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   async function handleMarkAllInboxRead() {
     try {
       setInboxSavingId('all')
-      await markAllClientNotificationsRead({ session })
+      await markAllNotificationsAsRead({ session })
       const nowIso = new Date().toISOString()
       setInboxItems((current) =>
         current.map((item) => ({

@@ -1,4 +1,6 @@
-import { StyleSheet } from 'react-native'
+import { Platform, StatusBar, StyleSheet } from 'react-native'
+
+const ANDROID_STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0
 
 export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#f2f4f7' },
@@ -8,7 +10,7 @@ export const styles = StyleSheet.create({
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
     paddingHorizontal: 18,
-    paddingTop: 14,
+    paddingTop: 14 + ANDROID_STATUS_BAR_HEIGHT,
     paddingBottom: 16,
     shadowColor: '#1d4ed8',
     shadowOffset: { width: 0, height: 4 },
@@ -227,7 +229,7 @@ export const styles = StyleSheet.create({
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
     paddingHorizontal: 18,
-    paddingTop: 12,
+    paddingTop: 12 + ANDROID_STATUS_BAR_HEIGHT,
     paddingBottom: 14,
     shadowColor: '#1d4ed8',
     shadowOffset: { width: 0, height: 4 },
@@ -436,7 +438,7 @@ export const styles = StyleSheet.create({
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
     paddingHorizontal: 18,
-    paddingTop: 12,
+    paddingTop: 12 + ANDROID_STATUS_BAR_HEIGHT,
     paddingBottom: 14,
     shadowColor: '#1d4ed8',
     shadowOffset: { width: 0, height: 4 },

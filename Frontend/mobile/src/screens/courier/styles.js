@@ -1,4 +1,6 @@
-import { StyleSheet } from 'react-native'
+import { Platform, StatusBar, StyleSheet } from 'react-native'
+
+const ANDROID_STATUS_BAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0
 
 export const styles = StyleSheet.create({
   safe: {
@@ -12,7 +14,7 @@ export const styles = StyleSheet.create({
   header: {
     backgroundColor: '#07bf4f',
     paddingHorizontal: 18,
-    paddingTop: 12,
+    paddingTop: 12 + ANDROID_STATUS_BAR_HEIGHT,
     paddingBottom: 16,
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
@@ -42,20 +44,31 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   brandWrap: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
+    marginRight: 10,
   },
   brandIcon: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
     borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#ecfdf5',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#86efac',
   },
   brandIconText: {
-    fontSize: 17,
+    color: '#166534',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  brandTextWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   brand: {
     color: '#fff',
@@ -70,41 +83,46 @@ export const styles = StyleSheet.create({
   },
   onlineBtn: {
     borderRadius: 999,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.28)',
+    paddingHorizontal: 12,
     paddingVertical: 7,
+    minWidth: 78,
+    alignItems: 'center',
   },
   onlineBtnOff: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: '#ffffff',
+    borderColor: '#ffffff',
   },
   onlineBtnText: {
-    color: '#15803d',
+    color: '#ffffff',
     fontWeight: '800',
     fontSize: 13,
     letterSpacing: 0.2,
   },
   onlineBtnTextOff: {
-    color: '#fff',
+    color: '#166534',
   },
   statusRow: {
-    marginTop: 12,
+    marginTop: 14,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
   },
   statusChip: {
     borderRadius: 999,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-    fontSize: 10.5,
-    fontWeight: '700',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    fontSize: 11,
+    fontWeight: '800',
     overflow: 'hidden',
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
   statusChipOk: {
-    backgroundColor: 'rgba(255, 255, 255, 0.22)',
-    color: '#ffffff',
+    backgroundColor: 'rgba(236, 253, 245, 0.92)',
+    color: '#166534',
   },
   statusChipWarn: {
     backgroundColor: '#fef9c3',
@@ -455,16 +473,16 @@ export const styles = StyleSheet.create({
     fontSize: 13,
   },
   statusToggleRow: {
-    marginTop: 10,
+    marginTop: 12,
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
   },
   statusToggle: {
     flex: 1,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.45)',
     alignItems: 'center',
   },
   statusToggleActive: {
@@ -480,12 +498,12 @@ export const styles = StyleSheet.create({
     color: '#0b9b3f',
   },
   historyLink: {
-    marginTop: 10,
+    marginTop: 12,
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.35)',
   },

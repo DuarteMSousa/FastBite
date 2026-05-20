@@ -92,6 +92,10 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   const [chatSending, setChatSending] = useState(false)
   const lastSentRef = useRef({ lat: null, lng: null, timestamp: 0 })
   const courierId = session?.userId || session?.devUserId
+  const courierInitial = String(session?.operatorName ?? 'E')
+    .trim()
+    .charAt(0)
+    .toUpperCase() || 'E'
 
   const activeOffer = useMemo(
     () => availableOffers.find((offer) => offer.offer_token === activeOfferId) ?? null,
@@ -930,11 +934,13 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           <View style={styles.headerTop}>
             <View style={styles.brandWrap}>
               <View style={styles.brandIcon}>
-                <Text style={styles.brandIconText}>{"\\uD83D\\uDEB4"}</Text>
+                <Text style={styles.brandIconText}>{courierInitial}</Text>
               </View>
-              <View>
+              <View style={styles.brandTextWrap}>
                 <Text style={styles.brand}>FastBite</Text>
-                <Text style={styles.brandSub}>Estafeta</Text>
+                <Text style={styles.brandSub} numberOfLines={1} ellipsizeMode="tail">
+                  {session?.operatorName ? `Estafeta - ${session.operatorName}` : 'Estafeta'}
+                </Text>
               </View>
             </View>
             <Pressable
