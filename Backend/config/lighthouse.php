@@ -466,11 +466,6 @@ return [
                 'connection' => 'pusher',
                 'routes' => Nuwave\Lighthouse\Subscriptions\SubscriptionRouter::class . '@pusher',
             ],
-            'reverb' => [
-                'driver' => 'pusher',
-                'connection' => 'reverb',
-                'routes' => Nuwave\Lighthouse\Subscriptions\SubscriptionRouter::class . '@reverb',
-            ],
         ],
 
         /*

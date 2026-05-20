@@ -10,9 +10,6 @@ export default defineConfig({
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
             return 'react-vendor'
           }
-          if (id.includes('node_modules/laravel-echo') || id.includes('node_modules/pusher-js')) {
-            return 'realtime'
-          }
           return undefined
         },
       },

@@ -1,9 +1,7 @@
 <?php
 
-use App\Http\Middleware\ResolveDevBroadcastUser;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
-use Illuminate\Foundation\Configuration\Middleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -14,15 +12,6 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withCommands([
         __DIR__.'/../app/Console/Commands',
     ])
-    ->withBroadcasting(
-        __DIR__.'/../routes/channels.php',
-        ['middleware' => ['web', 'dev.broadcast.user']]
-    )
-    ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->alias([
-            'dev.broadcast.user' => ResolveDevBroadcastUser::class,
-        ]);
-    })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

@@ -67,9 +67,9 @@ API base (opcional):
 
 - criar `Frontend/mobile/.env` com `EXPO_PUBLIC_API_BASE_URL=http://localhost:8000`
 
-Realtime WebSocket (tracking):
+Realtime WebSocket (GatewayWorker):
 
 - usar `Frontend/mobile/.env.example` como base
-- definir `EXPO_PUBLIC_REVERB_*`
+- definir `EXPO_PUBLIC_GATEWAY_WORKER_*`
 - definir `EXPO_PUBLIC_TRACKING_ORDER_ID` com UUID real de encomenda
-- em ambiente local, podes usar `EXPO_PUBLIC_DEV_BROADCAST_USER_ID` para auth de canais privados
+- em ambiente local, podes usar `EXPO_PUBLIC_DEV_BROADCAST_USER_ID` para identificar o utilizador no handshake `hello`

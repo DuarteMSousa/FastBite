@@ -16,7 +16,6 @@ return [
     'paths' => [
         'api/*',
         'graphql',
-        'broadcasting/auth',
         'sanctum/csrf-cookie',
     ],
 
