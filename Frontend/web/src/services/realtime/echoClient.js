@@ -265,7 +265,7 @@ function createChannelApi(channelName) {
   }
 }
 
-export function getEchoClient({ authToken: _authToken, devUserId } = {}) {
+export function getEchoClient({ devUserId } = {}) {
   ensureConnection(devUserId)
 
   if (!gatewayClient) {
