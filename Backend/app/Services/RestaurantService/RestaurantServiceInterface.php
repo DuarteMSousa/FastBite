@@ -5,6 +5,8 @@ namespace App\Services\RestaurantService;
 use App\DTOs\Restaurant\CreateRestaurantDTO;
 use App\DTOs\Restaurant\SearchRestaurantsDTO;
 use App\DTOs\Restaurant\UpdateRestaurantDTO;
+use App\Models\ChainManager;
+use App\Models\LocalManager;
 use App\Models\Restaurant;
 
 interface RestaurantServiceInterface
@@ -22,4 +24,14 @@ interface RestaurantServiceInterface
     public function getRestaurantsByChainId(string $chainId);
 
     public function getRestaurantByLocalManagerUserId(string $userId): ?Restaurant;
+
+    public function getRestaurantByManagerUserId(string $userId): ?Restaurant;
+
+    public function getRestaurantsByManagerUserId(string $userId);
+
+    public function getRestaurantChainByManagerUserId(string $userId);
+
+    public function assignChainManager(string $userId, string $chainId): ChainManager;
+
+    public function assignLocalManager(string $userId, string $restaurantId): LocalManager;
 }

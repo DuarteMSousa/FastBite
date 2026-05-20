@@ -19,7 +19,6 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'user_type',
     ];
 
     protected $hidden = [
@@ -30,8 +29,27 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
-            'user_type' => \App\Enums\UserType::class,
         ];
+    }
+
+    public function isCustomer(): bool
+    {
+        return ! $this->isCourier() && ! $this->isLocalManager() && ! $this->isChainManager();
+    }
+
+    public function isCourier(): bool
+    {
+        return $this->courier()->exists();
+    }
+
+    public function isLocalManager(): bool
+    {
+        return $this->localManager()->whereNotNull('restaurant_id')->exists();
+    }
+
+    public function isChainManager(): bool
+    {
+        return $this->chainManager()->whereNotNull('chain_id')->exists();
     }
 
     public function courier(): HasOne

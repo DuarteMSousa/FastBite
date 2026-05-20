@@ -3,9 +3,11 @@
 namespace App\Services\CourierService;
 
 use App\Aspects\Transactional;
+use App\DTOs\Courier\CreateCourierDTO;
 use App\DTOs\Courier\UpdateCourierDTO;
 use App\Enums\CourierStatus;
 use App\Models\Courier;
+use App\Models\User;
 use App\Repositories\CourierRepository\CourierRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
@@ -21,6 +23,21 @@ class CourierService implements CourierServiceInterface
     public function countAvailableCouriers(): int
     {
         return $this->couriers->countAvailable();
+    }
+
+    #[Transactional]
+    public function ensureCourierProfile(string $userId): Courier
+    {
+        if (! User::query()->whereKey($userId)->exists()) {
+            throw ValidationException::withMessages([
+                'user_id' => ['User does not exist.'],
+            ]);
+        }
+
+        $courier = $this->couriers->findByUserId($userId)
+            ?? $this->couriers->createCourier(new CreateCourierDTO(user_id: $userId));
+
+        return $courier->load('user');
     }
 
     #[Transactional]

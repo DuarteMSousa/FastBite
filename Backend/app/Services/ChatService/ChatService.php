@@ -7,7 +7,6 @@ use App\DTOs\Chat\CreateOrderChatDTO;
 use App\DTOs\Chat\SendMessageDTO;
 use App\Enums\OrderStatus;
 use App\Enums\OutboxEventName;
-use App\Enums\UserType;
 use App\Models\Chat;
 use App\Models\ChatParticipant;
 use App\Models\Message;
@@ -61,7 +60,6 @@ class ChatService implements ChatServiceInterface
             $user = User::query()->findOrFail($userId);
             $chat->participants()->create([
                 'user_id' => $user->id,
-                'user_type' => $user->user_type->value ?? $user->user_type,
                 'joined_at' => now(),
             ]);
         }
@@ -107,7 +105,6 @@ class ChatService implements ChatServiceInterface
             $participant = ChatParticipant::query()->create([
                 'chat_id' => $data->chat_id,
                 'user_id' => $sender->id,
-                'user_type' => $sender->user_type->value ?? $sender->user_type,
                 'joined_at' => now(),
             ]);
         }
@@ -141,12 +138,12 @@ class ChatService implements ChatServiceInterface
             return false;
         }
 
-        if ($user->user_type === UserType::LOCAL_MANAGER) {
+        if ($user->isLocalManager()) {
             return $restaurant->localManager
                 && $restaurant->localManager->user_id === $user->id;
         }
 
-        if ($user->user_type === UserType::CHAIN_MANAGER) {
+        if ($user->isChainManager()) {
             return $restaurant->chain
                 && $restaurant->chain->chainManagers->contains('user_id', $user->id);
         }

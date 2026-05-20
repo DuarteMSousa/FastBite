@@ -1,15 +1,14 @@
 import { NavIcon } from './NavIcon'
 
 export function RestaurantSideNav({ views, activeViewId, onSelect, operatorName, onLogout, session }) {
-  const userType = session?.userType ?? null
-  const isChainManager = userType === 'CHAIN_MANAGER'
+  const isChainManager = Boolean(session?.isChainManager)
   const visibleViews = views.filter((view) => {
     if (view.hideFromNav) return false
     if (view.chainOnly && !isChainManager) return false
     return true
   })
 
-  const roleLabel = isChainManager ? 'Gestor de cadeia' : userType === 'LOCAL_MANAGER' ? 'Gestor local' : 'Operador'
+  const profileLabel = isChainManager ? 'Gestor de cadeia' : 'Gestor local'
 
   return (
     <aside className="rb-sidebar">
@@ -31,7 +30,7 @@ export function RestaurantSideNav({ views, activeViewId, onSelect, operatorName,
         <p>
           <strong>{session?.restaurant ?? 'Unidade'}</strong>
           <br />
-          {roleLabel}
+          {profileLabel}
         </p>
       </div>
       <div className="rb-sidebar-footer">

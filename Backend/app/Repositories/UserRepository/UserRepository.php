@@ -23,7 +23,6 @@ class UserRepository implements UserRepositoryInterface
             'name' => $data->name,
             'email' => $data->email,
             'password' => $data->password,
-            'user_type' => $data->user_type,
         ]);
     }
 

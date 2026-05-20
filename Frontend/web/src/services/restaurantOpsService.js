@@ -80,17 +80,82 @@ const LOGIN_USER_MUTATION = `
     authenticateByCredentials(email: $email, password: $password) {
       id
       name
-      user_type
+      email
     }
   }
 `
 
-const OPERATOR_RESTAURANT_QUERY = `
-  query GetRestaurantByLocalManagerUserId($userId: ID!) {
-    getRestaurantByLocalManagerUserId(user_id: $userId) {
+const CREATE_RESTAURANT_USER_MUTATION = `
+  mutation CreateRestaurantUser($input: CreateUserInput!) {
+    createUser(input: $input) {
+      id
+      name
+      email
+    }
+  }
+`
+
+const RESTAURANTS_BY_MANAGER_USER_QUERY = `
+  query GetRestaurantsByManagerUserId($userId: ID!) {
+    getRestaurantsByManagerUserId(user_id: $userId) {
+        id
+        name
+        chain_id
+    }
+  }
+`
+
+const CHAIN_BY_MANAGER_USER_QUERY = `
+  query GetRestaurantChainByManagerUserId($userId: ID!) {
+    getRestaurantChainByManagerUserId(user_id: $userId) {
+      id
+      name
+    }
+  }
+`
+
+const ALL_RESTAURANT_CHAINS_QUERY = `
+  query GetAllRestaurantChains {
+    getAllRestaurantChains {
+      id
+      name
+    }
+  }
+`
+
+const CREATE_RESTAURANT_CHAIN_MUTATION = `
+  mutation CreateRestaurantChain($input: CreateRestaurantChainInput!) {
+    createRestaurantChain(input: $input) {
+      id
+      name
+    }
+  }
+`
+
+const CREATE_RESTAURANT_MUTATION = `
+  mutation CreateRestaurant($input: CreateRestaurantInput!) {
+    createRestaurant(input: $input) {
       id
       name
       chain_id
+    }
+  }
+`
+
+const ASSIGN_CHAIN_MANAGER_MUTATION = `
+  mutation AssignChainManager($userId: ID!, $chainId: ID!) {
+    assignChainManager(user_id: $userId, chain_id: $chainId) {
+      user_id
+      chain_id
+    }
+  }
+`
+
+const ASSIGN_LOCAL_MANAGER_MUTATION = `
+  mutation AssignLocalManager($userId: ID!, $restaurantId: ID!) {
+    assignLocalManager(user_id: $userId, restaurant_id: $restaurantId) {
+      user_id
+      restaurant_id
     }
   }
 `
@@ -635,30 +700,52 @@ export async function bootstrapRestaurantSession({
     token: trimmedToken,
   }
   const operatorName = authenticatedUser.name || trimmedEmail.split('@')[0] || 'manager'
-  const userType = authenticatedUser.user_type
 
-  if (userType !== 'LOCAL_MANAGER' && userType !== 'CHAIN_MANAGER') {
-    throw new Error(`Utilizador ${operatorName} nao tem perfil de restaurante.`)
-  }
-
-  const resolvedRestaurant = trimmedRestaurantId
+  const managedRestaurants = trimmedRestaurantId
     ? (
         await graphqlRequest({
           query: RESTAURANT_QUERY,
           variables: { id: trimmedRestaurantId },
           ...requestOptions(requestSession),
         })
-      ).restaurant
+      )
     : (
         await graphqlRequest({
-          query: OPERATOR_RESTAURANT_QUERY,
+          query: RESTAURANTS_BY_MANAGER_USER_QUERY,
           variables: { userId: authenticatedUser.id },
           ...requestOptions(requestSession),
         })
-      ).getRestaurantByLocalManagerUserId
+      ).getRestaurantsByManagerUserId
+
+  const managerChain = trimmedRestaurantId
+    ? null
+    : (
+        await graphqlRequest({
+          query: CHAIN_BY_MANAGER_USER_QUERY,
+          variables: { userId: authenticatedUser.id },
+          ...requestOptions(requestSession),
+        })
+      ).getRestaurantChainByManagerUserId
+
+  const resolvedRestaurant = trimmedRestaurantId
+    ? managedRestaurants.getRestaurantById
+    : managedRestaurants?.[0]
+  const isChainManager = Boolean(managerChain?.id)
 
   if (!resolvedRestaurant?.id) {
-    throw new Error('Conta sem restaurante associado. Cria um restaurante ou pede associacao ao administrador.')
+    return {
+      needsSetup: true,
+      operatorName,
+      user: {
+        id: authenticatedUser.id,
+        name: authenticatedUser.name,
+        email: authenticatedUser.email ?? trimmedEmail,
+        isChainManager,
+        chainId: managerChain?.id ?? null,
+      },
+      devUserId: authenticatedUser.id,
+      token: trimmedToken,
+    }
   }
 
   return {
@@ -669,7 +756,137 @@ export async function bootstrapRestaurantSession({
     userId: authenticatedUser.id,
     devUserId: authenticatedUser.id,
     token: trimmedToken,
-    userType,
+    isChainManager,
+  }
+}
+
+export async function registerRestaurantUser({
+  name,
+  email,
+  password,
+}) {
+  const trimmedName = String(name ?? '').trim()
+  const trimmedEmail = String(email ?? '').trim()
+  const trimmedPassword = String(password ?? '').trim()
+
+  if (!trimmedName || !trimmedEmail || !trimmedPassword) {
+    throw new Error('Preenche nome, email e password.')
+  }
+
+  const data = await graphqlRequest({
+    query: CREATE_RESTAURANT_USER_MUTATION,
+    variables: {
+      input: {
+        name: trimmedName,
+        email: trimmedEmail,
+        password: trimmedPassword,
+      },
+    },
+  })
+
+  return data.createUser
+}
+
+export async function fetchAllRestaurantChains() {
+  const data = await graphqlRequest({
+    query: ALL_RESTAURANT_CHAINS_QUERY,
+  })
+
+  return data.getAllRestaurantChains ?? []
+}
+
+export async function completeRestaurantOnboarding({
+  user,
+  mode,
+  chainId,
+  chainName,
+  restaurant,
+  token = '',
+}) {
+  const userId = user?.id
+  if (!userId) {
+    throw new Error('Utilizador invalido para onboarding.')
+  }
+
+  const selectedMode = mode === 'new-chain' ? 'new-chain' : 'existing-chain'
+  let resolvedChain
+
+  if (selectedMode === 'new-chain') {
+    const trimmedChainName = String(chainName ?? '').trim()
+    if (!trimmedChainName) {
+      throw new Error('Indica o nome da chain.')
+    }
+
+    const chainData = await graphqlRequest({
+      query: CREATE_RESTAURANT_CHAIN_MUTATION,
+      variables: {
+        input: { name: trimmedChainName },
+      },
+    })
+    resolvedChain = chainData.createRestaurantChain
+  } else {
+    const trimmedChainId = String(chainId ?? '').trim()
+    if (!trimmedChainId) {
+      throw new Error('Escolhe uma chain existente.')
+    }
+    resolvedChain = { id: trimmedChainId, name: '' }
+  }
+
+  const payload = {
+    chain_id: resolvedChain.id,
+    name: String(restaurant?.name ?? '').trim(),
+    opening_hours: String(restaurant?.opening_hours ?? '').trim(),
+    closing_hours: String(restaurant?.closing_hours ?? '').trim(),
+    delivery_radius: Number(restaurant?.delivery_radius ?? 0),
+    street: String(restaurant?.street ?? '').trim(),
+    city: String(restaurant?.city ?? '').trim(),
+    postal_code: String(restaurant?.postal_code ?? '').trim(),
+    country: String(restaurant?.country ?? '').trim(),
+    latitude: Number(restaurant?.latitude ?? 0),
+    longitude: Number(restaurant?.longitude ?? 0),
+  }
+
+  if (!payload.name || !payload.opening_hours || !payload.closing_hours) {
+    throw new Error('Preenche nome e horario do restaurante.')
+  }
+
+  const restaurantData = await graphqlRequest({
+    query: CREATE_RESTAURANT_MUTATION,
+    variables: {
+      input: payload,
+    },
+  })
+  const createdRestaurant = restaurantData.createRestaurant
+
+  const isChainManager = Boolean(user.isChainManager) || selectedMode === 'new-chain'
+
+  if (isChainManager) {
+    await graphqlRequest({
+      query: ASSIGN_CHAIN_MANAGER_MUTATION,
+      variables: {
+        userId,
+        chainId: resolvedChain.id,
+      },
+    })
+  } else {
+    await graphqlRequest({
+      query: ASSIGN_LOCAL_MANAGER_MUTATION,
+      variables: {
+        userId,
+        restaurantId: createdRestaurant.id,
+      },
+    })
+  }
+
+  return {
+    operatorName: user.name,
+    restaurant: createdRestaurant.name,
+    restaurantId: createdRestaurant.id,
+    chainId: createdRestaurant.chain_id,
+    userId,
+    devUserId: userId,
+    token: String(token ?? '').trim(),
+    isChainManager,
   }
 }
 

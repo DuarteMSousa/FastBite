@@ -66,7 +66,6 @@ class CampaignPricingTest extends TestCase
             'name' => 'Cliente',
             'email' => uniqid('cliente_', true).'@example.com',
             'password' => 'password',
-            'user_type' => 'CUSTOMER',
         ]);
 
         $chain = RestaurantChain::query()->create(['name' => uniqid('Chain ', true)]);

@@ -17,6 +17,11 @@ class DeliveryMutations
         return $this->courierService->updateCourierStatus($args['user_id'], $args['status']);
     }
 
+    public function ensureCourierProfile($_, array $args)
+    {
+        return $this->courierService->ensureCourierProfile($args['user_id']);
+    }
+
     public function acceptDeliveryOffer($_, array $args)
     {
         return $this->deliveryService->acceptDeliveryOffer($args['offer_id']);

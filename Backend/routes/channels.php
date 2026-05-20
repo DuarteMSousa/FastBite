@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\UserType;
 use App\Models\ChainManager;
 use App\Models\Chat;
 use App\Models\Delivery;
@@ -40,7 +39,7 @@ Broadcast::channel('customer.{customerId}.orders', function (?User $user, string
         return false;
     }
 
-    return $user->user_type === UserType::CUSTOMER && $user->id === $customerId;
+    return $user->isCustomer() && $user->id === $customerId;
 });
 
 Broadcast::channel('courier.{courierId}.jobs', function (?User $user, string $courierId): bool {
@@ -50,7 +49,7 @@ Broadcast::channel('courier.{courierId}.jobs', function (?User $user, string $co
         return false;
     }
 
-    return $user->user_type === UserType::COURIER && $user->id === $courierId;
+    return $user->isCourier() && $user->id === $courierId;
 });
 
 Broadcast::channel('order.{orderId}.tracking', function (?User $user, string $orderId): bool {
@@ -60,21 +59,21 @@ Broadcast::channel('order.{orderId}.tracking', function (?User $user, string $or
         return false;
     }
 
-    if ($user->user_type === UserType::CUSTOMER) {
+    if ($user->isCustomer()) {
         return Order::query()
             ->whereKey($orderId)
             ->where('user_id', $user->id)
             ->exists();
     }
 
-    if ($user->user_type === UserType::COURIER) {
+    if ($user->isCourier()) {
         return Delivery::query()
             ->where('order_id', $orderId)
             ->where('courier_id', $user->id)
             ->exists();
     }
 
-    if ($user->user_type === UserType::LOCAL_MANAGER) {
+    if ($user->isLocalManager()) {
         return Order::query()
             ->whereKey($orderId)
             ->whereHas('restaurant.localManager', function ($query) use ($user): void {
@@ -83,7 +82,7 @@ Broadcast::channel('order.{orderId}.tracking', function (?User $user, string $or
             ->exists();
     }
 
-    if ($user->user_type === UserType::CHAIN_MANAGER) {
+    if ($user->isChainManager()) {
         return Order::query()
             ->whereKey($orderId)
             ->whereHas('restaurant.chain', function ($query) use ($user): void {
@@ -115,7 +114,7 @@ Broadcast::channel('chat.{chatId}', function (?User $user, string $chatId): bool
     }
 
     // 2. Local manager do restaurante da order associada ao chat
-    if ($user->user_type === UserType::LOCAL_MANAGER) {
+    if ($user->isLocalManager()) {
         return Chat::query()
             ->whereKey($chatId)
             ->whereHas('order.restaurant.localManager', function ($query) use ($user): void {
@@ -125,7 +124,7 @@ Broadcast::channel('chat.{chatId}', function (?User $user, string $chatId): bool
     }
 
     // 3. Chain manager da cadeia do restaurante da order associada ao chat
-    if ($user->user_type === UserType::CHAIN_MANAGER) {
+    if ($user->isChainManager()) {
         return Chat::query()
             ->whereKey($chatId)
             ->whereHas('order.restaurant.chain.chainManagers', function ($query) use ($user): void {
@@ -154,14 +153,14 @@ Broadcast::channel('restaurant.{restaurantId}.orders', function (?User $user, st
         return false;
     }
 
-    if ($user->user_type === UserType::LOCAL_MANAGER) {
+    if ($user->isLocalManager()) {
         return LocalManager::query()
             ->where('user_id', $user->id)
             ->where('restaurant_id', $restaurantId)
             ->exists();
     }
 
-    if ($user->user_type === UserType::CHAIN_MANAGER) {
+    if ($user->isChainManager()) {
         $chainId = Restaurant::query()->whereKey($restaurantId)->value('chain_id');
 
         if (! $chainId) {

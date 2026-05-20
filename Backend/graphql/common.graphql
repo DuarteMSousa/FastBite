@@ -85,18 +85,10 @@ enum NotificationType {
   SYSTEM
 }
 
-enum UserType {
-  CUSTOMER
-  COURIER
-  CHAIN_MANAGER
-  LOCAL_MANAGER
-}
-
 type User {
   id: ID!
   name: String!
   email: String!
-  user_type: UserType
   created_at: String
   updated_at: String
 }
@@ -148,6 +140,20 @@ type Restaurant {
   restaurantProducts: [RestaurantProduct!]
   created_at: String
   updated_at: String
+}
+
+type ChainManager {
+  user_id: ID!
+  chain_id: ID
+  user: User
+  chain: RestaurantChain
+}
+
+type LocalManager {
+  user_id: ID!
+  restaurant_id: ID
+  user: User
+  restaurant: Restaurant
 }
 
 type Category {
@@ -437,7 +443,6 @@ type ChatParticipant {
   id: ID!
   chat_id: ID!
   user_id: ID!
-  user_type: UserType!
   joined_at: String
   last_read_at: String
 }

@@ -23,8 +23,7 @@ export function RestaurantWebShell() {
   const [selectedOrderId, setSelectedOrderId] = useState('')
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
 
-  const userType = session?.userType ?? null
-  const isChainManager = userType === 'CHAIN_MANAGER'
+  const isChainManager = Boolean(session?.isChainManager)
 
   const activeView = useMemo(() => {
     const fallback = RESTAURANT_VIEWS[0]

@@ -16,6 +16,8 @@ extend type Query {
 }
 
 extend type Mutation {
+  ensureCourierProfile(user_id: ID!): Courier!
+    @field(resolver: "App\\GraphQL\\Mutations\\DeliveryMutations@ensureCourierProfile")
   updateCourierStatus(user_id: ID!, status: CourierStatus!): Courier!
     @field(resolver: "App\\GraphQL\\Mutations\\DeliveryMutations@updateCourierStatus")
   acceptDeliveryOffer(offer_id: ID!): Delivery!

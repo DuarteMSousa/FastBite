@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Enums\CourierStatus;
-use App\Enums\UserType;
 use App\Models\ChainManager;
 use App\Models\Category;
 use App\Models\Coupon;
@@ -52,42 +51,36 @@ class DemoSeeder extends Seeder
                 'name' => 'Manuel Cadeia',
                 'email' => 'chain@fastbite.pt',
                 'password' => 'password',
-                'user_type' => UserType::CHAIN_MANAGER,
             ]);
 
             $localManagerUser = User::create([
                 'name' => 'Joana Loja',
                 'email' => 'local@fastbite.pt',
                 'password' => 'password',
-                'user_type' => UserType::LOCAL_MANAGER,
             ]);
 
             $customerOneUser = User::create([
                 'name' => 'Alexandre Cliente',
                 'email' => 'cliente@fastbite.pt',
                 'password' => 'password',
-                'user_type' => UserType::CUSTOMER,
             ]);
 
             $customerTwoUser = User::create([
                 'name' => 'Beatriz Cliente',
                 'email' => 'cliente2@fastbite.pt',
                 'password' => 'password',
-                'user_type' => UserType::CUSTOMER,
             ]);
 
             $courierOneUser = User::create([
                 'name' => 'Carlos Estafeta',
                 'email' => 'estafeta@fastbite.pt',
                 'password' => 'password',
-                'user_type' => UserType::COURIER,
             ]);
 
             $courierTwoUser = User::create([
                 'name' => 'Diana Estafeta',
                 'email' => 'estafeta2@fastbite.pt',
                 'password' => 'password',
-                'user_type' => UserType::COURIER,
             ]);
 
             // Courier rows (estafeta1 online perto do restaurante)

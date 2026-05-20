@@ -6,7 +6,6 @@ const CREATE_USER_MUTATION = `
       id
       name
       email
-      user_type
     }
   }
 `
@@ -17,37 +16,52 @@ const LOGIN_USER_MUTATION = `
       id
       name
       email
-      user_type
     }
   }
 `
 
-function mapUserTypeToRole(userType) {
-  if (userType === 'CUSTOMER') return 'customer'
-  if (userType === 'COURIER') return 'courier'
-  return null
-}
-
-function mapRoleToUserType(role) {
-  if (role === 'courier') return 'COURIER'
-  return 'CUSTOMER'
-}
-
-function buildSession({ user, email, token = '' }) {
-  const role = mapUserTypeToRole(user.user_type)
-  if (!role) {
-    throw new Error('Conta sem perfil mobile (usa CUSTOMER ou COURIER).')
+const USER_CAPABILITIES_QUERY = `
+  query GetUserCapabilities($userId: ID!) {
+    getCourierByUserId(user_id: $userId) {
+      user_id
+    }
+    getRestaurantsByManagerUserId(user_id: $userId) {
+      id
+    }
   }
+`
 
+const ENSURE_COURIER_PROFILE_MUTATION = `
+  mutation EnsureCourierProfile($userId: ID!) {
+    ensureCourierProfile(user_id: $userId) {
+      user_id
+    }
+  }
+`
+
+function buildSession({ user, email, role, token = '' }) {
   return {
     userId: user.id,
     devUserId: user.id,
     role,
-    userType: user.user_type,
     name: user.name || email.split('@')[0] || 'utilizador',
     email: user.email ?? email,
     token: String(token ?? '').trim(),
   }
+}
+
+async function resolveMobileRole(userId) {
+  const data = await graphqlRequest({
+    query: USER_CAPABILITIES_QUERY,
+    variables: { userId },
+  })
+
+  if (data.getCourierByUserId?.user_id) return 'courier'
+  if ((data.getRestaurantsByManagerUserId ?? []).length > 0) {
+    throw new Error('Conta sem perfil mobile.')
+  }
+
+  return 'customer'
 }
 
 export async function loginMobileUser({ email, password, token = '' }) {
@@ -72,13 +86,14 @@ export async function loginMobileUser({ email, password, token = '' }) {
     throw new Error('Nao foi possivel autenticar o utilizador.')
   }
 
-  return buildSession({ user, email: trimmedEmail, token })
+  const role = await resolveMobileRole(user.id)
+
+  return buildSession({ user, email: trimmedEmail, role, token })
 }
 
 export async function registerMobileUser({ email, password, role = 'customer', token = '' }) {
   const trimmedEmail = String(email ?? '').trim()
   const trimmedPassword = String(password ?? '').trim()
-  const userType = mapRoleToUserType(role)
 
   if (!trimmedEmail || !trimmedPassword) {
     throw new Error('Preenche email e password.')
@@ -87,17 +102,25 @@ export async function registerMobileUser({ email, password, role = 'customer', t
   const defaultName = trimmedEmail.split('@')[0] || 'utilizador'
 
   try {
-    await graphqlRequest({
+    const data = await graphqlRequest({
       query: CREATE_USER_MUTATION,
       variables: {
         input: {
           name: defaultName,
           email: trimmedEmail,
           password: trimmedPassword,
-          user_type: userType,
         },
       },
     })
+
+    if (role === 'courier') {
+      await graphqlRequest({
+        query: ENSURE_COURIER_PROFILE_MUTATION,
+        variables: {
+          userId: data.createUser.id,
+        },
+      })
+    }
   } catch (error) {
     const message = String(error?.message ?? '')
     if (

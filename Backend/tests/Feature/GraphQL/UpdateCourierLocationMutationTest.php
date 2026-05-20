@@ -25,14 +25,12 @@ class UpdateCourierLocationMutationTest extends TestCase
             'name' => 'Cliente Demo',
             'email' => 'cliente@example.com',
             'password' => 'password123',
-            'user_type' => 'CUSTOMER',
         ]);
 
         $courierUser = User::query()->create([
             'name' => 'Estafeta Demo',
             'email' => 'estafeta@example.com',
             'password' => 'password123',
-            'user_type' => 'COURIER',
         ]);
 
         Courier::query()->create([

@@ -495,7 +495,6 @@ const ORDER_CHATS_QUERY = `
       participants {
         id
         user_id
-        user_type
       }
     }
   }

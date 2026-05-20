@@ -17,14 +17,12 @@ class NotificationsGraphQLTest extends TestCase
             'name' => 'User Notif',
             'email' => 'user_notif@example.com',
             'password' => 'password123',
-            'user_type' => 'CUSTOMER',
         ]);
 
         $otherUser = User::query()->create([
             'name' => 'Other Notif',
             'email' => 'other_notif@example.com',
             'password' => 'password123',
-            'user_type' => 'CUSTOMER',
         ]);
 
         Notification::query()->create([
@@ -104,7 +102,6 @@ GRAPHQL;
             'name' => 'User Mark One',
             'email' => 'user_mark_one@example.com',
             'password' => 'password123',
-            'user_type' => 'CUSTOMER',
         ]);
 
         $notification = Notification::query()->create([
@@ -151,7 +148,6 @@ GRAPHQL;
             'name' => 'User Mark All',
             'email' => 'user_mark_all@example.com',
             'password' => 'password123',
-            'user_type' => 'CUSTOMER',
         ]);
 
         Notification::query()->create([

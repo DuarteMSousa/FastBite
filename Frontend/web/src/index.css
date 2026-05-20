@@ -885,6 +885,46 @@ body {
   padding: 22px;
 }
 
+.rb-login-card-wide {
+  max-width: 720px;
+}
+
+.rb-login-tabs,
+.rb-setup-mode {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f8fafc;
+  margin-bottom: 16px;
+}
+
+.rb-login-tabs button,
+.rb-setup-mode button {
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.rb-login-tabs button.active,
+.rb-setup-mode button.active {
+  background: #fff;
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.rb-login-tabs button:disabled,
+.rb-setup-mode button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .rb-login-card h2 {
   margin: 0;
   font-size: 28px;
@@ -1624,15 +1664,19 @@ body {
 }
 
 .rb-dialog-body textarea,
-.rb-dialog-body input[type='text'] {
+.rb-dialog-body input,
+.rb-dialog-body select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 14px;
+  font-family: inherit;
+}
+
+.rb-dialog-body textarea {
   resize: vertical;
   min-height: 70px;
-  font-family: inherit;
 }
 
 .rb-dialog-actions {

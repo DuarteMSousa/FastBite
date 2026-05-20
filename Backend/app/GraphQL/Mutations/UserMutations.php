@@ -6,7 +6,6 @@ use App\DTOs\User\CreateUserDTO;
 use App\DTOs\User\UpdateUserDTO;
 use App\DTOs\UserAddress\CreateUserAddressDTO;
 use App\DTOs\UserAddress\UpdateUserAddressDTO;
-use App\Enums\UserType;
 use App\Services\UserAddressService\UserAddressServiceInterface;
 use App\Services\UserService\UserServiceInterface;
 
@@ -25,7 +24,6 @@ class UserMutations
             name: $input['name'],
             email: $input['email'],
             password: $input['password'],
-            user_type: $input['user_type'] ?? UserType::CUSTOMER->value,
         ));
     }
 

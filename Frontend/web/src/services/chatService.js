@@ -10,7 +10,6 @@ const ORDER_CHATS_QUERY = `
       participants {
         id
         user_id
-        user_type
       }
       messages {
         id
@@ -33,7 +32,6 @@ const CREATE_ORDER_CHAT_MUTATION = `
       participants {
         id
         user_id
-        user_type
       }
       messages {
         id

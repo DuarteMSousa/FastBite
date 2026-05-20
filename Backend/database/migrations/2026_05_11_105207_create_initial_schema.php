@@ -17,7 +17,6 @@ return new class extends Migration {
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('user_type', ['CUSTOMER', 'COURIER', 'CHAIN_MANAGER', 'LOCAL_MANAGER']);
             $table->timestamps();
         });
 
@@ -268,7 +267,6 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->foreignUuid('chat_id')->constrained('chats')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
-            $table->enum('user_type', ['CUSTOMER', 'COURIER', 'CHAIN_MANAGER', 'LOCAL_MANAGER']);
             $table->timestamp('joined_at')->nullable();
             $table->timestamp('last_read_at')->nullable();
             $table->timestamps();

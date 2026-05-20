@@ -6,10 +6,12 @@ use App\Aspects\Transactional;
 use App\DTOs\Restaurant\CreateRestaurantDTO;
 use App\DTOs\Restaurant\SearchRestaurantsDTO;
 use App\DTOs\Restaurant\UpdateRestaurantDTO;
+use App\Models\ChainManager;
 use App\Models\LocalManager;
 use App\Models\Restaurant;
 use App\Models\RestaurantAddress;
 use App\Models\RestaurantChain;
+use App\Models\User;
 use App\Repositories\RestaurantRepository\RestaurantRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
@@ -100,6 +102,90 @@ class RestaurantService implements RestaurantServiceInterface
         $manager = LocalManager::query()->where('user_id', $userId)->first();
 
         return $manager?->restaurant()->with($this->with)->first();
+    }
+
+    public function getRestaurantByManagerUserId(string $userId): ?Restaurant
+    {
+        return $this->getRestaurantsByManagerUserId($userId)->first();
+    }
+
+    public function getRestaurantsByManagerUserId(string $userId)
+    {
+        $localManager = LocalManager::query()
+            ->with(['restaurant.chain', 'restaurant.address'])
+            ->where('user_id', $userId)
+            ->whereNotNull('restaurant_id')
+            ->first();
+
+        if ($localManager?->restaurant) {
+            return collect([$localManager->restaurant]);
+        }
+
+        $chainManager = ChainManager::query()
+            ->where('user_id', $userId)
+            ->whereNotNull('chain_id')
+            ->first();
+
+        if (! $chainManager) {
+            return collect();
+        }
+
+        return Restaurant::query()
+            ->with($this->with)
+            ->where('chain_id', $chainManager->chain_id)
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function getRestaurantChainByManagerUserId(string $userId): ?RestaurantChain
+    {
+        return ChainManager::query()
+            ->where('user_id', $userId)
+            ->whereNotNull('chain_id')
+            ->first()
+            ?->chain;
+    }
+
+    #[Transactional]
+    public function assignChainManager(string $userId, string $chainId): ChainManager
+    {
+        if (! User::query()->whereKey($userId)->exists()) {
+            throw ValidationException::withMessages([
+                'user_id' => ['User does not exist.'],
+            ]);
+        }
+
+        if (! RestaurantChain::query()->whereKey($chainId)->exists()) {
+            throw ValidationException::withMessages([
+                'chain_id' => ['Restaurant chain does not exist.'],
+            ]);
+        }
+
+        return ChainManager::query()->updateOrCreate(
+            ['user_id' => $userId],
+            ['chain_id' => $chainId],
+        )->load(['user', 'chain']);
+    }
+
+    #[Transactional]
+    public function assignLocalManager(string $userId, string $restaurantId): LocalManager
+    {
+        if (! User::query()->whereKey($userId)->exists()) {
+            throw ValidationException::withMessages([
+                'user_id' => ['User does not exist.'],
+            ]);
+        }
+
+        if (! Restaurant::query()->whereKey($restaurantId)->exists()) {
+            throw ValidationException::withMessages([
+                'restaurant_id' => ['Restaurant does not exist.'],
+            ]);
+        }
+
+        return LocalManager::query()->updateOrCreate(
+            ['user_id' => $userId],
+            ['restaurant_id' => $restaurantId],
+        )->load(['user', 'restaurant']);
     }
 
     private function validateInput(array $input, bool $isUpdate = false): void

@@ -44,4 +44,19 @@ class RestaurantQueries
     {
         return $this->restaurantService->getRestaurantByLocalManagerUserId($args['user_id']);
     }
+
+    public function getRestaurantByManagerUserId($_, array $args)
+    {
+        return $this->restaurantService->getRestaurantByManagerUserId($args['user_id']);
+    }
+
+    public function getRestaurantsByManagerUserId($_, array $args)
+    {
+        return $this->restaurantService->getRestaurantsByManagerUserId($args['user_id']);
+    }
+
+    public function getRestaurantChainByManagerUserId($_, array $args)
+    {
+        return $this->restaurantService->getRestaurantChainByManagerUserId($args['user_id']);
+    }
 }

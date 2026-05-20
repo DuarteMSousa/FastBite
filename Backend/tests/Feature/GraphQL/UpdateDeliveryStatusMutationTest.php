@@ -21,14 +21,12 @@ class UpdateDeliveryStatusMutationTest extends TestCase
             'name' => 'Cliente Demo',
             'email' => 'cliente_delivery_status@example.com',
             'password' => 'password123',
-            'user_type' => 'CUSTOMER',
         ]);
 
         $courierUser = User::query()->create([
             'name' => 'Estafeta Demo',
             'email' => 'estafeta_delivery_status@example.com',
             'password' => 'password123',
-            'user_type' => 'COURIER',
         ]);
 
         Courier::query()->create([
@@ -109,14 +107,12 @@ GRAPHQL;
             'name' => 'Cliente Demo',
             'email' => 'cliente_delivery_transition@example.com',
             'password' => 'password123',
-            'user_type' => 'CUSTOMER',
         ]);
 
         $courierUser = User::query()->create([
             'name' => 'Estafeta Demo',
             'email' => 'estafeta_delivery_transition@example.com',
             'password' => 'password123',
-            'user_type' => 'COURIER',
         ]);
 
         Courier::query()->create([

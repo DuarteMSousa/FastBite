@@ -45,4 +45,14 @@ class RestaurantMutations
     {
         return $this->restaurantService->deleteRestaurant($args['actor_user_id'] ?? 'system', $args['id']);
     }
+
+    public function assignChainManager($_, array $args)
+    {
+        return $this->restaurantService->assignChainManager($args['user_id'], $args['chain_id']);
+    }
+
+    public function assignLocalManager($_, array $args)
+    {
+        return $this->restaurantService->assignLocalManager($args['user_id'], $args['restaurant_id']);
+    }
 }

@@ -36,7 +36,6 @@ class UserServiceTest extends TestCase
         $createdUser = new User([
             'name' => 'Ana',
             'email' => 'ana@example.test',
-            'user_type' => 'CUSTOMER',
         ]);
 
         $repository->shouldReceive('findByEmail')
