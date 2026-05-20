@@ -35,13 +35,21 @@ class JSON extends ScalarType
             $valueNode instanceof FloatValueNode => (float) $valueNode->value,
             $valueNode instanceof BooleanValueNode => $valueNode->value,
             $valueNode instanceof NullValueNode => null,
-            $valueNode instanceof ListValueNode => array_map(
-                fn (Node $node) => $this->parseLiteral($node, $variables),
-                $valueNode->values
-            ),
+            $valueNode instanceof ListValueNode => $this->parseList($valueNode, $variables),
             $valueNode instanceof ObjectValueNode => $this->parseObject($valueNode, $variables),
             default => throw new Error('Unsupported JSON value.'),
         };
+    }
+
+    private function parseList(ListValueNode $valueNode, ?array $variables): array
+    {
+        $value = [];
+
+        foreach ($valueNode->values as $node) {
+            $value[] = $this->parseLiteral($node, $variables);
+        }
+
+        return $value;
     }
 
     private function parseObject(ObjectValueNode $valueNode, ?array $variables): array
