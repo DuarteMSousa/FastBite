@@ -3,8 +3,15 @@
 namespace App\Providers;
 
 use App\Enums\CampaignMorphType;
+use App\Events\CourierLastSocketDisconnected;
+use App\Events\ChatMessageSent;
+use App\Events\CourierPositionUpdated;
+use App\Events\DomainEventBroadcasted;
 use App\Events\NotificationEventRecorded;
+use App\Events\UserNotificationCreated;
 use App\Listeners\CreateNotificationFromDomainEvent;
+use App\Listeners\DispatchSocketMessage;
+use App\Listeners\CourierConnectionStatusListener;
 use App\Models\Coupon;
 use App\Models\Promotion;
 use App\Services\CartService\CartService;
@@ -88,5 +95,10 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         Event::listen(NotificationEventRecorded::class, CreateNotificationFromDomainEvent::class);
+        Event::listen(ChatMessageSent::class, DispatchSocketMessage::class);
+        Event::listen(CourierPositionUpdated::class, DispatchSocketMessage::class);
+        Event::listen(UserNotificationCreated::class, DispatchSocketMessage::class);
+        Event::listen(DomainEventBroadcasted::class, DispatchSocketMessage::class);
+        Event::listen(CourierLastSocketDisconnected::class, CourierConnectionStatusListener::class);
     }
 }

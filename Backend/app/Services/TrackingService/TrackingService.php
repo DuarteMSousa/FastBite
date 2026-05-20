@@ -61,6 +61,12 @@ class TrackingService implements TrackingServiceInterface
     #[Transactional]
     public function updateCourierLocation(UpdateCourierLocationDTO $data): array
     {
+        if ($data->latitude < -90 || $data->latitude > 90 || $data->longitude < -180 || $data->longitude > 180) {
+            throw ValidationException::withMessages([
+                'coordinates' => 'Latitude or longitude are outside valid ranges.',
+            ]);
+        }
+
         $delivery = Delivery::query()
             ->where('courier_id', $data->courier_id)
             ->findOrFail($data->delivery_id);

@@ -28,6 +28,12 @@ class CourierService implements CourierServiceInterface
     {
         $courier = $this->couriers->getByUserIdOrFail($userId);
 
+        if (! CourierStatus::tryFrom($status)) {
+            throw ValidationException::withMessages([
+                'status' => 'Unknown courier status.',
+            ]);
+        }
+
         if ($status === CourierStatus::OFFLINE->value && $this->courierHasActiveDelivery($userId)) {
             throw ValidationException::withMessages([
                 'status' => 'Courier has an active delivery and cannot go offline.',

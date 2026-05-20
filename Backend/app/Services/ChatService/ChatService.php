@@ -6,11 +6,14 @@ use App\Aspects\Transactional;
 use App\DTOs\Chat\CreateOrderChatDTO;
 use App\DTOs\Chat\SendMessageDTO;
 use App\Enums\OrderStatus;
+use App\Enums\OutboxEventName;
 use App\Enums\UserType;
 use App\Models\Chat;
 use App\Models\ChatParticipant;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\OutboxService;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ChatService implements ChatServiceInterface
@@ -109,12 +112,25 @@ class ChatService implements ChatServiceInterface
             ]);
         }
 
-        return Message::query()->create([
+        $message = Message::query()->create([
             'chat_id' => $data->chat_id,
             'sender_participant_id' => $participant->id,
             'content' => $data->content,
             'timestamp' => now(),
         ]);
+
+        app(OutboxService::class)->enqueue('chat', $chat->id, OutboxEventName::CHAT_MESSAGE_SENT->value, [
+            'eventId' => (string) Str::uuid(),
+            'eventName' => OutboxEventName::CHAT_MESSAGE_SENT->value,
+            'chatId' => $chat->id,
+            'messageId' => $message->id,
+            'senderUserId' => $senderUserId,
+            'senderParticipantId' => $participant->id,
+            'content' => $message->content,
+            'sentAt' => $message->timestamp?->toIso8601String(),
+        ]);
+
+        return $message;
     }
 
     private function isAuthorizedManagerForChat(User $user, Chat $chat): bool

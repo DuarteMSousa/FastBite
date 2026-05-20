@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Gateway\ClientEvents\Handlers;
+
+use App\DTOs\Chat\SendMessageDTO;
+use App\Gateway\ClientEvents\ClientEventHandler;
+use App\Gateway\ClientEvents\ClientSocketMessage;
+use App\Gateway\ClientEvents\ReadsClientPayload;
+use App\Gateway\Responses\ChatMessageSendAckResponse;
+use App\Gateway\SocketMessage;
+use App\Gateway\SocketClientEventType;
+use App\Services\ChatService\ChatServiceInterface;
+use GatewayWorker\Lib\Gateway;
+
+class SendChatMessageClientEventHandler implements ClientEventHandler
+{
+    use ReadsClientPayload;
+
+    public function __construct(private ChatServiceInterface $chatService) {}
+
+    public function type(): SocketClientEventType
+    {
+        return SocketClientEventType::CHAT_MESSAGE_SEND;
+    }
+
+    public function handle(string $clientId, ClientSocketMessage $message): void
+    {
+        $senderUserId = $this->requiredStringFromMessageOrSession($message, $clientId, 'user_id', 'sender_user_id');
+        $data = SendMessageDTO::from([
+            'chat_id' => $message->requiredString('chat_id'),
+            'content' => $message->requiredString('content'),
+        ]);
+
+        $chatMessage = $this->chatService->sendChatMessage(
+            $senderUserId,
+            $data
+        );
+
+        Gateway::sendToClient($clientId, SocketMessage::response(
+            new ChatMessageSendAckResponse($data->chat_id, $chatMessage->id)
+        ));
+    }
+}
