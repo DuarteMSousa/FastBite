@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import {
   Modal,
   Pressable,
@@ -921,18 +921,24 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     }
   }
 
-  function hasReviewFor(targetType, targetId) {
-    return clientReviews.some(
+  function findReviewForTarget(targetType, targetId, source = clientReviews) {
+    return (source ?? []).find(
       (review) =>
         String(review.target_type).toUpperCase() === String(targetType).toUpperCase() &&
         String(review.target_id) === String(targetId),
-    )
+    ) ?? null
+  }
+
+  function hasReviewFor(targetType, targetId) {
+    return Boolean(findReviewForTarget(targetType, targetId))
   }
 
   function openReviewModal(order, targetType, targetId) {
     if (!order || !targetType || !targetId) return
-    if (hasReviewFor(targetType, targetId)) {
-      setErrorText('Ja avaliou este destinatario. Veja em "Minhas avaliacoes" para editar.')
+    const existingReview = findReviewForTarget(targetType, targetId)
+    if (existingReview) {
+      openEditReview(existingReview)
+      setSuccessText('Ja existe avaliacao para este destinatario. Modo edicao aberto.')
       return
     }
     setReviewTarget({
@@ -1022,7 +1028,40 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       setReviewComment('')
       setEditingReview(null)
     } catch (error) {
-      setErrorText(error.message)
+      const errorMessage = String(error?.message ?? '')
+      const isDuplicateReview = /already reviewed/i.test(errorMessage)
+
+      if (!editingReview && isDuplicateReview) {
+        try {
+          const latestReviews = await refreshReviewsHistory()
+          const existingReview = findReviewForTarget(
+            reviewTarget.targetType,
+            reviewTarget.targetId,
+            latestReviews,
+          )
+
+          if (existingReview) {
+            await updateClientReview({
+              session,
+              reviewId: existingReview.id,
+              rating: reviewRating,
+              comment: reviewComment,
+            })
+            setSuccessText('Avaliacao atualizada.')
+            setErrorText('')
+            setReviewTarget(null)
+            setReviewRating(5)
+            setReviewComment('')
+            setEditingReview(null)
+            return
+          }
+        } catch (fallbackError) {
+          setErrorText(String(fallbackError?.message ?? errorMessage))
+          return
+        }
+      }
+
+      setErrorText(errorMessage)
     } finally {
       setIsSubmittingReview(false)
     }
@@ -1032,8 +1071,10 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     try {
       const reviews = await fetchClientReviewsHistory({ session })
       setClientReviews(reviews)
+      return reviews
     } catch {
-      // ignore silently — review history is optional
+      // ignore silently -- review history is optional
+      return []
     }
   }
 
@@ -1675,7 +1716,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 style={styles.inboxClose}
                 onPress={() => setOrderDetailModal({ visible: false, order: null, loading: false })}
               >
-                <Text style={styles.inboxCloseText}>{'×'}</Text>
+                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
               </Pressable>
             </View>
 
@@ -1791,7 +1832,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 style={styles.inboxClose}
                 onPress={() => setShowReviewsHistory(false)}
               >
-                <Text style={styles.inboxCloseText}>{'×'}</Text>
+                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
               </Pressable>
             </View>
 
@@ -1803,7 +1844,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 <View key={review.id} style={styles.inboxItem}>
                   <View style={styles.inboxItemTop}>
                     <Text style={styles.inboxItemTitle}>
-                      {review.target_type} · {Number(review.rating)}★
+                      {review.target_type} Â· {Number(review.rating)}â˜…
                     </Text>
                     <Text style={styles.inboxItemTimestamp}>
                       {review.created_at
@@ -1881,7 +1922,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 </Text>
               </View>
               <Pressable style={styles.inboxClose} onPress={closeChatModal}>
-                <Text style={styles.inboxCloseText}>{'×'}</Text>
+                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
               </Pressable>
             </View>
 
@@ -1912,7 +1953,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                       {message.timestamp
                         ? new Date(message.timestamp).toLocaleTimeString()
                         : ''}
-                      {isMine && message.read_at ? ' ✓✓' : isMine ? ' ✓' : ''}
+                      {isMine && message.read_at ? ' âœ“âœ“' : isMine ? ' âœ“' : ''}
                     </Text>
                   </View>
                 )
@@ -2040,7 +2081,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                   setOptionSelections({})
                 }}
               >
-                <Text style={styles.inboxCloseText}>{'×'}</Text>
+                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
               </Pressable>
             </View>
 
@@ -2152,7 +2193,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 </Text>
               </View>
               <Pressable style={styles.inboxClose} onPress={() => setShowAddressModal(false)}>
-                <Text style={styles.inboxCloseText}>{'×'}</Text>
+                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
               </Pressable>
             </View>
 
@@ -2179,7 +2220,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                       }}
                     >
                       <Text style={styles.addressOptionLabel}>
-                        {address.label || 'Morada'} {address.is_default ? '· default' : ''}
+                        {address.label || 'Morada'} {address.is_default ? 'Â· default' : ''}
                       </Text>
                       <Text style={styles.addressOptionDetail}>
                         {address.street}, {address.city}
@@ -2348,7 +2389,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             <View style={styles.inboxHeader}>
               <Text style={styles.inboxTitle}>Metodo de pagamento</Text>
               <Pressable style={styles.inboxClose} onPress={() => setShowPaymentModal(false)}>
-                <Text style={styles.inboxCloseText}>{'×'}</Text>
+                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
               </Pressable>
             </View>
 
@@ -2460,7 +2501,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 </Text>
               </View>
               <Pressable style={styles.inboxClose} onPress={() => setShowInbox(false)}>
-                <Text style={styles.inboxCloseText}>{'×'}</Text>
+                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
               </Pressable>
             </View>
 
@@ -2575,4 +2616,5 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     </SafeAreaView>
   )
 }
+
 
