@@ -26,25 +26,25 @@ interface OrderServiceInterface
 
     public function cancelOrderBySystem(string $orderId, string $reason): Order;
 
-    public function acceptOrderByRestaurant(string $actorUserId, string $orderId): Order;
+    public function acceptOrderByRestaurant(string $orderId): Order;
 
-    public function rejectOrderByRestaurant(string $actorUserId, string $orderId, ?string $reason): Order;
+    public function rejectOrderByRestaurant(string $orderId, ?string $reason): Order;
 
-    public function startPreparingOrder(string $actorUserId, string $orderId): Order;
+    public function startPreparingOrder(string $orderId): Order;
 
-    public function updateOrderItemStatus(string $actorUserId, string $orderItemId, string $status): Order;
+    public function updateOrderItemStatus(string $orderItemId, string $status): Order;
 
-    public function markOrderReady(string $actorUserId, string $orderId): Order;
+    public function markOrderReady(string $orderId): Order;
 
     public function repeatClientOrder(string $userId, string $orderId): Cart;
 
-    public function confirmOrderAfterPayment(Order $order, string $actorUserId): Order;
+    public function confirmOrderAfterPayment(Order $order): Order;
 
-    public function recordCourierAssignedToOrder(Order $order, string $actorUserId): Order;
+    public function recordCourierAssignedToOrder(Order $order): Order;
 
-    public function recordOrderPickedUp(Order $order, string $actorUserId): Order;
+    public function recordOrderPickedUp(Order $order): Order;
 
-    public function markOrderOutForDelivery(Order $order, string $actorUserId): Order;
+    public function markOrderOutForDelivery(Order $order): Order;
 
-    public function markOrderDelivered(Order $order, string $actorUserId): Order;
+    public function markOrderDelivered(Order $order): Order;
 }

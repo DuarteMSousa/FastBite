@@ -31,35 +31,35 @@ class OrderMutations
     {
         $input = $args['input'];
 
-        return $this->orderService->acceptOrderByRestaurant($input['actor_user_id'], $input['order_id']);
+        return $this->orderService->acceptOrderByRestaurant($input['order_id']);
     }
 
     public function rejectOrderByRestaurant($_, array $args)
     {
         $input = $args['input'];
 
-        return $this->orderService->rejectOrderByRestaurant($input['actor_user_id'], $input['order_id'], $input['reason'] ?? null);
+        return $this->orderService->rejectOrderByRestaurant($input['order_id'], $input['reason'] ?? null);
     }
 
     public function startPreparingOrder($_, array $args)
     {
         $input = $args['input'];
 
-        return $this->orderService->startPreparingOrder($input['actor_user_id'], $input['order_id']);
+        return $this->orderService->startPreparingOrder($input['order_id']);
     }
 
     public function updateOrderItemStatus($_, array $args)
     {
         $input = $args['input'];
 
-        return $this->orderService->updateOrderItemStatus($input['actor_user_id'], $input['order_item_id'], $input['status']);
+        return $this->orderService->updateOrderItemStatus($input['order_item_id'], $input['status']);
     }
 
     public function markOrderReady($_, array $args)
     {
         $input = $args['input'];
 
-        return $this->orderService->markOrderReady($input['actor_user_id'], $input['order_id']);
+        return $this->orderService->markOrderReady($input['order_id']);
     }
 
     public function repeatClientOrder($_, array $args)

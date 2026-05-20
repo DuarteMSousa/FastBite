@@ -21,7 +21,7 @@ class RestaurantChainService implements RestaurantChainServiceInterface
     }
 
     #[Transactional]
-    public function createRestaurantChain(string $actorUserId, CreateRestaurantChainDTO $data): RestaurantChain
+    public function createRestaurantChain(CreateRestaurantChainDTO $data): RestaurantChain
     {
         $this->validateInput($data->toArray());
 
@@ -29,7 +29,7 @@ class RestaurantChainService implements RestaurantChainServiceInterface
     }
 
     #[Transactional]
-    public function updateRestaurantChain(string $actorUserId, string $id, UpdateRestaurantChainDTO $data): ?RestaurantChain
+    public function updateRestaurantChain(string $id, UpdateRestaurantChainDTO $data): ?RestaurantChain
     {
         $chain = RestaurantChain::query()->find($id);
 
@@ -45,7 +45,7 @@ class RestaurantChainService implements RestaurantChainServiceInterface
     }
 
     #[Transactional]
-    public function deleteRestaurantChain(string $actorUserId, string $id): bool
+    public function deleteRestaurantChain(string $id): bool
     {
         return (bool) RestaurantChain::query()->whereKey($id)->delete();
     }

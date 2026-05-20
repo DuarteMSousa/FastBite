@@ -122,7 +122,6 @@ class NotificationMapper
                 'status' => $payload['status'] ?? null,
                 'reason' => $payload['data']['reason'] ?? $payload['data']['failure_reason'] ?? null,
             ],
-            actorId: isset($payload['actorId']) ? (string) $payload['actorId'] : null,
         );
     }
 
@@ -148,7 +147,6 @@ class NotificationMapper
                 'event_name' => $payload['eventName'] ?? DeliveryOfferEventType::JOB_OFFERED->value,
                 'expires_at' => $payload['expiresAt'] ?? null,
             ],
-            actorId: isset($payload['actorId']) ? (string) $payload['actorId'] : null,
         );
     }
 }

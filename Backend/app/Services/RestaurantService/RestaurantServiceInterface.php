@@ -15,11 +15,11 @@ interface RestaurantServiceInterface
 
     public function getRestaurantById(string $id): ?Restaurant;
 
-    public function createRestaurant(string $actorUserId, CreateRestaurantDTO $data): Restaurant;
+    public function createRestaurant(CreateRestaurantDTO $data): Restaurant;
 
-    public function updateRestaurant(string $actorUserId, string $id, UpdateRestaurantDTO $data): ?Restaurant;
+    public function updateRestaurant(string $id, UpdateRestaurantDTO $data): ?Restaurant;
 
-    public function deleteRestaurant(string $actorUserId, string $id): bool;
+    public function deleteRestaurant(string $id): bool;
 
     public function getRestaurantsByChainId(string $chainId);
 

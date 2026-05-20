@@ -75,7 +75,6 @@ class PaymentService implements PaymentServiceInterface
     {
         return $this->transitionPaymentStatus($paymentId, PaymentStatus::FAILED, PaymentEventType::PAYMENT_EXPIRED, [
             'reason' => 'PAYMENT_EXPIRED',
-            'actor_user_id' => 'payment-expiry',
         ]);
     }
 
@@ -98,7 +97,7 @@ class PaymentService implements PaymentServiceInterface
         }
 
         if ($status === PaymentStatus::COMPLETED) {
-            app(OrderServiceInterface::class)->confirmOrderAfterPayment($payment->order, $payload['actor_user_id'] ?? 'payment');
+            app(OrderServiceInterface::class)->confirmOrderAfterPayment($payment->order);
         }
 
         if ($cascadeToOrder && in_array($status, [PaymentStatus::FAILED, PaymentStatus::CANCELLED], true)) {
@@ -122,7 +121,6 @@ class PaymentService implements PaymentServiceInterface
             'aggregateId' => $payment->id,
             'paymentId' => $payment->id,
             'orderId' => $payment->order_id,
-            'actorId' => $payload['actor_user_id'] ?? null,
             'occurredAt' => $occurredAt->toIso8601String(),
             'data' => $payload,
             'channels' => [

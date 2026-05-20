@@ -61,11 +61,11 @@ extend type Query {
 }
 
 extend type Mutation {
-  createPromotion(actor_user_id: ID!, input: CreatePromotionInput!): Promotion!
+  createPromotion(input: CreatePromotionInput!): Promotion!
     @field(resolver: "App\\GraphQL\\Mutations\\CampaignMutations@createPromotion")
-  updatePromotion(actor_user_id: ID!, id: ID!, input: UpdatePromotionInput!): Promotion!
+  updatePromotion(id: ID!, input: UpdatePromotionInput!): Promotion!
     @field(resolver: "App\\GraphQL\\Mutations\\CampaignMutations@updatePromotion")
-  deletePromotion(actor_user_id: ID!, id: ID!): Boolean!
+  deletePromotion(id: ID!): Boolean!
     @field(resolver: "App\\GraphQL\\Mutations\\CampaignMutations@deletePromotion")
 
   createCoupon(input: CreateCouponInput!): Coupon!

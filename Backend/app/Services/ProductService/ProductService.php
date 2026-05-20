@@ -33,7 +33,7 @@ class ProductService implements ProductServiceInterface
     }
 
     #[Transactional]
-    public function createProduct(string $actorUserId, CreateProductDTO $data)
+    public function createProduct(CreateProductDTO $data)
     {
         $this->validateCreate($data);
 
@@ -41,7 +41,7 @@ class ProductService implements ProductServiceInterface
     }
 
     #[Transactional]
-    public function updateProduct(string $actorUserId, string $id, UpdateProductDTO $data)
+    public function updateProduct(string $id, UpdateProductDTO $data)
     {
         $this->validateUpdate($id, $data);
 
@@ -49,7 +49,7 @@ class ProductService implements ProductServiceInterface
     }
 
     #[Transactional]
-    public function deleteProduct(string $actorUserId, string $id)
+    public function deleteProduct(string $id)
     {
         return $this->productRepository->deleteProduct($id);
     }

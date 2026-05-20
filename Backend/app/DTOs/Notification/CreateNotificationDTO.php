@@ -15,7 +15,6 @@ final readonly class CreateNotificationDTO
         public string $title,
         public string $message,
         public array $data = [],
-        public ?string $actorId = null,
     ) {
     }
 }

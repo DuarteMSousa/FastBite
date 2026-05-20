@@ -17,7 +17,6 @@ class NotificationMapperTest extends TestCase
             'eventName' => OrderEventType::ORDER_READY->value,
             'orderId' => 'order-1',
             'customerId' => 'customer-1',
-            'actorId' => 'manager-1',
             'status' => 'READY',
         ]);
 
@@ -28,7 +27,6 @@ class NotificationMapperTest extends TestCase
         $this->assertSame('O pedido esta pronto para recolha.', $dto->message);
         $this->assertSame('order-1', $dto->data['order_id']);
         $this->assertSame('READY', $dto->data['status']);
-        $this->assertSame('manager-1', $dto->actorId);
     }
 
     public function test_maps_created_order_with_pending_payment_to_pending_message(): void
@@ -39,7 +37,6 @@ class NotificationMapperTest extends TestCase
             'customerId' => 'customer-1',
             'restaurantName' => 'Fast Pizza',
             'paymentStatus' => 'PENDING',
-            'actorId' => 'customer-1',
         ]);
 
         $this->assertNotNull($dto);
@@ -55,7 +52,6 @@ class NotificationMapperTest extends TestCase
             'customerId' => 'customer-1',
             'restaurantName' => 'Fast Pizza',
             'paymentStatus' => 'COMPLETED',
-            'actorId' => 'customer-1',
         ]));
     }
 

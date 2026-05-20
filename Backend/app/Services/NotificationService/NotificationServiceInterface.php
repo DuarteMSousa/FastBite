@@ -16,8 +16,7 @@ interface NotificationServiceInterface
         NotificationType $type,
         string $title,
         string $message,
-        array $data = [],
-        ?string $actorId = null
+        array $data = []
     ): Notification;
 
     /**

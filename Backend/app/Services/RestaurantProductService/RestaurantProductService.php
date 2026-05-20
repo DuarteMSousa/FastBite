@@ -54,11 +54,11 @@ class RestaurantProductService implements RestaurantProductServiceInterface
     #[Transactional]
     public function setRestaurantProductAvailability(string $id, bool $isAvailable): ?RestaurantProduct
     {
-        return $this->updateRestaurantProduct('', $id, new UpdateRestaurantProductDTO(is_available: $isAvailable));
+        return $this->updateRestaurantProduct($id, new UpdateRestaurantProductDTO(is_available: $isAvailable));
     }
 
     #[Transactional]
-    public function createRestaurantProduct(string $actorUserId, CreateRestaurantProductDTO $data): RestaurantProduct
+    public function createRestaurantProduct(CreateRestaurantProductDTO $data): RestaurantProduct
     {
         $this->validateInput($data->toArray());
 
@@ -72,7 +72,7 @@ class RestaurantProductService implements RestaurantProductServiceInterface
     }
 
     #[Transactional]
-    public function updateRestaurantProduct(string $actorUserId, string $id, UpdateRestaurantProductDTO $data): ?RestaurantProduct
+    public function updateRestaurantProduct(string $id, UpdateRestaurantProductDTO $data): ?RestaurantProduct
     {
         $restaurantProduct = RestaurantProduct::query()->find($id);
 

@@ -181,7 +181,7 @@ GRAPHQL;
             ->actingAs($manager)
             ->postJson('/graphql', [
                 'query' => $acceptMutation,
-                'variables' => ['input' => ['actor_user_id' => $manager->id, 'order_id' => $orderToAccept->id]],
+                'variables' => ['input' => ['order_id' => $orderToAccept->id]],
             ]);
 
         $acceptResponse
@@ -193,7 +193,7 @@ GRAPHQL;
             ->actingAs($manager)
             ->postJson('/graphql', [
                 'query' => $rejectMutation,
-                'variables' => ['input' => ['actor_user_id' => $manager->id, 'order_id' => $orderToReject->id]],
+                'variables' => ['input' => ['order_id' => $orderToReject->id]],
             ]);
 
         $rejectResponse

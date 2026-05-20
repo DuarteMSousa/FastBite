@@ -25,7 +25,7 @@ participant "Estafeta\n(Mobile RN)" as Courier
 
 RestUser -> Web: clica "Comecar Preparacao"
 Web -> GraphQL: mutation startPreparingOrder(orderId)
-GraphQL -> OrderSvc: startPreparingOrder(actor, orderId)
+GraphQL -> OrderSvc: startPreparingOrder(orderId)
 
 OrderSvc -> DB: BEGIN TRANSACTION
 OrderSvc -> OrderSvc: transition(CONFIRMED -> PREPARING)

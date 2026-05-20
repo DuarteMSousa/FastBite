@@ -9,7 +9,7 @@ function requestOptions(session) {
   }
 }
 
-function actorUserId(session) {
+function currentUserId(session) {
   return session?.userId || session?.devUserId || 'system'
 }
 
@@ -366,8 +366,8 @@ const CHAIN_COUPONS_QUERY = `
 `
 
 const CREATE_PROMOTION_MUTATION = `
-  mutation CreatePromotion($actorUserId: ID!, $input: CreatePromotionInput!) {
-    createPromotion(actor_user_id: $actorUserId, input: $input) {
+  mutation CreatePromotion($input: CreatePromotionInput!) {
+    createPromotion(input: $input) {
       id
       name
     }
@@ -375,8 +375,8 @@ const CREATE_PROMOTION_MUTATION = `
 `
 
 const UPDATE_PROMOTION_MUTATION = `
-  mutation UpdatePromotion($actorUserId: ID!, $id: ID!, $input: UpdatePromotionInput!) {
-    updatePromotion(actor_user_id: $actorUserId, id: $id, input: $input) {
+  mutation UpdatePromotion($id: ID!, $input: UpdatePromotionInput!) {
+    updatePromotion(id: $id, input: $input) {
       id
       name
     }
@@ -403,8 +403,8 @@ const CHAIN_PRODUCTS_QUERY = `
 `
 
 const DELETE_PROMOTION_MUTATION = `
-  mutation DeletePromotion($actorUserId: ID!, $id: ID!) {
-    deletePromotion(actor_user_id: $actorUserId, id: $id)
+  mutation DeletePromotion($id: ID!) {
+    deletePromotion(id: $id)
   }
 `
 
@@ -571,8 +571,8 @@ const PRODUCT_OPTION_GROUPS_QUERY_ADMIN = `
 `
 
 const UPDATE_PRODUCT_MUTATION = `
-  mutation UpdateProduct($actorUserId: ID!, $id: ID!, $input: UpdateProductInput!) {
-    updateProduct(actor_user_id: $actorUserId, id: $id, input: $input) {
+  mutation UpdateProduct($id: ID!, $input: UpdateProductInput!) {
+    updateProduct(id: $id, input: $input) {
       id
       name
       price
@@ -590,8 +590,8 @@ const CREATE_CATEGORY_MUTATION = `
 `
 
 const CREATE_PRODUCT_MUTATION = `
-  mutation CreateProduct($actorUserId: ID!, $input: CreateProductInput!) {
-    createProduct(actor_user_id: $actorUserId, input: $input) {
+  mutation CreateProduct($input: CreateProductInput!) {
+    createProduct(input: $input) {
       id
       name
       price
@@ -993,7 +993,6 @@ export async function acceptRestaurantOrder({ session, orderId }) {
     query: ACCEPT_RESTAURANT_ORDER_MUTATION,
     variables: {
       input: {
-        actor_user_id: actorUserId(session),
         order_id: orderId,
       },
     },
@@ -1012,7 +1011,6 @@ export async function rejectRestaurantOrder({ session, orderId, reason = null })
     query: REJECT_RESTAURANT_ORDER_MUTATION,
     variables: {
       input: {
-        actor_user_id: actorUserId(session),
         order_id: orderId,
         reason: reason && String(reason).trim() !== '' ? String(reason).trim() : null,
       },
@@ -1032,7 +1030,6 @@ export async function startPreparingRestaurantOrder({ session, orderId }) {
     query: START_PREPARING_ORDER_MUTATION,
     variables: {
       input: {
-        actor_user_id: actorUserId(session),
         order_id: orderId,
       },
     },
@@ -1051,7 +1048,6 @@ export async function markRestaurantOrderReady({ session, orderId }) {
     query: MARK_ORDER_READY_MUTATION,
     variables: {
       input: {
-        actor_user_id: actorUserId(session),
         order_id: orderId,
       },
     },
@@ -1070,7 +1066,6 @@ export async function updateOrderItemStatus({ session, orderItemId, status }) {
     query: UPDATE_ORDER_ITEM_STATUS_MUTATION,
     variables: {
       input: {
-        actor_user_id: actorUserId(session),
         order_item_id: orderItemId,
         status,
       },
@@ -1162,7 +1157,6 @@ export async function createRestaurantMenuProduct({ session, input }) {
   const productData = await graphqlRequest({
     query: CREATE_PRODUCT_MUTATION,
     variables: {
-      actorUserId: actorUserId(session),
       input: {
         category_id: categoryId,
         name: input.name,
@@ -1274,7 +1268,6 @@ export async function createChainPromotion({ session, input }) {
   const data = await graphqlRequest({
     query: CREATE_PROMOTION_MUTATION,
     variables: {
-      actorUserId: actorUserId(session),
       input: {
         chain_id: session.chainId,
         name: input.name,
@@ -1295,7 +1288,6 @@ export async function updateChainPromotion({ session, promotionId, input }) {
   const data = await graphqlRequest({
     query: UPDATE_PROMOTION_MUTATION,
     variables: {
-      actorUserId: actorUserId(session),
       id: promotionId,
       input: {
         name: input.name,
@@ -1353,7 +1345,7 @@ export async function fetchChainProductsAndCategories({ session, chainId }) {
 export async function deleteChainPromotion({ session, promotionId }) {
   const data = await graphqlRequest({
     query: DELETE_PROMOTION_MUTATION,
-    variables: { actorUserId: actorUserId(session), id: promotionId },
+    variables: { id: promotionId },
     ...requestOptions(session),
   })
   return { ok: Boolean(data.deletePromotion) }
@@ -1536,7 +1528,6 @@ export async function updateRestaurantMenuProductWithOptions({
   const data = await graphqlRequest({
     query: UPDATE_PRODUCT_MUTATION,
     variables: {
-      actorUserId: actorUserId(session),
       id: productId,
       input,
     },
@@ -1573,7 +1564,7 @@ export async function fetchOperatorNotifications({
   const data = await graphqlRequest({
     query: CLIENT_NOTIFICATIONS_QUERY,
     variables: {
-      userId: actorUserId(session),
+      userId: currentUserId(session),
       unreadOnly,
       limit,
     },
@@ -1587,7 +1578,7 @@ export async function markOperatorNotificationRead({ session, notificationId }) 
   const data = await graphqlRequest({
     query: MARK_NOTIFICATION_READ_MUTATION,
     variables: {
-      userId: actorUserId(session),
+      userId: currentUserId(session),
       notificationId,
     },
     ...requestOptions(session),
@@ -1600,7 +1591,7 @@ export async function markAllOperatorNotificationsRead({ session }) {
   const data = await graphqlRequest({
     query: MARK_ALL_NOTIFICATIONS_READ_MUTATION,
     variables: {
-      userId: actorUserId(session),
+      userId: currentUserId(session),
     },
     ...requestOptions(session),
   })

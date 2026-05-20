@@ -17,7 +17,7 @@ interface ChatServiceInterface
 
     public function getParticipantsByChatId(string $chatId);
 
-    public function createOrderChat(string $actorUserId, CreateOrderChatDTO $data): Chat;
+    public function createOrderChat(CreateOrderChatDTO $data): Chat;
 
     public function sendChatMessage(string $senderUserId, SendMessageDTO $data): Message;
 }

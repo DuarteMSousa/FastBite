@@ -12,9 +12,9 @@ interface PromotionServiceInterface
 
     public function getPromotionById(string $id): ?Promotion;
 
-    public function createPromotion(string $actorUserId, CreatePromotionDTO $data): Promotion;
+    public function createPromotion(CreatePromotionDTO $data): Promotion;
 
-    public function updatePromotion(string $actorUserId, string $promotionId, UpdatePromotionDTO $data): Promotion;
+    public function updatePromotion(string $promotionId, UpdatePromotionDTO $data): Promotion;
 
-    public function deletePromotion(string $actorUserId, string $id): bool;
+    public function deletePromotion(string $id): bool;
 }

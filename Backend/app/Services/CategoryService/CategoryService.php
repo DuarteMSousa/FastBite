@@ -37,7 +37,7 @@ class CategoryService implements CategoryServiceInterface
     }
 
     #[Transactional]
-    public function createCategory(string $actorUserId, CreateCategoryDTO $data): Category
+    public function createCategory(CreateCategoryDTO $data): Category
     {
         $this->validateInput($data->toArray());
 
@@ -48,7 +48,7 @@ class CategoryService implements CategoryServiceInterface
     }
 
     #[Transactional]
-    public function updateCategory(string $actorUserId, string $id, UpdateCategoryDTO $data): ?Category
+    public function updateCategory(string $id, UpdateCategoryDTO $data): ?Category
     {
         $category = Category::query()->find($id);
 
@@ -67,7 +67,7 @@ class CategoryService implements CategoryServiceInterface
     }
 
     #[Transactional]
-    public function deleteCategory(string $actorUserId, string $id): bool
+    public function deleteCategory(string $id): bool
     {
         return (bool) Category::query()->whereKey($id)->delete();
     }

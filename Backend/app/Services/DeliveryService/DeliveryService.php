@@ -180,8 +180,8 @@ class DeliveryService implements DeliveryServiceInterface
         $this->deliveries->expireOtherPendingOffers($delivery->id, $offer->id);
 
         app(CourierServiceInterface::class)->updateCourierStatus($offer->courier_id, CourierStatus::BUSY->value);
-        $this->recordEvent($delivery, DeliveryEventType::DELIVERY_ACCEPTED, $offer->courier_id);
-        app(OrderServiceInterface::class)->recordCourierAssignedToOrder($delivery->order, $offer->courier_id);
+        $this->recordEvent($delivery, DeliveryEventType::DELIVERY_ACCEPTED);
+        app(OrderServiceInterface::class)->recordCourierAssignedToOrder($delivery->order);
         $this->broadcastJobEvent(DeliveryOfferEventType::JOB_ACCEPTED, $offer);
 
         return $this->reloadDelivery($delivery);
@@ -207,7 +207,7 @@ class DeliveryService implements DeliveryServiceInterface
     public function markDeliveryPickedUp(string $deliveryId, string $courierId): Delivery
     {
         $delivery = $this->transitionDeliveryStatus($deliveryId, $courierId, DeliveryStatus::PICKED_UP, ['pickup_time' => now()]);
-        app(OrderServiceInterface::class)->recordOrderPickedUp($delivery->order, $courierId);
+        app(OrderServiceInterface::class)->recordOrderPickedUp($delivery->order);
 
         return $this->reloadDelivery($delivery);
     }
@@ -216,7 +216,7 @@ class DeliveryService implements DeliveryServiceInterface
     public function markDeliveryInTransit(string $deliveryId, string $courierId): Delivery
     {
         $delivery = $this->transitionDeliveryStatus($deliveryId, $courierId, DeliveryStatus::IN_TRANSIT);
-        app(OrderServiceInterface::class)->markOrderOutForDelivery($delivery->order, $courierId);
+        app(OrderServiceInterface::class)->markOrderOutForDelivery($delivery->order);
 
         return $this->reloadDelivery($delivery);
     }
@@ -225,7 +225,7 @@ class DeliveryService implements DeliveryServiceInterface
     public function markDeliveryDelivered(string $deliveryId, string $courierId): Delivery
     {
         $delivery = $this->transitionDeliveryStatus($deliveryId, $courierId, DeliveryStatus::DELIVERED, ['delivery_time' => now()]);
-        app(OrderServiceInterface::class)->markOrderDelivered($delivery->order, $courierId);
+        app(OrderServiceInterface::class)->markOrderDelivered($delivery->order);
         app(CourierServiceInterface::class)->updateCourierStatus($courierId, CourierStatus::AVAILABLE->value);
 
         return $this->reloadDelivery($delivery);
@@ -250,7 +250,7 @@ class DeliveryService implements DeliveryServiceInterface
         }
 
         DeliveryStateFactory::from($delivery->status)->transition($delivery, DeliveryStatus::FAILED);
-        $this->recordEvent($delivery->refresh(), DeliveryEventType::DELIVERY_FAILED, 'system', [
+        $this->recordEvent($delivery->refresh(), DeliveryEventType::DELIVERY_FAILED, [
             'reason' => $reason,
         ]);
 
@@ -263,7 +263,7 @@ class DeliveryService implements DeliveryServiceInterface
     {
         $delivery = $this->deliveries->getByIdAndCourierIdOrFail($deliveryId, $courierId, lock: true);
         DeliveryStateFactory::from($delivery->status)->transition($delivery, $status, $extra);
-        $this->recordEvent($delivery, $this->eventTypeForStatus($status), $courierId, $extra);
+        $this->recordEvent($delivery, $this->eventTypeForStatus($status), $extra);
 
         return $this->reloadDelivery($delivery);
     }
@@ -284,7 +284,7 @@ class DeliveryService implements DeliveryServiceInterface
         return $this->deliveries->getById($delivery->id) ?? $delivery->refresh();
     }
 
-    private function recordEvent(Delivery $delivery, DeliveryEventType $eventType, string $actorUserId, array $payload = []): void
+    private function recordEvent(Delivery $delivery, DeliveryEventType $eventType, array $payload = []): void
     {
         $delivery->loadMissing('order');
         $occurredAt = now();
@@ -297,7 +297,6 @@ class DeliveryService implements DeliveryServiceInterface
             'orderId' => $delivery->order_id,
             'customerId' => $delivery->order?->user_id,
             'courierId' => $delivery->courier_id,
-            'actorId' => $actorUserId,
             'occurredAt' => $occurredAt->toIso8601String(),
             'data' => $payload,
             'channels' => array_values(array_filter([

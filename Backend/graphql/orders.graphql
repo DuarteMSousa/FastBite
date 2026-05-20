@@ -12,13 +12,11 @@ type CheckoutPayload {
 }
 
 input RestaurantOrderDecisionInput {
-  actor_user_id: ID!
   order_id: ID!
   reason: String
 }
 
 input UpdateOrderItemStatusInput {
-  actor_user_id: ID!
   order_item_id: ID!
   status: OrderItemStatus!
 }

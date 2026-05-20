@@ -18,7 +18,7 @@ interface RestaurantProductServiceInterface
 
     public function setRestaurantProductAvailability(string $id, bool $isAvailable): ?RestaurantProduct;
 
-    public function createRestaurantProduct(string $actorUserId, CreateRestaurantProductDTO $data): RestaurantProduct;
+    public function createRestaurantProduct(CreateRestaurantProductDTO $data): RestaurantProduct;
 
-    public function updateRestaurantProduct(string $actorUserId, string $id, UpdateRestaurantProductDTO $data): ?RestaurantProduct;
+    public function updateRestaurantProduct(string $id, UpdateRestaurantProductDTO $data): ?RestaurantProduct;
 }

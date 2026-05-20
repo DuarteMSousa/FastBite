@@ -19,7 +19,6 @@ class CampaignMutations
     public function createPromotion($_, array $args)
     {
         return $this->promotionService->createPromotion(
-            actorUserId: $args['actor_user_id'],
             data: CreatePromotionDTO::from($args['input']),
         );
     }
@@ -27,7 +26,6 @@ class CampaignMutations
     public function updatePromotion($_, array $args)
     {
         return $this->promotionService->updatePromotion(
-            actorUserId: $args['actor_user_id'],
             promotionId: $args['id'],
             data: UpdatePromotionDTO::from($args['input']),
         );
@@ -35,7 +33,7 @@ class CampaignMutations
 
     public function deletePromotion($_, array $args): bool
     {
-        return $this->promotionService->deletePromotion($args['actor_user_id'], $args['id']);
+        return $this->promotionService->deletePromotion($args['id']);
     }
 
     public function createCoupon($_, array $args)

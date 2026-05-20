@@ -12,7 +12,7 @@ class ChatMutations
 
     public function createOrderChat($_, array $args)
     {
-        return $this->chatService->createOrderChat($args['actor_user_id'] ?? 'system', CreateOrderChatDTO::from($args['input']));
+        return $this->chatService->createOrderChat(CreateOrderChatDTO::from($args['input']));
     }
 
     public function sendChatMessage($_, array $args)

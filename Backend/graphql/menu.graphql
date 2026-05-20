@@ -77,11 +77,11 @@ extend type Mutation {
   deleteCategory(id: ID!): Boolean!
     @field(resolver: "App\\GraphQL\\Mutations\\MenuMutations@deleteCategory")
 
-  createProduct(actor_user_id: ID!, input: CreateProductInput!): Product!
+  createProduct(input: CreateProductInput!): Product!
     @field(resolver: "App\\GraphQL\\Mutations\\MenuMutations@createProduct")
-  updateProduct(actor_user_id: ID!, id: ID!, input: UpdateProductInput!): Product!
+  updateProduct(id: ID!, input: UpdateProductInput!): Product!
     @field(resolver: "App\\GraphQL\\Mutations\\MenuMutations@updateProduct")
-  deleteProduct(actor_user_id: ID!, id: ID!): Boolean!
+  deleteProduct(id: ID!): Boolean!
     @field(resolver: "App\\GraphQL\\Mutations\\MenuMutations@deleteProduct")
 
   createRestaurantProduct(input: CreateRestaurantProductInput!): RestaurantProduct!

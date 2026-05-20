@@ -162,25 +162,25 @@ class OrderService implements OrderServiceInterface
             'expired_at' => $paymentStatus === PaymentStatus::PENDING ? now()->addMinutes(10) : null,
         ]);
 
-        $this->recordEvent($order, OrderEventType::ORDER_CREATED, $clientUserId, [
+        $this->recordEvent($order, OrderEventType::ORDER_CREATED, [
             'paymentStatus' => $paymentStatus->value,
         ]);
         if ($orderStatus === OrderStatus::CONFIRMED) {
-            $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED, $clientUserId);
-            $this->recordEvent($order, OrderEventType::ORDER_CONFIRMED, $clientUserId);
+            $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED);
+            $this->recordEvent($order, OrderEventType::ORDER_CONFIRMED);
         }
 
         $payment->events()->create([
             'event_type' => PaymentEventType::PAYMENT_CREATED->value,
             'timestamp' => now(),
-            'payload' => ['actor_user_id' => $clientUserId],
+            'payload' => [],
         ]);
 
         if ($paymentStatus === PaymentStatus::COMPLETED) {
             $payment->events()->create([
                 'event_type' => PaymentEventType::PAYMENT_COMPLETED->value,
                 'timestamp' => now(),
-                'payload' => ['actor_user_id' => $clientUserId],
+                'payload' => [],
             ]);
         } else {
             ExpirePendingPaymentJob::dispatch($payment->id)
@@ -205,7 +205,7 @@ class OrderService implements OrderServiceInterface
             return $order->load($this->with);
         }
 
-        $order = $this->transition($order, OrderStatus::CANCELLED, OrderEventType::ORDER_CANCELLED, $userId, ['reason' => $reason]);
+        $order = $this->transition($order, OrderStatus::CANCELLED, OrderEventType::ORDER_CANCELLED, ['reason' => $reason]);
         $this->cancelPaymentForOrder($order->id, $reason ?? 'order cancelled by client');
 
         return $order->refresh()->load($this->with);
@@ -220,7 +220,7 @@ class OrderService implements OrderServiceInterface
             return $order->load($this->with);
         }
 
-        $order = $this->transition($order, OrderStatus::CANCELLED, OrderEventType::ORDER_CANCELLED, 'system', [
+        $order = $this->transition($order, OrderStatus::CANCELLED, OrderEventType::ORDER_CANCELLED, [
             'reason' => $reason,
         ]);
         $this->cancelPaymentForOrder($order->id, $reason);
@@ -229,11 +229,11 @@ class OrderService implements OrderServiceInterface
     }
 
     #[Transactional]
-    public function acceptOrderByRestaurant(string $actorUserId, string $orderId): Order
+    public function acceptOrderByRestaurant(string $orderId): Order
     {
         $order = Order::query()->findOrFail($orderId);
 
-        $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING, $actorUserId);
+        $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
         $order->loadMissing(['restaurant.address', 'address']);
         $deliveryFee = app(OrderPricingService::class)->deliveryFee($order->restaurant, $order->address);
         $delivery = app(DeliveryServiceInterface::class)->createDeliveryForOrder($order->id, $deliveryFee);
@@ -243,23 +243,23 @@ class OrderService implements OrderServiceInterface
     }
 
     #[Transactional]
-    public function rejectOrderByRestaurant(string $actorUserId, string $orderId, ?string $reason): Order
+    public function rejectOrderByRestaurant(string $orderId, ?string $reason): Order
     {
         $order = Order::query()->findOrFail($orderId);
 
-        $this->recordEvent($order, OrderEventType::ORDER_REJECTED, $actorUserId, ['reason' => $reason]);
-        $order = $this->transition($order, OrderStatus::CANCELLED, OrderEventType::ORDER_CANCELLED, $actorUserId, ['reason' => $reason]);
+        $this->recordEvent($order, OrderEventType::ORDER_REJECTED, ['reason' => $reason]);
+        $order = $this->transition($order, OrderStatus::CANCELLED, OrderEventType::ORDER_CANCELLED, ['reason' => $reason]);
         $this->cancelPaymentForOrder($order->id, $reason ?? 'order rejected by restaurant');
 
         return $order->refresh()->load($this->with);
     }
 
     #[Transactional]
-    public function startPreparingOrder(string $actorUserId, string $orderId): Order
+    public function startPreparingOrder(string $orderId): Order
     {
         $order = Order::query()->findOrFail($orderId);
 
-        $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING, $actorUserId);
+        $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
         $order->loadMissing(['restaurant.address', 'address']);
         $deliveryFee = app(OrderPricingService::class)->deliveryFee($order->restaurant, $order->address);
         $delivery = app(DeliveryServiceInterface::class)->createDeliveryForOrder($order->id, $deliveryFee);
@@ -269,7 +269,7 @@ class OrderService implements OrderServiceInterface
     }
 
     #[Transactional]
-    public function updateOrderItemStatus(string $actorUserId, string $orderItemId, string $status): Order
+    public function updateOrderItemStatus(string $orderItemId, string $status): Order
     {
         $item = OrderItem::query()->with('order.items')->findOrFail($orderItemId);
         $item->update(['status' => $status]);
@@ -287,18 +287,18 @@ class OrderService implements OrderServiceInterface
         }
 
         if ($isAllReady) {
-            return $this->transition($order, OrderStatus::READY, OrderEventType::ORDER_READY, $actorUserId);
+            return $this->transition($order, OrderStatus::READY, OrderEventType::ORDER_READY);
         }
 
         return $order->load($this->with);
     }
 
     #[Transactional]
-    public function markOrderReady(string $actorUserId, string $orderId): Order
+    public function markOrderReady(string $orderId): Order
     {
         $order = Order::query()->findOrFail($orderId);
 
-        return $this->transition($order, OrderStatus::READY, OrderEventType::ORDER_READY, $actorUserId);
+        return $this->transition($order, OrderStatus::READY, OrderEventType::ORDER_READY);
     }
 
     #[Transactional]
@@ -328,46 +328,46 @@ class OrderService implements OrderServiceInterface
     }
 
     #[Transactional]
-    public function markOrderOutForDelivery(Order $order, string $actorUserId): Order
+    public function markOrderOutForDelivery(Order $order): Order
     {
-        return $this->transition($order, OrderStatus::OUT_FOR_DELIVERY, OrderEventType::ORDER_OUT_FOR_DELIVERY, $actorUserId);
+        return $this->transition($order, OrderStatus::OUT_FOR_DELIVERY, OrderEventType::ORDER_OUT_FOR_DELIVERY);
     }
 
     #[Transactional]
-    public function markOrderDelivered(Order $order, string $actorUserId): Order
+    public function markOrderDelivered(Order $order): Order
     {
-        return $this->transition($order, OrderStatus::DELIVERED, OrderEventType::ORDER_DELIVERED, $actorUserId);
+        return $this->transition($order, OrderStatus::DELIVERED, OrderEventType::ORDER_DELIVERED);
     }
 
     #[Transactional]
-    public function confirmOrderAfterPayment(Order $order, string $actorUserId): Order
+    public function confirmOrderAfterPayment(Order $order): Order
     {
-        $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED, $actorUserId);
+        $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED);
 
-        return $this->transition($order, OrderStatus::CONFIRMED, OrderEventType::ORDER_CONFIRMED, $actorUserId);
+        return $this->transition($order, OrderStatus::CONFIRMED, OrderEventType::ORDER_CONFIRMED);
     }
 
     #[Transactional]
-    public function recordCourierAssignedToOrder(Order $order, string $actorUserId): Order
+    public function recordCourierAssignedToOrder(Order $order): Order
     {
-        $this->recordEvent($order, OrderEventType::ORDER_COURIER_ASSIGNED, $actorUserId);
+        $this->recordEvent($order, OrderEventType::ORDER_COURIER_ASSIGNED);
 
         return $order->refresh()->load($this->with);
     }
 
     #[Transactional]
-    public function recordOrderPickedUp(Order $order, string $actorUserId): Order
+    public function recordOrderPickedUp(Order $order): Order
     {
-        $this->recordEvent($order, OrderEventType::ORDER_PICKED_UP, $actorUserId);
+        $this->recordEvent($order, OrderEventType::ORDER_PICKED_UP);
 
         return $order->refresh()->load($this->with);
     }
 
-    private function transition(Order $order, OrderStatus $status, OrderEventType $eventType, string $actorUserId, array $payload = []): Order
+    private function transition(Order $order, OrderStatus $status, OrderEventType $eventType, array $payload = []): Order
     {
         $order = Order::query()->lockForUpdate()->findOrFail($order->id);
         OrderStateFactory::from($order->status)->transition($order, $status);
-        $this->recordEvent($order, $eventType, $actorUserId, $payload);
+        $this->recordEvent($order, $eventType, $payload);
 
         return $order->refresh()->load($this->with);
     }
@@ -532,7 +532,7 @@ class OrderService implements OrderServiceInterface
         return $now->greaterThanOrEqualTo($opening) && $now->lessThan($closing);
     }
 
-    private function recordEvent(Order $order, OrderEventType $eventType, string $actorUserId, array $payload = []): void
+    private function recordEvent(Order $order, OrderEventType $eventType, array $payload = []): void
     {
         $occurredAt = now();
         $eventPayload = [
@@ -544,7 +544,6 @@ class OrderService implements OrderServiceInterface
             'customerId' => $order->user_id,
             'restaurantId' => $order->restaurant_id,
             'restaurantName' => $order->restaurant_name_snapshot,
-            'actorId' => $actorUserId,
             'occurredAt' => $occurredAt->toIso8601String(),
             'data' => $payload,
             'channels' => [

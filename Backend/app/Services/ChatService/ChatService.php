@@ -49,7 +49,7 @@ class ChatService implements ChatServiceInterface
     }
 
     #[Transactional]
-    public function createOrderChat(string $actorUserId, CreateOrderChatDTO $data): Chat
+    public function createOrderChat(CreateOrderChatDTO $data): Chat
     {
         $chat = Chat::query()->create([
             'order_id' => $data->order_id,

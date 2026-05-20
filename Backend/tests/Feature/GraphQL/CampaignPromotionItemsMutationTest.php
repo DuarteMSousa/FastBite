@@ -20,8 +20,8 @@ class CampaignPromotionItemsMutationTest extends TestCase
         ]);
 
         $mutation = <<<'GRAPHQL'
-mutation CreatePromotion($actor_user_id: ID!, $input: CreatePromotionInput!) {
-  createPromotion(actor_user_id: $actor_user_id, input: $input) {
+mutation CreatePromotion($input: CreatePromotionInput!) {
+  createPromotion(input: $input) {
     id
     discount
     promotionItems {
@@ -36,7 +36,6 @@ GRAPHQL;
         $response = $this->postJson('/graphql', [
             'query' => $mutation,
             'variables' => [
-                'actor_user_id' => 'system',
                 'input' => [
                     'chain_id' => $chain->id,
                     'name' => 'Pizza Festa',
@@ -74,8 +73,8 @@ GRAPHQL;
         ]);
 
         $mutation = <<<'GRAPHQL'
-mutation CreatePromotion($actor_user_id: ID!, $input: CreatePromotionInput!) {
-  createPromotion(actor_user_id: $actor_user_id, input: $input) {
+mutation CreatePromotion($input: CreatePromotionInput!) {
+  createPromotion(input: $input) {
     id
   }
 }
@@ -84,7 +83,6 @@ GRAPHQL;
         $response = $this->postJson('/graphql', [
             'query' => $mutation,
             'variables' => [
-                'actor_user_id' => 'system',
                 'input' => [
                     'chain_id' => $chain->id,
                     'name' => 'Pizza Festa',

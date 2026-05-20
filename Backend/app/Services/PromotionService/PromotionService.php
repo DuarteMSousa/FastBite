@@ -25,7 +25,7 @@ class PromotionService implements PromotionServiceInterface
     }
 
     #[Transactional]
-    public function createPromotion(string $actorUserId, CreatePromotionDTO $data): Promotion
+    public function createPromotion(CreatePromotionDTO $data): Promotion
     {
         $items = $data->items?->toArray() ?? [];
         $this->validatePromotion($data->chain_id, $data->target, $data->discount, $data->start_date, $data->end_date, $items);
@@ -38,7 +38,7 @@ class PromotionService implements PromotionServiceInterface
     }
 
     #[Transactional]
-    public function updatePromotion(string $actorUserId, string $promotionId, UpdatePromotionDTO $data): Promotion
+    public function updatePromotion(string $promotionId, UpdatePromotionDTO $data): Promotion
     {
         $promotion = $this->promotions->getByIdOrFail($promotionId);
         $startDate = $data->start_date ?? $promotion->start_date;
@@ -69,7 +69,7 @@ class PromotionService implements PromotionServiceInterface
     }
 
     #[Transactional]
-    public function deletePromotion(string $actorUserId, string $id): bool
+    public function deletePromotion(string $id): bool
     {
         return (bool) $this->promotions->deletePromotion($id);
     }

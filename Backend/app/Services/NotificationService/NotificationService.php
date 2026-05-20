@@ -35,16 +35,14 @@ class NotificationService implements NotificationServiceInterface
         NotificationType $type,
         string $title,
         string $message,
-        array $data = [],
-        ?string $actorId = null
+        array $data = []
     ): Notification {
         return $this->createFromDTO(new CreateNotificationDTO(
             userId: $userId,
             type: $type,
             title: $title,
             message: $message,
-            data: $data,
-            actorId: $actorId
+            data: $data
         ));
     }
 
@@ -144,7 +142,6 @@ class NotificationService implements NotificationServiceInterface
             'message' => $notification->message,
             'data' => $dto->data,
             'sentAt' => $sentAt->toIso8601String(),
-            'actorId' => $dto->actorId,
         ];
 
         $this->outboxService->enqueue(
