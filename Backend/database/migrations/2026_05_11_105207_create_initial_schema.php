@@ -175,7 +175,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();
             $table->enum('method', ['CASH', 'CARD', 'MBWAY', 'PAYPAL']);
-            $table->enum('status', ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED']);
+            $table->enum('status', ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED', 'REFUNDED']);
             $table->string('transaction_id')->nullable();
             $table->timestamp('paid_at')->nullable();
             $table->timestamp('expired_at')->nullable();
@@ -334,7 +334,7 @@ return new class extends Migration {
         Schema::create('payment_events', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('payment_id')->constrained('payments')->cascadeOnDelete();
-            $table->enum('event_type', ['PAYMENT_CREATED', 'PAYMENT_COMPLETED', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED', 'PAYMENT_CANCELLED']);
+            $table->enum('event_type', ['PAYMENT_CREATED', 'PAYMENT_COMPLETED', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED', 'PAYMENT_CANCELLED', 'PAYMENT_REFUNDED']);
             $table->timestamp('timestamp');
             $table->jsonb('payload')->nullable();
         });
