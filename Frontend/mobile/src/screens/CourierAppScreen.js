@@ -28,6 +28,7 @@ import {
   stopBackgroundLocation,
 } from '../services/backgroundLocationTask'
 import { openGoogleMaps, openWaze } from '../services/navigationLinks'
+import { eventTypeLabel } from './customer/utils'
 
 const OFFER_EXPIRY_FALLBACK_SECONDS = 30
 
@@ -1247,7 +1248,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               {tracking.events.map((event) => (
                 <SummaryRow
                   key={`${event.event_type}-${event.timestamp}`}
-                  label={event.event_type}
+                  label={eventTypeLabel(event.event_type)}
                   value={event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : '-'}
                 />
               ))}
@@ -1657,9 +1658,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                   Chat com {chatModalState.type === 'CUSTOMER_RESTAURANT' ? 'restaurante' : 'cliente'}
                 </Text>
                 <Text style={styles.offerMeta}>
-                  {chatModalState.chat?.id
-                    ? `Chat #${String(chatModalState.chat.id).slice(0, 8)}`
-                    : 'A carregar'}
+                  {chatModalState.chat?.id ? 'Conversa associada ao pedido' : 'A carregar...'}
                 </Text>
               </View>
               <Pressable style={styles.offerModalClose} onPress={closeChatModal}>

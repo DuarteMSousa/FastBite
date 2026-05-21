@@ -123,7 +123,6 @@ export function RestaurantReviewsScreen({ session }) {
               <small>{review.created_at ? new Date(review.created_at).toLocaleString() : '-'}</small>
             </div>
             <p>{review.comment || 'Sem comentario.'}</p>
-            <small>Cliente: {String(review.user_id).slice(0, 8)}</small>
           </div>
         ))}
       </article>

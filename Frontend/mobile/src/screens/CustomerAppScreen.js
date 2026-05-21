@@ -25,7 +25,10 @@ import {
   TRACKABLE_STATUSES,
   ICON,
   INBOX_MAX_ITEMS,
+  eventTypeLabel,
   formatCurrency,
+  orderItemStatusChipStyle,
+  orderItemStatusLabel,
   orderStatusChipStyle,
   paymentMethodLabel,
   statusLabel,
@@ -34,6 +37,7 @@ import {
   addCartItem,
   cancelClientOrderById,
   checkoutCart,
+  clearCart,
   createClientAddress,
   createClientReview,
   deleteClientReview,
@@ -58,6 +62,7 @@ import {
   fetchRestaurantMenu,
   fetchRestaurants,
   payPaymentNow,
+  previewCheckout,
   markAllNotificationsAsRead,
   markClientNotificationRead,
   removeCartItem,
@@ -110,7 +115,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   const [busyOrderId, setBusyOrderId] = useState('')
   const [addresses, setAddresses] = useState([])
   const [selectedAddressId, setSelectedAddressId] = useState(null)
-  const [paymentMethod, setPaymentMethod] = useState('CASH')
+  const [paymentMethod, setPaymentMethod] = useState('CARD')
   const [couponCode, setCouponCode] = useState('')
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -178,9 +183,26 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
   const cartItems = cart?.items ?? []
   const itemCount = cartItems.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0)
-  const subtotal = cartItems.reduce((sum, item) => sum + Number(item.line_total ?? 0), 0)
-  const deliveryFee = 0
-  const total = subtotal + deliveryFee
+  const localSubtotal = cartItems.reduce((sum, item) => sum + Number(item.line_total ?? 0), 0)
+  const [checkoutPreview, setCheckoutPreview] = useState(null)
+  const subtotal = checkoutPreview?.subtotal ?? localSubtotal
+  const deliveryFee = checkoutPreview?.delivery_fee ?? 0
+  const discountTotal = checkoutPreview?.discount_total ?? 0
+  const total = checkoutPreview?.total ?? Math.max(0, localSubtotal + deliveryFee - discountTotal)
+  const cartRestaurantId = useMemo(
+    () => cartItems.find((item) => item.restaurant_id)?.restaurant_id ?? null,
+    [cartItems],
+  )
+  const cartRestaurantName = useMemo(
+    () => cartItems.find((item) => item.restaurant_name)?.restaurant_name ?? null,
+    [cartItems],
+  )
+  const [pendingRestaurantSwitch, setPendingRestaurantSwitch] = useState(null)
+  const [isSwitchingRestaurant, setIsSwitchingRestaurant] = useState(false)
+  const [ordersOriginRoute, setOrdersOriginRoute] = useState('home')
+  const [trackingUpdateCount, setTrackingUpdateCount] = useState(0)
+  const [trackingLastUpdateMs, setTrackingLastUpdateMs] = useState(null)
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
 
   function ensureOnline(actionLabel) {
     if (isOnline) {
@@ -196,6 +218,38 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   }, [])
 
   useEffect(() => {
+    if (!cartItems.length || !isOnline) {
+      setCheckoutPreview(null)
+      return undefined
+    }
+
+    let cancelled = false
+    setIsPreviewLoading(true)
+
+    const handle = setTimeout(() => {
+      previewCheckout({
+        session,
+        addressId: selectedAddressId,
+        couponCode,
+      })
+        .then((preview) => {
+          if (!cancelled) setCheckoutPreview(preview)
+        })
+        .catch(() => {
+          if (!cancelled) setCheckoutPreview(null)
+        })
+        .finally(() => {
+          if (!cancelled) setIsPreviewLoading(false)
+        })
+    }, 350)
+
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
+    }
+  }, [cartItems.length, localSubtotal, selectedAddressId, couponCode, session?.userId, session?.devUserId, isOnline])
+
+  useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
       const nextOnline = Boolean(state.isConnected && state.isInternetReachable !== false)
       setIsOnline(nextOnline)
@@ -209,20 +263,19 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   }, [])
 
   useEffect(() => {
-    if (route !== 'tracking' || !activeOrderId) {
+    if (!activeOrderId || !isOnline) {
       return undefined
     }
-    // Polling de fallback apenas se o socket nao esta live.
     if (realtimeState === 'live') {
       return undefined
     }
 
     const timer = setInterval(() => {
       loadTracking(activeOrderId)
-    }, 15000)
+    }, 8000)
 
     return () => clearInterval(timer)
-  }, [route, activeOrderId, realtimeState])
+  }, [activeOrderId, realtimeState, isOnline])
 
   useEffect(() => {
     if (!userId || !isOnline) {
@@ -434,10 +487,13 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   }, [isOnline, session?.devUserId, session?.token, userId])
 
   useEffect(() => {
-    if (route !== 'tracking' || !activeOrderId) {
+    if (!activeOrderId || !isOnline) {
       setRealtimeState('offline')
       return undefined
     }
+
+    setTrackingUpdateCount(0)
+    setTrackingLastUpdateMs(null)
 
     let unsubscribe = null
 
@@ -449,6 +505,8 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         devUserId: session?.devUserId,
         onPositionUpdated: (payload) => {
           setRealtimeState('live')
+          setTrackingUpdateCount((value) => value + 1)
+          setTrackingLastUpdateMs(Date.now())
           setTracking((current) => {
             const latest = {
               lat: Number(payload?.lat),
@@ -488,7 +546,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         unsubscribe()
       }
     }
-  }, [route, activeOrderId, session?.token, session?.devUserId, trackingRetryTick, isOnline])
+  }, [activeOrderId, session?.token, session?.devUserId, trackingRetryTick, isOnline])
 
   async function bootstrap() {
     if (!ensureOnline('carregar dados iniciais')) {
@@ -780,6 +838,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   }
 
   function openOrdersHistory() {
+    setOrdersOriginRoute(route === 'profile' ? 'profile' : 'home')
     setRoute('orders')
     setOrdersPage(1)
     setHasMoreOrders(true)
@@ -1153,6 +1212,20 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       return
     }
 
+    if (cartItems.length > 0 && cartRestaurantId && cartRestaurantId !== id) {
+      const targetRestaurant = restaurants.find((entry) => entry.id === id) ?? null
+      setPendingRestaurantSwitch({
+        restaurantId: id,
+        restaurantName: targetRestaurant?.name ?? 'novo restaurante',
+        fromRestaurantName: cartRestaurantName ?? 'restaurante anterior',
+      })
+      return
+    }
+
+    await loadRestaurantMenu(id)
+  }
+
+  async function loadRestaurantMenu(id) {
     try {
       setLoading(true)
       setRestaurantId(id)
@@ -1167,6 +1240,24 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       setErrorText(error.message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function confirmRestaurantSwitch() {
+    if (!pendingRestaurantSwitch) return
+    if (!ensureOnline('trocar de restaurante')) return
+
+    try {
+      setIsSwitchingRestaurant(true)
+      await clearCart({ session })
+      setCart(null)
+      const targetId = pendingRestaurantSwitch.restaurantId
+      setPendingRestaurantSwitch(null)
+      await loadRestaurantMenu(targetId)
+    } catch (error) {
+      setErrorText(error.message)
+    } finally {
+      setIsSwitchingRestaurant(false)
     }
   }
 
@@ -1489,7 +1580,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     }
 
     if (route === 'orders') {
-      setRoute('home')
+      setRoute(ordersOriginRoute || 'home')
       return
     }
 
@@ -1546,6 +1637,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             refreshReviewsHistory()
           }}
           reviewsCount={clientReviews.length}
+          onOpenOrdersHistory={openOrdersHistory}
         />
       )}
       {route === 'orders' && (
@@ -1588,6 +1680,11 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           items={cartItems}
           subtotal={subtotal}
           deliveryFee={deliveryFee}
+          discountTotal={discountTotal}
+          appliedDiscounts={checkoutPreview?.discounts ?? []}
+          couponValid={checkoutPreview?.coupon_valid ?? false}
+          couponError={checkoutPreview?.coupon_error ?? null}
+          previewLoading={isPreviewLoading}
           total={total}
           loading={loading}
           availableCouriers={availableCouriers}
@@ -1608,6 +1705,8 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           tracking={tracking}
           checkout={lastCheckout}
           realtimeState={realtimeState}
+          realtimeUpdateCount={trackingUpdateCount}
+          realtimeLastUpdateMs={trackingLastUpdateMs}
           isOnline={isOnline}
           onBack={back}
           onRefresh={() => activeOrderId && loadTracking(activeOrderId)}
@@ -1708,7 +1807,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 <Text style={styles.inboxTitle}>Detalhe do pedido</Text>
                 <Text style={styles.inboxSubtitle}>
                   {orderDetailModal.order
-                    ? `#${String(orderDetailModal.order.id).slice(0, 8)}`
+                    ? (orderDetailModal.order.restaurant_name_snapshot ?? 'Restaurante')
                     : 'A carregar...'}
                 </Text>
               </View>
@@ -1766,6 +1865,11 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                         <Text style={styles.checkoutRowValue}>
                           {item.quantity}x {item.product_name_snapshot}
                         </Text>
+                        {item.status ? (
+                          <Text style={[styles.orderStatusChip, orderItemStatusChipStyle(item.status)]}>
+                            {orderItemStatusLabel(item.status)}
+                          </Text>
+                        ) : null}
                         {(item.options ?? []).map((option) => (
                           <Text style={styles.checkoutRowLabel} key={option.id}>
                             + {option.option_name_snapshot}
@@ -1800,12 +1904,29 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                   {(orderDetailModal.order.events ?? []).map((event, index) => (
                     <SummaryLine
                       key={`${event.event_type}-${index}`}
-                      label={String(event.event_type ?? '').replaceAll('_', ' ')}
+                      label={eventTypeLabel(event.event_type)}
                       value={
                         event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : '-'
                       }
                     />
                   ))}
+
+                  <Pressable
+                    style={[styles.orderButton, { marginTop: 16 }, busyOrderId === orderDetailModal.order.id ? { opacity: 0.6 } : null]}
+                    onPress={() => {
+                      const targetOrder = {
+                        id: orderDetailModal.order.id,
+                        restaurant_name: orderDetailModal.order.restaurant_name_snapshot,
+                      }
+                      setOrderDetailModal({ visible: false, order: null, loading: false })
+                      handleRepeatOrder(targetOrder)
+                    }}
+                    disabled={busyOrderId === orderDetailModal.order.id}
+                  >
+                    <Text style={styles.orderButtonText}>
+                      {busyOrderId === orderDetailModal.order.id ? 'A repetir...' : 'Repetir pedido'}
+                    </Text>
+                  </Pressable>
                 </>
               ) : null}
             </ScrollView>
@@ -1869,6 +1990,45 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       </Modal>
 
       <Modal
+        visible={Boolean(pendingRestaurantSwitch)}
+        animationType="fade"
+        transparent
+        onRequestClose={() => {
+          if (!isSwitchingRestaurant) setPendingRestaurantSwitch(null)
+        }}
+      >
+        <View style={styles.inboxBackdrop}>
+          <View style={styles.failModalCardClient}>
+            <Text style={styles.inboxTitle}>Trocar de restaurante?</Text>
+            <Text style={styles.inboxSubtitle}>
+              {`O teu carrinho tem itens de ${pendingRestaurantSwitch?.fromRestaurantName ?? 'outro restaurante'}. Continuar para ${pendingRestaurantSwitch?.restaurantName ?? 'este restaurante'} vai descartar o carrinho.`}
+            </Text>
+
+            <View style={styles.cancelActionsRow}>
+              <Pressable
+                style={styles.cancelSecondary}
+                onPress={() => {
+                  if (!isSwitchingRestaurant) setPendingRestaurantSwitch(null)
+                }}
+                disabled={isSwitchingRestaurant}
+              >
+                <Text style={styles.cancelSecondaryText}>Manter carrinho</Text>
+              </Pressable>
+              <Pressable
+                style={styles.cancelDanger}
+                onPress={confirmRestaurantSwitch}
+                disabled={isSwitchingRestaurant}
+              >
+                <Text style={styles.cancelDangerText}>
+                  {isSwitchingRestaurant ? 'A descartar...' : 'Descartar e continuar'}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={showLogoutConfirm}
         animationType="fade"
         transparent
@@ -1916,9 +2076,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                   Chat com {chatModalState.type === 'CUSTOMER_COURIER' ? 'estafeta' : 'restaurante'}
                 </Text>
                 <Text style={styles.inboxSubtitle}>
-                  {chatModalState.chat?.id
-                    ? `Chat #${String(chatModalState.chat.id).slice(0, 8)}`
-                    : 'Carregando'}
+                  {chatModalState.chat?.id ? 'Conversa associada ao pedido' : 'A carregar...'}
                 </Text>
               </View>
               <Pressable style={styles.inboxClose} onPress={closeChatModal}>
@@ -2393,7 +2551,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               </Pressable>
             </View>
 
-            {['CASH', 'CARD', 'MBWAY', 'PAYPAL'].map((method) => (
+            {['CARD', 'MBWAY', 'PAYPAL'].map((method) => (
               <Pressable
                 key={method}
                 style={[

@@ -13,7 +13,10 @@ import {
   CANCELLABLE_STATUSES,
   TRACKABLE_STATUSES,
   ICON,
+  eventTypeLabel,
   formatCurrency,
+  orderItemStatusChipStyle,
+  orderItemStatusLabel,
   orderStatusChipStyle,
   paymentMethodLabel,
   statusLabel,
@@ -331,6 +334,11 @@ export function CartScreen({
   items,
   subtotal,
   deliveryFee,
+  discountTotal = 0,
+  appliedDiscounts = [],
+  couponValid = false,
+  couponError = null,
+  previewLoading = false,
   total,
   loading,
   availableCouriers,
@@ -422,12 +430,35 @@ export function CartScreen({
               autoCapitalize="characters"
             />
           </View>
+          {couponCode?.trim() ? (
+            couponError ? (
+              <Text style={styles.errorText}>Cupao invalido: {couponError}</Text>
+            ) : couponValid ? (
+              <Text style={styles.successText}>{ICON.check} Cupao aplicado.</Text>
+            ) : null
+          ) : null}
         </View>
       </ScrollView>
 
       <View style={styles.checkoutBar}>
         <SummaryLine label="Subtotal" value={formatCurrency(subtotal)} />
-        <SummaryLine label="Taxa de entrega" value={formatCurrency(deliveryFee)} />
+        <SummaryLine
+          label={`Taxa de entrega${selectedAddress ? '' : ' (escolhe morada)'}`}
+          value={formatCurrency(deliveryFee)}
+        />
+        {appliedDiscounts.length > 0 ? (
+          appliedDiscounts.map((discount, index) => (
+            <SummaryLine
+              key={`${discount.name}-${index}`}
+              label={discount.name}
+              value={`- ${formatCurrency(discount.amount)}`}
+            />
+          ))
+        ) : null}
+        {discountTotal > 0 ? (
+          <SummaryLine label="Desconto total" value={`- ${formatCurrency(discountTotal)}`} />
+        ) : null}
+        {previewLoading ? <Text style={styles.mutedText}>A calcular...</Text> : null}
 
         <View style={styles.totalRow}>
           <Text style={styles.totalLabel}>Total</Text>
@@ -456,6 +487,8 @@ export function TrackingScreen({
   tracking,
   checkout,
   realtimeState,
+  realtimeUpdateCount = 0,
+  realtimeLastUpdateMs = null,
   isOnline,
   onBack,
   onRefresh,
@@ -472,6 +505,15 @@ export function TrackingScreen({
         : realtimeState === 'error'
           ? 'Erro'
           : 'Offline'
+  const lastUpdateLabel = (() => {
+    if (!realtimeLastUpdateMs) return '-'
+    const secondsAgo = Math.max(0, Math.floor((Date.now() - realtimeLastUpdateMs) / 1000))
+    if (secondsAgo < 60) return `ha ${secondsAgo}s`
+    const minutesAgo = Math.floor(secondsAgo / 60)
+    return `ha ${minutesAgo}min`
+  })()
+  const hasCourierPosition = Boolean(tracking?.latest_position)
+  const courierAssigned = Boolean(tracking?.courier_id)
 
   return (
     <View style={styles.screen}>
@@ -480,8 +522,8 @@ export function TrackingScreen({
           <Text style={styles.backArrow}>{ICON.back}</Text>
         </Pressable>
 
-        <Text style={styles.trackTitle}>Acompanhar Pedido</Text>
-        <Text style={styles.trackSub}>#{tracking?.order_id ? String(tracking.order_id).slice(0, 8) : '-'}</Text>
+        <Text style={styles.trackTitle}>Acompanhar pedido</Text>
+        <Text style={styles.trackSub}>{tracking?.restaurant_name ?? 'Restaurante'}</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -534,6 +576,12 @@ export function TrackingScreen({
           <Text style={styles.trackSummarySub}>Entrega: {tracking?.delivery_status ?? '-'}</Text>
           <Text style={styles.trackSummarySub}>Realtime: {realtimeLabel}</Text>
           <Text style={styles.trackSummarySub}>
+            Posicao do estafeta: {hasCourierPosition ? `actualizada ${lastUpdateLabel}` : courierAssigned ? 'aguardando primeira posicao...' : 'sem estafeta atribuido'}
+          </Text>
+          <Text style={styles.trackSummarySub}>
+            Atualizacoes recebidas: {realtimeUpdateCount}
+          </Text>
+          <Text style={styles.trackSummarySub}>
             Distancia restante: {tracking?.distance_km_remaining ?? '-'} km
           </Text>
           <Text style={styles.trackSummarySub}>
@@ -544,7 +592,13 @@ export function TrackingScreen({
 
         <NativeDeliveryMapCard
           title="Mapa da entrega"
-          subtitle="Posicao em tempo real do estafeta entre pickup e dropoff"
+          subtitle={
+            hasCourierPosition
+              ? `Posicao do estafeta actualizada ${lastUpdateLabel} (${realtimeLabel})`
+              : courierAssigned
+                ? `A aguardar posicao do estafeta (${realtimeLabel})`
+                : 'Estafeta ainda nao atribuido'
+          }
           pickup={
             tracking?.pickup_latitude !== null && tracking?.pickup_latitude !== undefined
               ? {
@@ -576,12 +630,28 @@ export function TrackingScreen({
           positions={tracking?.positions ?? []}
         />
 
+        {(tracking?.items ?? []).length > 0 ? (
+          <View style={styles.trackDetailsCard}>
+            <Text style={styles.sectionTitle}>Pratos do pedido</Text>
+            {tracking.items.map((item) => (
+              <View key={item.id} style={styles.summaryLine}>
+                <Text style={styles.summaryLabel}>
+                  {item.quantity}x {item.product_name}
+                </Text>
+                <Text style={[styles.orderStatusChip, orderItemStatusChipStyle(item.status)]}>
+                  {orderItemStatusLabel(item.status)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         <View style={styles.trackDetailsCard}>
           <Text style={styles.sectionTitle}>Eventos</Text>
           {events.length === 0 ? <Text style={styles.mutedText}>Sem eventos ainda.</Text> : null}
           {events.map((event) => (
             <View key={`${event.event_type}-${event.timestamp}`} style={styles.summaryLine}>
-              <Text style={styles.summaryLabel}>{event.event_type}</Text>
+              <Text style={styles.summaryLabel}>{eventTypeLabel(event.event_type)}</Text>
               <Text style={styles.summaryValue}>
                 {event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : '-'}
               </Text>
@@ -764,6 +834,7 @@ export function ProfileScreen({
   onOpenAddresses,
   onOpenReviewsHistory,
   reviewsCount,
+  onOpenOrdersHistory,
 }) {
   return (
     <View style={styles.screen}>
@@ -819,6 +890,19 @@ export function ProfileScreen({
           </Text>
           <Pressable style={[styles.addressAddBtn, { marginTop: 12 }]} onPress={onOpenAddresses}>
             <Text style={styles.addressAddBtnText}>Gerir moradas</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.checkoutCard}>
+          <Text style={styles.checkoutSectionTitle}>Meus pedidos</Text>
+          <Text style={styles.checkoutRowValue}>
+            Historico completo de encomendas, com detalhe, repetir e cancelar.
+          </Text>
+          <Pressable
+            style={[styles.addressAddBtn, { marginTop: 12 }]}
+            onPress={onOpenOrdersHistory}
+          >
+            <Text style={styles.addressAddBtnText}>Ver historico</Text>
           </Pressable>
         </View>
 

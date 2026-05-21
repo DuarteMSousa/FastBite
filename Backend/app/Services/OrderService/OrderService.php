@@ -99,6 +99,66 @@ class OrderService implements OrderServiceInterface
         return $this->orders->getEvents($orderId);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function previewCheckout(string $clientUserId, ?string $cartId, ?string $addressId, ?string $couponCode): array
+    {
+        $cart = $this->carts->findCheckoutCart($clientUserId, $cartId);
+
+        if ($cart->items->isEmpty()) {
+            return [
+                'subtotal' => 0.0,
+                'delivery_fee' => 0.0,
+                'discount_total' => 0.0,
+                'total' => 0.0,
+                'discounts' => [],
+                'coupon_valid' => false,
+                'coupon_error' => null,
+            ];
+        }
+
+        $restaurant = $cart->items->first()->restaurantProduct->restaurant()->firstOrFail();
+
+        $address = null;
+        if ($addressId !== null && trim($addressId) !== '') {
+            try {
+                $address = $this->addresses->findByUserIdAndIdOrFail($clientUserId, $addressId);
+            } catch (\Throwable) {
+                $address = null;
+            }
+        }
+
+        $couponError = null;
+        $effectiveCouponCode = $couponCode !== null && trim($couponCode) !== '' ? $couponCode : null;
+        $pricing = null;
+
+        try {
+            $pricing = app(OrderPricingService::class)->price($cart, $restaurant, $address, $effectiveCouponCode);
+        } catch (ValidationException $exception) {
+            $errors = $exception->errors();
+            $couponError = $errors['coupon_code'][0] ?? $exception->getMessage();
+            $pricing = app(OrderPricingService::class)->price($cart, $restaurant, $address, null);
+        }
+
+        return [
+            'subtotal' => $pricing['subtotal'],
+            'delivery_fee' => $pricing['delivery_fee'],
+            'discount_total' => $pricing['discount_total'],
+            'total' => $pricing['total'],
+            'discounts' => array_map(static fn (array $entry) => [
+                'name' => $entry['name_snapshot'],
+                'description' => $entry['description_snapshot'] ?? null,
+                'amount' => $entry['discount_amount'],
+                'type' => $entry['discount_type'],
+                'target' => $entry['discount_target'],
+                'origin_type' => $entry['origin_type'],
+            ], $pricing['discounts']),
+            'coupon_valid' => $effectiveCouponCode !== null && $couponError === null && $pricing['coupon'] !== null,
+            'coupon_error' => $couponError,
+        ];
+    }
+
     #[Transactional]
     public function checkoutOrder(string $clientUserId, CheckoutDTO $data): array
     {
@@ -258,18 +318,27 @@ class OrderService implements OrderServiceInterface
         $item = $this->orders->updateOrderItemStatus($orderItemId, $status);
         $order = $item->order->refresh()->load('items');
 
-        $statuses = $order->items->pluck('status');
-        $isAllReady = true;
+        $itemValue = static fn ($entry) => $entry->status instanceof BackedEnum
+            ? $entry->status->value
+            : $entry->status;
+        $orderStatusValue = $order->status instanceof BackedEnum ? $order->status->value : $order->status;
 
-        foreach ($statuses as $status) {
-            $value = $status instanceof BackedEnum ? $status->value : $status;
+        $hasInProgress = $order->items->contains(
+            fn ($entry) => in_array($itemValue($entry), [
+                OrderItemStatus::PREPARING->value,
+                OrderItemStatus::READY->value,
+            ], true)
+        );
 
-            if ($value !== OrderItemStatus::READY->value) {
-                 $isAllReady = false;
-            }
+        if ($hasInProgress && $orderStatusValue === OrderStatus::CONFIRMED->value) {
+            $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
+            $orderStatusValue = OrderStatus::PREPARING->value;
         }
 
-        if ($isAllReady) {
+        $allReady = $order->items->isNotEmpty()
+            && $order->items->every(fn ($entry) => $itemValue($entry) === OrderItemStatus::READY->value);
+
+        if ($allReady && $orderStatusValue === OrderStatus::PREPARING->value) {
             return $this->transition($order, OrderStatus::READY, OrderEventType::ORDER_READY);
         }
 
@@ -482,7 +551,13 @@ class OrderService implements OrderServiceInterface
             return;
         }
 
-        if (in_array($payment->status, [PaymentStatus::FAILED, PaymentStatus::CANCELLED], true)) {
+        if (in_array($payment->status, [PaymentStatus::FAILED, PaymentStatus::CANCELLED, PaymentStatus::REFUNDED], true)) {
+            return;
+        }
+
+        if ($payment->status === PaymentStatus::COMPLETED) {
+            app(PaymentServiceInterface::class)->refundPayment($payment->id, $reason, cascadeToOrder: false);
+
             return;
         }
 

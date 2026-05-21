@@ -51,6 +51,8 @@ function mapCart(cart) {
     items: (cart.items ?? []).map((item) => ({
       id: item.id,
       restaurant_product_id: item.restaurant_product_id,
+      restaurant_id: item.restaurantProduct?.restaurant_id ?? null,
+      restaurant_name: item.restaurantProduct?.restaurant?.name ?? null,
       product_name: item.restaurantProduct?.product?.name ?? 'Produto',
       quantity: item.quantity,
       unit_price: item.unit_price,
@@ -108,6 +110,12 @@ function mapTracking(payload) {
     latest_position: lastPosition,
     positions,
     events: order?.events ?? [],
+    items: (order?.items ?? []).map((item) => ({
+      id: item.id,
+      status: item.status,
+      quantity: item.quantity,
+      product_name: item.product_name_snapshot,
+    })),
   }
 }
 
@@ -175,7 +183,9 @@ const CART_QUERY = `
         unit_price
         total_price
         restaurantProduct {
+          restaurant_id
           product { name }
+          restaurant { name }
         }
       }
     }
@@ -286,6 +296,7 @@ const ORDERS_HISTORY_QUERY = `
       delivery { id status courier_id }
       items {
         id
+        status
         quantity
         product_name_snapshot
         total_price
@@ -315,7 +326,11 @@ const REPEAT_CLIENT_ORDER_MUTATION = `
         quantity
         unit_price
         total_price
-        restaurantProduct { product { name } }
+        restaurantProduct {
+          restaurant_id
+          product { name }
+          restaurant { name }
+        }
       }
     }
   }
@@ -335,6 +350,7 @@ const CLIENT_ORDER_DETAIL_QUERY = `
       delivery { id status pickup_time delivery_time delivery_fee }
       items {
         id
+        status
         quantity
         unit_price
         product_name_snapshot
@@ -368,6 +384,12 @@ const ORDER_TRACKING_QUERY = `
         address { latitude longitude }
         restaurant { address { latitude longitude } }
         events { event_type timestamp }
+        items {
+          id
+          status
+          quantity
+          product_name_snapshot
+        }
       }
       delivery {
         id
@@ -432,7 +454,11 @@ const ADD_CART_ITEM_MUTATION = `
         quantity
         unit_price
         total_price
-        restaurantProduct { product { name } }
+        restaurantProduct {
+          restaurant_id
+          product { name }
+          restaurant { name }
+        }
       }
     }
   }
@@ -449,7 +475,11 @@ const UPDATE_CART_ITEM_MUTATION = `
         quantity
         unit_price
         total_price
-        restaurantProduct { product { name } }
+        restaurantProduct {
+          restaurant_id
+          product { name }
+          restaurant { name }
+        }
       }
     }
   }
@@ -472,7 +502,11 @@ const REMOVE_CART_ITEM_MUTATION = `
         quantity
         unit_price
         total_price
-        restaurantProduct { product { name } }
+        restaurantProduct {
+          restaurant_id
+          product { name }
+          restaurant { name }
+        }
       }
     }
   }
@@ -615,6 +649,27 @@ const ORDER_PAYMENT_QUERY = `
       paid_at
       expired_at
       amount
+    }
+  }
+`
+
+const PREVIEW_CHECKOUT_QUERY = `
+  query PreviewCheckout($input: PreviewCheckoutInput!) {
+    previewCheckout(input: $input) {
+      subtotal
+      delivery_fee
+      discount_total
+      total
+      coupon_valid
+      coupon_error
+      discounts {
+        name
+        description
+        amount
+        type
+        target
+        origin_type
+      }
     }
   }
 `
@@ -1143,6 +1198,40 @@ export async function removeCartItem({ session, cartItemId }) {
   return mapCart(data.removeCartItem)
 }
 
+export async function previewCheckout({ session, addressId = null, couponCode = null } = {}) {
+  const data = await graphqlRequest({
+    query: PREVIEW_CHECKOUT_QUERY,
+    variables: {
+      input: {
+        user_id: sessionUserId(session),
+        address_id: addressId && String(addressId).trim() !== '' ? addressId : null,
+        coupon_code: couponCode && couponCode.trim() !== '' ? couponCode.trim() : null,
+      },
+    },
+    ...requestOptions(session),
+  })
+
+  const preview = data.previewCheckout ?? null
+  if (!preview) return null
+
+  return {
+    subtotal: Number(preview.subtotal ?? 0),
+    delivery_fee: Number(preview.delivery_fee ?? 0),
+    discount_total: Number(preview.discount_total ?? 0),
+    total: Number(preview.total ?? 0),
+    coupon_valid: Boolean(preview.coupon_valid),
+    coupon_error: preview.coupon_error ?? null,
+    discounts: (preview.discounts ?? []).map((discount) => ({
+      name: discount.name,
+      description: discount.description ?? null,
+      amount: Number(discount.amount ?? 0),
+      type: discount.type,
+      target: discount.target,
+      origin_type: discount.origin_type,
+    })),
+  }
+}
+
 export async function clearCart({ session }) {
   const data = await graphqlRequest({
     query: CLEAR_CART_MUTATION,
@@ -1155,7 +1244,7 @@ export async function clearCart({ session }) {
 
 export async function checkoutCart(
   session,
-  { addressId = null, paymentMethod = 'CASH', couponCode = null } = {},
+  { addressId = null, paymentMethod = 'CARD', couponCode = null } = {},
 ) {
   const resolvedAddressId = addressId ?? session?.addressId ?? (await fetchDefaultAddressId(session))
 

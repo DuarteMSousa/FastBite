@@ -22,7 +22,7 @@ function mapOrder(order) {
     order_id: order.id,
     restaurant_id: order.restaurant_id,
     customer_id: order.user_id,
-    customer_name: order.user?.name ?? order.user_id,
+    customer_name: order.user?.name ?? null,
     order_status: order.status,
     total: order.total,
     delivery_address: order.address
@@ -346,6 +346,8 @@ const CHAIN_PROMOTIONS_QUERY = `
         parent_type
         parent_id
         item_id
+        product { id name }
+        category { id name }
       }
     }
   }
@@ -361,6 +363,14 @@ const CHAIN_COUPONS_QUERY = `
       target
       discount
       expiry_date
+      promotionItems {
+        id
+        parent_type
+        parent_id
+        item_id
+        product { id name }
+        category { id name }
+      }
     }
   }
 `
@@ -399,6 +409,28 @@ const CHAIN_PRODUCTS_QUERY = `
       name
       products { id name }
     }
+  }
+`
+
+const CHAIN_CATALOG_QUERY = `
+  query GetChainCatalog($chainId: ID!) {
+    getCategoriesByChainId(chain_id: $chainId) {
+      id
+      name
+      products {
+        id
+        name
+        price
+        description
+        category_id
+      }
+    }
+  }
+`
+
+const DELETE_PRODUCT_MUTATION = `
+  mutation DeleteProduct($id: ID!) {
+    deleteProduct(id: $id)
   }
 `
 
@@ -1101,18 +1133,6 @@ export async function fetchRestaurantMenuProducts(session) {
   )
 }
 
-async function fetchRestaurantChainId(session) {
-  if (session.chainId) return session.chainId
-
-  const data = await graphqlRequest({
-    query: RESTAURANT_QUERY,
-    variables: { id: session.restaurantId },
-    ...requestOptions(session),
-  })
-
-  return data.getRestaurantById?.chain_id
-}
-
 async function resolveCategoryId({ session, chainId, categoryName }) {
   const categoryData = await graphqlRequest({
     query: CHAIN_CATEGORIES_QUERY,
@@ -1142,66 +1162,6 @@ async function resolveCategoryId({ session, chainId, categoryName }) {
   return createdCategory.createCategory.id
 }
 
-export async function createRestaurantMenuProduct({ session, input }) {
-  const chainId = await fetchRestaurantChainId(session)
-  if (!chainId) {
-    throw new Error('Nao foi possivel descobrir a cadeia do restaurante.')
-  }
-
-  const categoryId = await resolveCategoryId({
-    session,
-    chainId,
-    categoryName: input.category,
-  })
-
-  const productData = await graphqlRequest({
-    query: CREATE_PRODUCT_MUTATION,
-    variables: {
-      input: {
-        category_id: categoryId,
-        name: input.name,
-        price: Number(input.price),
-        description: input.description,
-        option_groups: Array.isArray(input.option_groups)
-          ? input.option_groups.map((group) => ({
-              name: group.name,
-              min_options: Number(group.min_options ?? 0),
-              max_options: Number(group.max_options ?? 1),
-              options: (group.options ?? []).map((option) => ({
-                name: option.name,
-                extra_price: Number(option.extra_price ?? 0),
-                default_option: Boolean(option.default_option),
-              })),
-            }))
-          : [],
-      },
-    },
-    ...requestOptions(session),
-  })
-
-  const restaurantProductData = await graphqlRequest({
-    query: CREATE_RESTAURANT_PRODUCT_MUTATION,
-    variables: {
-      input: {
-        restaurant_id: session.restaurantId,
-        product_id: productData.createProduct.id,
-        local_price: Number(input.price),
-        is_available: Boolean(input.is_available),
-        estimated_preparation_time_min: input.estimated_preparation_time_min,
-      },
-    },
-    ...requestOptions(session),
-  })
-
-  return {
-    ok: true,
-    restaurant_product_id: restaurantProductData.createRestaurantProduct.id,
-    product_id: restaurantProductData.createRestaurantProduct.product_id,
-    restaurant_id: restaurantProductData.createRestaurantProduct.restaurant_id,
-    message: 'Produto criado.',
-  }
-}
-
 export async function updateRestaurantMenuProduct({ session, input }) {
   const payload = {}
 
@@ -1227,6 +1187,148 @@ export async function updateRestaurantMenuProduct({ session, input }) {
     restaurant_id: data.updateRestaurantProduct.restaurant_id,
     message: 'Produto atualizado.',
   }
+}
+
+export async function fetchChainCatalog({ session, chainId }) {
+  const resolvedChainId = chainId ?? session?.chainId
+  if (!resolvedChainId) {
+    throw new Error('Sem chain_id na sessao.')
+  }
+
+  const data = await graphqlRequest({
+    query: CHAIN_CATALOG_QUERY,
+    variables: { chainId: resolvedChainId },
+    ...requestOptions(session),
+  })
+
+  const categories = data.getCategoriesByChainId ?? []
+  const products = categories.flatMap((category) =>
+    (category.products ?? []).map((product) => ({
+      id: product.id,
+      name: product.name,
+      price: Number(product.price ?? 0),
+      description: product.description ?? '',
+      category_id: category.id,
+      category_name: category.name,
+    })),
+  )
+
+  return {
+    categories: categories.map((category) => ({ id: category.id, name: category.name })),
+    products,
+  }
+}
+
+export async function createChainProduct({ session, input }) {
+  if (!session?.chainId) {
+    throw new Error('Sem chain_id na sessao.')
+  }
+
+  const categoryId = await resolveCategoryId({
+    session,
+    chainId: session.chainId,
+    categoryName: input.category,
+  })
+
+  const data = await graphqlRequest({
+    query: CREATE_PRODUCT_MUTATION,
+    variables: {
+      input: {
+        category_id: categoryId,
+        name: input.name,
+        price: Number(input.price),
+        description: input.description ?? null,
+        option_groups: Array.isArray(input.option_groups)
+          ? input.option_groups.map((group) => ({
+              name: group.name,
+              min_options: Number(group.min_options ?? 0),
+              max_options: Number(group.max_options ?? 1),
+              options: (group.options ?? []).map((option) => ({
+                name: option.name,
+                extra_price: Number(option.extra_price ?? 0),
+                default_option: Boolean(option.default_option),
+              })),
+            }))
+          : [],
+      },
+    },
+    ...requestOptions(session),
+  })
+
+  return data.createProduct
+}
+
+export async function updateChainProduct({ session, productId, input }) {
+  const payload = {}
+
+  if (input.name !== undefined) payload.name = input.name
+  if (input.description !== undefined) payload.description = input.description
+  if (input.price !== undefined) payload.price = Number(input.price)
+  if (input.option_groups !== undefined) {
+    payload.option_groups = input.option_groups.map((group) => ({
+      id: group.id ?? null,
+      name: group.name,
+      min_options: Number(group.min_options ?? 0),
+      max_options: Number(group.max_options ?? 1),
+      options: (group.options ?? []).map((option) => ({
+        id: option.id ?? null,
+        name: option.name,
+        extra_price: Number(option.extra_price ?? 0),
+        default_option: Boolean(option.default_option),
+      })),
+    }))
+  }
+
+  const data = await graphqlRequest({
+    query: UPDATE_PRODUCT_MUTATION,
+    variables: { id: productId, input: payload },
+    ...requestOptions(session),
+  })
+
+  return data.updateProduct
+}
+
+export async function deleteChainProduct({ session, productId }) {
+  const data = await graphqlRequest({
+    query: DELETE_PRODUCT_MUTATION,
+    variables: { id: productId },
+    ...requestOptions(session),
+  })
+
+  return { ok: Boolean(data.deleteProduct) }
+}
+
+export async function addChainProductToRestaurantMenu({
+  session,
+  productId,
+  localPrice,
+  estimatedPreparationTimeMin,
+  isAvailable = true,
+}) {
+  if (!session?.restaurantId) {
+    throw new Error('Sem restaurantId na sessao.')
+  }
+
+  const data = await graphqlRequest({
+    query: CREATE_RESTAURANT_PRODUCT_MUTATION,
+    variables: {
+      input: {
+        restaurant_id: session.restaurantId,
+        product_id: productId,
+        local_price: localPrice === undefined || localPrice === null || localPrice === '' ? null : Number(localPrice),
+        is_available: Boolean(isAvailable),
+        estimated_preparation_time_min:
+          estimatedPreparationTimeMin === undefined ||
+          estimatedPreparationTimeMin === null ||
+          estimatedPreparationTimeMin === ''
+            ? null
+            : Number(estimatedPreparationTimeMin),
+      },
+    },
+    ...requestOptions(session),
+  })
+
+  return data.createRestaurantProduct
 }
 
 export async function deleteRestaurantMenuProduct({ session, restaurantProductId }) {
@@ -1498,42 +1600,6 @@ export async function updateRestaurantChainProfile({ session, chainId, name }) {
   })
 
   return data.updateRestaurantChain
-}
-
-export async function updateRestaurantMenuProductWithOptions({
-  session,
-  productId,
-  name,
-  description,
-  optionGroups,
-}) {
-  const input = {}
-  if (name !== undefined) input.name = name
-  if (description !== undefined) input.description = description
-  if (optionGroups !== undefined) {
-    input.option_groups = optionGroups.map((group) => ({
-      id: group.id ?? null,
-      name: group.name,
-      min_options: Number(group.min_options ?? 0),
-      max_options: Number(group.max_options ?? 1),
-      options: (group.options ?? []).map((option) => ({
-        id: option.id ?? null,
-        name: option.name,
-        extra_price: Number(option.extra_price ?? 0),
-        default_option: Boolean(option.default_option),
-      })),
-    }))
-  }
-
-  const data = await graphqlRequest({
-    query: UPDATE_PRODUCT_MUTATION,
-    variables: {
-      id: productId,
-      input,
-    },
-    ...requestOptions(session),
-  })
-  return data.updateProduct
 }
 
 export async function fetchProductOptionGroupsAdmin({ session, productId }) {

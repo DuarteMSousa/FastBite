@@ -15,6 +15,7 @@ class PaymentStateFactory
             PaymentStatus::COMPLETED => new CompletedPaymentState(),
             PaymentStatus::FAILED => new FailedPaymentState(),
             PaymentStatus::CANCELLED => new CancelledPaymentState(),
+            PaymentStatus::REFUNDED => new RefundedPaymentState(),
         };
     }
 }

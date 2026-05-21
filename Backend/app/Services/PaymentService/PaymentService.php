@@ -78,6 +78,15 @@ class PaymentService implements PaymentServiceInterface
         ]);
     }
 
+    #[Transactional]
+    public function refundPayment(string $paymentId, ?string $reason, bool $cascadeToOrder = true): Payment
+    {
+        return $this->transitionPaymentStatus($paymentId, PaymentStatus::REFUNDED, PaymentEventType::PAYMENT_REFUNDED, [
+            'reason' => $reason,
+            'refunded_at' => now(),
+        ], $cascadeToOrder);
+    }
+
     private function transitionPaymentStatus(string $paymentId, PaymentStatus $status, ?PaymentEventType $eventType, array $payload, bool $cascadeToOrder = true): Payment
     {
         $payment = $this->payments->getByIdOrFail($paymentId, lock: true);
@@ -100,7 +109,7 @@ class PaymentService implements PaymentServiceInterface
             app(OrderServiceInterface::class)->confirmOrderAfterPayment($payment->order);
         }
 
-        if ($cascadeToOrder && in_array($status, [PaymentStatus::FAILED, PaymentStatus::CANCELLED], true)) {
+        if ($cascadeToOrder && in_array($status, [PaymentStatus::FAILED, PaymentStatus::CANCELLED, PaymentStatus::REFUNDED], true)) {
             app(OrderServiceInterface::class)->cancelOrderByClient(
                 $payment->order->user_id,
                 $payment->order_id,

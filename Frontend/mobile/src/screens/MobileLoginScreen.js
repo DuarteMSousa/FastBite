@@ -46,7 +46,7 @@ export function MobileLoginScreen({ onLogin }) {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <Text style={styles.brand}>FastBite</Text>
-        <Text style={styles.subtitle}>Entrar na sua conta</Text>
+        <Text style={styles.subtitle}>Inicia sessao</Text>
         <View style={styles.roleRow}>
           <RoleButton label="Cliente" active={role === 'customer'} onPress={() => setRole('customer')} />
           <RoleButton label="Estafeta" active={role === 'courier'} onPress={() => setRole('courier')} />
@@ -64,13 +64,13 @@ export function MobileLoginScreen({ onLogin }) {
             placeholderTextColor="#95a5c0"
           />
 
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>Palavra-passe</Text>
           <TextInput
             style={styles.input}
             secureTextEntry
             value={password}
             onChangeText={setPassword}
-            placeholder="a tua password"
+            placeholder="Palavra-passe"
             placeholderTextColor="#95a5c0"
           />
 

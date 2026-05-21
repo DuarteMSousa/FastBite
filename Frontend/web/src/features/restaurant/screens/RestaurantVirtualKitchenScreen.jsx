@@ -330,7 +330,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
             </header>
 
             <div className="rb-kitchen-contact">
-              <p>{order.customer_name ?? `Cliente ${String(order.customer_id).slice(0, 8)}`}</p>
+              <p>{order.customer_name ?? 'Cliente'}</p>
               <p>{order.delivery_address ?? 'Morada indisponivel'}</p>
             </div>
 
@@ -401,7 +401,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
           </header>
 
           <div className="rb-kitchen-contact">
-            <p>{order.customer_name ?? `Cliente ${String(order.customer_id).slice(0, 8)}`}</p>
+            <p>{order.customer_name ?? 'Cliente'}</p>
             <p>{order.delivery_address ?? 'Morada indisponivel'}</p>
           </div>
 
@@ -523,7 +523,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
           </header>
 
           <div className="rb-kitchen-contact">
-            <p>{order.customer_name ?? `Cliente ${String(order.customer_id).slice(0, 8)}`}</p>
+            <p>{order.customer_name ?? 'Cliente'}</p>
             <p>{order.delivery_address ?? 'Morada indisponivel'}</p>
           </div>
 

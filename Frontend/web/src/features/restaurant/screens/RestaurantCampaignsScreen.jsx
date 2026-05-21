@@ -15,6 +15,26 @@ import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
 const DISCOUNT_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT']
 const DISCOUNT_TARGETS = ['ORDER', 'PRODUCT', 'DELIVERY', 'CATEGORY']
 
+function formatDiscount(type, discount) {
+  const value = Number(discount ?? 0)
+  if (type === 'PERCENTAGE') return `${value}%`
+  return `${value.toFixed(2)} EUR`
+}
+
+function targetLabel(target) {
+  if (target === 'ORDER') return 'Encomenda inteira'
+  if (target === 'PRODUCT') return 'Produtos especificos'
+  if (target === 'CATEGORY') return 'Categorias especificas'
+  if (target === 'DELIVERY') return 'Taxa de entrega'
+  return target
+}
+
+function itemLabel(item) {
+  if (item?.product?.name) return `Produto: ${item.product.name}`
+  if (item?.category?.name) return `Categoria: ${item.category.name}`
+  return 'Item nao identificado'
+}
+
 function emptyPromotionDraft() {
   return {
     name: '',
@@ -62,6 +82,8 @@ export function RestaurantCampaignsScreen({ session }) {
   const [deleteCouponTarget, setDeleteCouponTarget] = useState(null)
   const [editingPromotionId, setEditingPromotionId] = useState('')
   const [editingCouponId, setEditingCouponId] = useState('')
+  const [expandedPromotionId, setExpandedPromotionId] = useState('')
+  const [expandedCouponId, setExpandedCouponId] = useState('')
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
 
@@ -409,35 +431,79 @@ export function RestaurantCampaignsScreen({ session }) {
           <p>Sem promocoes.</p>
         ) : null}
 
-        {promotions.map((promotion) => (
-          <div className="rb-detail-row" key={promotion.id}>
-            <span>
-              <strong>{promotion.name}</strong>
-              <br />
-              <small>
-                {promotion.type} - {promotion.target}
-                {promotion.start_date ? ` - de ${promotion.start_date}` : ''}
-                {promotion.end_date ? ` ate ${promotion.end_date}` : ''}
-              </small>
-            </span>
-            <div className="rb-card-actions">
-              <button
-                type="button"
-                className="rb-icon-mini"
-                onClick={() => startEditPromotion(promotion)}
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                className="rb-icon-mini danger"
-                onClick={() => setDeletePromotionTarget(promotion)}
-              >
-                Apagar
-              </button>
+        {promotions.map((promotion) => {
+          const isExpanded = expandedPromotionId === promotion.id
+          return (
+            <div key={promotion.id}>
+              <div className="rb-detail-row">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={() =>
+                    setExpandedPromotionId((current) => (current === promotion.id ? '' : promotion.id))
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      setExpandedPromotionId((current) => (current === promotion.id ? '' : promotion.id))
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <strong>{isExpanded ? '▼' : '▶'} {promotion.name}</strong>
+                  <br />
+                  <small>
+                    {formatDiscount(promotion.type, promotion.discount)} - {targetLabel(promotion.target)}
+                    {promotion.start_date ? ` - de ${promotion.start_date}` : ''}
+                    {promotion.end_date ? ` ate ${promotion.end_date}` : ''}
+                  </small>
+                </span>
+                <div className="rb-card-actions">
+                  <button
+                    type="button"
+                    className="rb-icon-mini"
+                    onClick={() => startEditPromotion(promotion)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="rb-icon-mini danger"
+                    onClick={() => setDeletePromotionTarget(promotion)}
+                  >
+                    Apagar
+                  </button>
+                </div>
+              </div>
+              {isExpanded ? (
+                <div className="rb-detail-expanded">
+                  {promotion.description ? <p>{promotion.description}</p> : null}
+                  <p>
+                    <strong>Tipo:</strong> {promotion.type}
+                    {' · '}
+                    <strong>Alvo:</strong> {targetLabel(promotion.target)}
+                    {' · '}
+                    <strong>Desconto:</strong> {formatDiscount(promotion.type, promotion.discount)}
+                  </p>
+                  {promotion.target === 'PRODUCT' || promotion.target === 'CATEGORY' ? (
+                    <>
+                      <strong>Itens abrangidos</strong>
+                      {(promotion.promotionItems ?? []).length === 0 ? (
+                        <p><small>Sem itens associados.</small></p>
+                      ) : (
+                        <ul>
+                          {(promotion.promotionItems ?? []).map((item) => (
+                            <li key={item.id}>{itemLabel(item)}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </article>
 
       <article className="rb-table-card">
@@ -579,34 +645,78 @@ export function RestaurantCampaignsScreen({ session }) {
 
         {coupons.length === 0 && !loading ? <p>Sem cupoes.</p> : null}
 
-        {coupons.map((coupon) => (
-          <div className="rb-detail-row" key={coupon.id}>
-            <span>
-              <strong>{coupon.code}</strong>
-              <br />
-              <small>
-                {coupon.type} - {coupon.target}
-                {coupon.expiry_date ? ` ate ${coupon.expiry_date}` : ''}
-              </small>
-            </span>
-            <div className="rb-card-actions">
-              <button
-                type="button"
-                className="rb-icon-mini"
-                onClick={() => startEditCoupon(coupon)}
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                className="rb-icon-mini danger"
-                onClick={() => setDeleteCouponTarget(coupon)}
-              >
-                Apagar
-              </button>
+        {coupons.map((coupon) => {
+          const isExpanded = expandedCouponId === coupon.id
+          return (
+            <div key={coupon.id}>
+              <div className="rb-detail-row">
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={() =>
+                    setExpandedCouponId((current) => (current === coupon.id ? '' : coupon.id))
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      setExpandedCouponId((current) => (current === coupon.id ? '' : coupon.id))
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <strong>{isExpanded ? '▼' : '▶'} {coupon.code}</strong>
+                  <br />
+                  <small>
+                    {formatDiscount(coupon.type, coupon.discount)} - {targetLabel(coupon.target)}
+                    {coupon.expiry_date ? ` ate ${coupon.expiry_date}` : ''}
+                  </small>
+                </span>
+                <div className="rb-card-actions">
+                  <button
+                    type="button"
+                    className="rb-icon-mini"
+                    onClick={() => startEditCoupon(coupon)}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="rb-icon-mini danger"
+                    onClick={() => setDeleteCouponTarget(coupon)}
+                  >
+                    Apagar
+                  </button>
+                </div>
+              </div>
+              {isExpanded ? (
+                <div className="rb-detail-expanded">
+                  {coupon.description ? <p>{coupon.description}</p> : null}
+                  <p>
+                    <strong>Tipo:</strong> {coupon.type}
+                    {' · '}
+                    <strong>Alvo:</strong> {targetLabel(coupon.target)}
+                    {' · '}
+                    <strong>Desconto:</strong> {formatDiscount(coupon.type, coupon.discount)}
+                  </p>
+                  {coupon.target === 'PRODUCT' || coupon.target === 'CATEGORY' ? (
+                    <>
+                      <strong>Itens abrangidos</strong>
+                      {(coupon.promotionItems ?? []).length === 0 ? (
+                        <p><small>Sem itens associados.</small></p>
+                      ) : (
+                        <ul>
+                          {(coupon.promotionItems ?? []).map((item) => (
+                            <li key={item.id}>{itemLabel(item)}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
-          </div>
-        ))}
+          )
+        })}
       </article>
 
       {infoText ? <p className="rb-success-note">{infoText}</p> : null}

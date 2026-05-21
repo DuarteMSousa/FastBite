@@ -22,4 +22,6 @@ interface PaymentServiceInterface
     public function failPayment(string $paymentId, ?string $reason, bool $cascadeToOrder = true): Payment;
 
     public function expirePayment(string $paymentId): Payment;
+
+    public function refundPayment(string $paymentId, ?string $reason, bool $cascadeToOrder = true): Payment;
 }

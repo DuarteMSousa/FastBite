@@ -10,6 +10,17 @@ const ORDER_EVENT_LABELS_PT = {
   ORDER_OUT_FOR_DELIVERY: 'Em entrega',
   ORDER_DELIVERED: 'Entregue ao cliente',
   ORDER_CANCELLED: 'Pedido cancelado',
+  DELIVERY_ACCEPTED: 'Entrega aceite',
+  DELIVERY_PICKED_UP: 'Encomenda recolhida',
+  DELIVERY_IN_TRANSIT: 'A caminho',
+  DELIVERY_DELIVERED: 'Entregue',
+  DELIVERY_FAILED: 'Entrega falhada',
+  PAYMENT_CREATED: 'Pagamento criado',
+  PAYMENT_COMPLETED: 'Pagamento confirmado',
+  PAYMENT_FAILED: 'Pagamento falhado',
+  PAYMENT_EXPIRED: 'Pagamento expirado',
+  PAYMENT_CANCELLED: 'Pagamento cancelado',
+  PAYMENT_REFUNDED: 'Pagamento reembolsado',
 }
 
 export function formatEventType(eventType) {

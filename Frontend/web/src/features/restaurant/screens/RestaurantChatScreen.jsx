@@ -20,7 +20,7 @@ function normalizeEventMessage(payload) {
 
 function orderLabel(order) {
   const shortId = String(order.order_id).slice(0, 8)
-  return `#${shortId} - ${order.customer_name ?? order.customer_id}`
+  return `#${shortId} - ${order.customer_name ?? 'Cliente'}`
 }
 
 function formatMessageTime(timestamp) {
@@ -362,9 +362,7 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
                         >
                           <div className="rb-chat-bubble">
                             {showSenderTag ? (
-                              <span className="rb-chat-bubble-sender">
-                                {String(message.sender_user_id).slice(0, 8)}
-                              </span>
+                              <span className="rb-chat-bubble-sender">Cliente</span>
                             ) : null}
                             <p>{message.content}</p>
                             <small>{formatMessageTime(message.timestamp)}</small>

@@ -22,6 +22,11 @@ interface OrderServiceInterface
 
     public function checkoutOrder(string $clientUserId, CheckoutDTO $data): array;
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function previewCheckout(string $clientUserId, ?string $cartId, ?string $addressId, ?string $couponCode): array;
+
     public function cancelOrderByClient(string $userId, string $orderId, ?string $reason): Order;
 
     public function cancelOrderBySystem(string $orderId, string $reason): Order;

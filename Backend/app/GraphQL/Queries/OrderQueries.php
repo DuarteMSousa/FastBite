@@ -37,4 +37,16 @@ class OrderQueries
     {
         return $this->orderService->getOrderEvents($args['order_id']);
     }
+
+    public function previewCheckout($_, array $args): array
+    {
+        $input = $args['input'];
+
+        return $this->orderService->previewCheckout(
+            clientUserId: $input['user_id'],
+            cartId: $input['cart_id'] ?? null,
+            addressId: $input['address_id'] ?? null,
+            couponCode: $input['coupon_code'] ?? null,
+        );
+    }
 }

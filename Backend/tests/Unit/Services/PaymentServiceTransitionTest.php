@@ -28,4 +28,21 @@ class PaymentServiceTransitionTest extends TestCase
 
         $state->transition(new \App\Models\Payment(['status' => PaymentStatus::COMPLETED]), PaymentStatus::FAILED);
     }
+
+    public function test_allows_completed_to_refunded(): void
+    {
+        $state = PaymentStateFactory::from(PaymentStatus::COMPLETED);
+
+        $this->assertTrue($state->canTransitionTo(PaymentStatus::REFUNDED));
+    }
+
+    public function test_refunded_is_terminal(): void
+    {
+        $state = PaymentStateFactory::from(PaymentStatus::REFUNDED);
+
+        $this->assertFalse($state->canTransitionTo(PaymentStatus::PENDING));
+        $this->assertFalse($state->canTransitionTo(PaymentStatus::COMPLETED));
+        $this->assertFalse($state->canTransitionTo(PaymentStatus::CANCELLED));
+        $this->assertFalse($state->canTransitionTo(PaymentStatus::FAILED));
+    }
 }

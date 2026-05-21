@@ -22,4 +22,9 @@ class PaymentMutations
     {
         return $this->paymentService->failPayment($args['payment_id'], $args['reason'] ?? null);
     }
+
+    public function refundPayment($_, array $args)
+    {
+        return $this->paymentService->refundPayment($args['payment_id'], $args['reason'] ?? null);
+    }
 }

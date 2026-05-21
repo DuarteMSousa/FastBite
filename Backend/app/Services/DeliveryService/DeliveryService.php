@@ -104,11 +104,13 @@ class DeliveryService implements DeliveryServiceInterface
             return;
         }
 
+        $maxRadiusKm = (float) config('services.delivery.assignment_radius_km', 10);
+
         $courier = $this->couriers
             ->getAvailableExceptUserIds($attemptedCourierIds)
-            ->sortBy(function ($courier) use ($restaurantAddress): float {
+            ->filter(function ($courier) use ($restaurantAddress, $maxRadiusKm): bool {
                 if (! $restaurantAddress || $courier->latitude === null || $courier->longitude === null) {
-                    return PHP_FLOAT_MAX;
+                    return false;
                 }
 
                 return GeoMath::distanceKm(
@@ -116,8 +118,14 @@ class DeliveryService implements DeliveryServiceInterface
                     (float) $courier->longitude,
                     (float) $restaurantAddress->latitude,
                     (float) $restaurantAddress->longitude
-                );
+                ) <= $maxRadiusKm;
             })
+            ->sortBy(fn ($courier): float => GeoMath::distanceKm(
+                (float) $courier->latitude,
+                (float) $courier->longitude,
+                (float) $restaurantAddress->latitude,
+                (float) $restaurantAddress->longitude
+            ))
             ->first();
 
         if (! $courier) {

@@ -1,6 +1,7 @@
 import { RestaurantOrdersQueueScreen } from './screens/RestaurantOrdersQueueScreen'
 import { RestaurantVirtualKitchenScreen } from './screens/RestaurantVirtualKitchenScreen'
 import { RestaurantMenuCatalogScreen } from './screens/RestaurantMenuCatalogScreen'
+import { RestaurantChainCatalogScreen } from './screens/RestaurantChainCatalogScreen'
 import { RestaurantChatScreen } from './screens/RestaurantChatScreen'
 import { RestaurantNotificationsScreen } from './screens/RestaurantNotificationsScreen'
 import { RestaurantOrderDetailScreen } from './screens/RestaurantOrderDetailScreen'
@@ -43,8 +44,15 @@ export const RESTAURANT_VIEWS = [
     hideFromNav: true,
   },
   {
+    id: 'chain-catalog',
+    label: 'Catalogo da cadeia',
+    icon: 'CC',
+    Component: RestaurantChainCatalogScreen,
+    chainOnly: true,
+  },
+  {
     id: 'menu',
-    label: 'Gestao de menu',
+    label: 'Menu do restaurante',
     icon: 'GM',
     Component: RestaurantMenuCatalogScreen,
   },

@@ -48,4 +48,8 @@ return [
         'timeout_seconds' => env('EXPO_PUSH_TIMEOUT_SECONDS', 8),
     ],
 
+    'delivery' => [
+        'assignment_radius_km' => env('DELIVERY_ASSIGNMENT_RADIUS_KM', 10),
+    ],
+
 ];

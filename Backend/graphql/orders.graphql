@@ -6,9 +6,35 @@ input CheckoutInput {
   coupon_code: String
 }
 
+input PreviewCheckoutInput {
+  user_id: ID!
+  cart_id: ID
+  address_id: ID
+  coupon_code: String
+}
+
 type CheckoutPayload {
   order: Order!
   payment: Payment
+}
+
+type CheckoutPreview {
+  subtotal: Float!
+  delivery_fee: Float!
+  discount_total: Float!
+  total: Float!
+  discounts: [PreviewDiscount!]!
+  coupon_valid: Boolean!
+  coupon_error: String
+}
+
+type PreviewDiscount {
+  name: String!
+  description: String
+  amount: Float!
+  type: DiscountType!
+  target: DiscountTarget!
+  origin_type: String!
 }
 
 input RestaurantOrderDecisionInput {
@@ -34,6 +60,8 @@ extend type Query {
     @field(resolver: "App\\GraphQL\\Queries\\OrderQueries@getRestaurantOrder")
   getOrderEvents(order_id: ID!): [OrderEvent!]!
     @field(resolver: "App\\GraphQL\\Queries\\OrderQueries@getOrderEvents")
+  previewCheckout(input: PreviewCheckoutInput!): CheckoutPreview!
+    @field(resolver: "App\\GraphQL\\Queries\\OrderQueries@previewCheckout")
 }
 
 extend type Mutation {

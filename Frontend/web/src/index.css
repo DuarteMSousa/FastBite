@@ -1765,6 +1765,23 @@ body {
   padding-top: 12px;
 }
 
+.rb-detail-expanded {
+  padding: 10px 20px 16px;
+  border-top: 1px dashed var(--line);
+  background: #f8fafc;
+  font-size: 13px;
+  color: #334155;
+}
+
+.rb-detail-expanded > p {
+  margin: 4px 0;
+}
+
+.rb-detail-expanded ul {
+  margin: 4px 0 0 18px;
+  padding: 0;
+}
+
 .rb-detail-row.total strong {
   color: var(--text);
   font-size: 18px;

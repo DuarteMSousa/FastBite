@@ -237,7 +237,7 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
               orders.map((order) => (
                 <tr key={order.order_id}>
                   <td>{String(order.order_id).slice(0, 8)}</td>
-                  <td>{order.customer_name ?? String(order.customer_id).slice(0, 8)}</td>
+                  <td>{order.customer_name ?? 'Cliente'}</td>
                   <td>{Number(order.total).toFixed(2)} EUR</td>
                   <td>
                     <span className={`rb-chip ${statusTone(order.order_status)}`}>

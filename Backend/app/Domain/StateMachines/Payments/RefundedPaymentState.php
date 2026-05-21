@@ -4,17 +4,15 @@ namespace App\Domain\StateMachines\Payments;
 
 use App\Enums\PaymentStatus;
 
-class CompletedPaymentState extends AbstractPaymentState
+class RefundedPaymentState extends AbstractPaymentState
 {
     public function status(): PaymentStatus
     {
-        return PaymentStatus::COMPLETED;
+        return PaymentStatus::REFUNDED;
     }
 
     protected function allowedTransitions(): array
     {
-        return [
-            PaymentStatus::REFUNDED,
-        ];
+        return [];
     }
 }
