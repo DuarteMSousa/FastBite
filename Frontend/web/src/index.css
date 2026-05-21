@@ -1002,6 +1002,44 @@ body {
   padding-top: 4px;
 }
 
+.rb-checkbox-list {
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.rb-checkbox-list legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  letter-spacing: 0.01em;
+  padding: 0 4px;
+}
+
+.rb-checkbox-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+
+.rb-checkbox-item input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .rb-login-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

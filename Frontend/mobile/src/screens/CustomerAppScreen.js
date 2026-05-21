@@ -2001,7 +2001,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           <View style={styles.failModalCardClient}>
             <Text style={styles.inboxTitle}>Trocar de restaurante?</Text>
             <Text style={styles.inboxSubtitle}>
-              {`O teu carrinho tem itens de ${pendingRestaurantSwitch?.fromRestaurantName ?? 'outro restaurante'}. Continuar para ${pendingRestaurantSwitch?.restaurantName ?? 'este restaurante'} vai descartar o carrinho.`}
+              {`O teu carrinho tem itens de ${pendingRestaurantSwitch?.fromRestaurantName ?? 'outro restaurante'}. Para entrar em ${pendingRestaurantSwitch?.restaurantName ?? 'este restaurante'} tens de descartar o carrinho e comecar um novo.`}
             </Text>
 
             <View style={styles.cancelActionsRow}>
@@ -2012,7 +2012,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 }}
                 disabled={isSwitchingRestaurant}
               >
-                <Text style={styles.cancelSecondaryText}>Manter carrinho</Text>
+                <Text style={styles.cancelSecondaryText}>Cancelar</Text>
               </Pressable>
               <Pressable
                 style={styles.cancelDanger}

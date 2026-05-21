@@ -44,7 +44,7 @@ function emptyPromotionDraft() {
     start_date: '',
     end_date: '',
     discount: '',
-    item_id: '',
+    item_ids: [],
   }
 }
 
@@ -55,16 +55,20 @@ function emptyCouponDraft() {
     type: 'PERCENTAGE',
     target: 'ORDER',
     discount: '',
-    item_id: '',
+    item_ids: [],
     expiry_date: '',
   }
 }
 
 function buildItems(draft) {
   if (draft.target === 'PRODUCT' || draft.target === 'CATEGORY') {
-    return draft.item_id ? [{ item_id: draft.item_id }] : []
+    return (draft.item_ids ?? []).map((item_id) => ({ item_id }))
   }
   return []
+}
+
+function toggleId(list, id) {
+  return list.includes(id) ? list.filter((entry) => entry !== id) : [...list, id]
 }
 
 export function RestaurantCampaignsScreen({ session }) {
@@ -120,12 +124,12 @@ export function RestaurantCampaignsScreen({ session }) {
       setErrorText('Nome obrigatorio.')
       return
     }
-    if (promotionDraft.target === 'PRODUCT' && !promotionDraft.item_id) {
-      setErrorText('Escolhe o produto.')
+    if (promotionDraft.target === 'PRODUCT' && promotionDraft.item_ids.length === 0) {
+      setErrorText('Escolhe pelo menos um produto.')
       return
     }
-    if (promotionDraft.target === 'CATEGORY' && !promotionDraft.item_id) {
-      setErrorText('Escolhe a categoria.')
+    if (promotionDraft.target === 'CATEGORY' && promotionDraft.item_ids.length === 0) {
+      setErrorText('Escolhe pelo menos uma categoria.')
       return
     }
 
@@ -160,7 +164,6 @@ export function RestaurantCampaignsScreen({ session }) {
   }
 
   function startEditPromotion(promotion) {
-    const firstItem = promotion.promotionItems?.[0]
     setEditingPromotionId(promotion.id)
     setPromotionDraft({
       name: promotion.name,
@@ -170,7 +173,7 @@ export function RestaurantCampaignsScreen({ session }) {
       start_date: promotion.start_date ?? '',
       end_date: promotion.end_date ?? '',
       discount: String(promotion.discount ?? 10),
-      item_id: firstItem?.item_id ?? '',
+      item_ids: (promotion.promotionItems ?? []).map((entry) => entry.item_id),
     })
     setShowPromotionForm(true)
   }
@@ -195,12 +198,12 @@ export function RestaurantCampaignsScreen({ session }) {
       setErrorText('Codigo de cupao obrigatorio.')
       return
     }
-    if (couponDraft.target === 'PRODUCT' && !couponDraft.item_id) {
-      setErrorText('Escolhe o produto.')
+    if (couponDraft.target === 'PRODUCT' && couponDraft.item_ids.length === 0) {
+      setErrorText('Escolhe pelo menos um produto.')
       return
     }
-    if (couponDraft.target === 'CATEGORY' && !couponDraft.item_id) {
-      setErrorText('Escolhe a categoria.')
+    if (couponDraft.target === 'CATEGORY' && couponDraft.item_ids.length === 0) {
+      setErrorText('Escolhe pelo menos uma categoria.')
       return
     }
     try {
@@ -233,7 +236,6 @@ export function RestaurantCampaignsScreen({ session }) {
   }
 
   function startEditCoupon(coupon) {
-    const firstItem = coupon.promotionItems?.[0]
     setEditingCouponId(coupon.id)
     setCouponDraft({
       code: coupon.code,
@@ -241,7 +243,7 @@ export function RestaurantCampaignsScreen({ session }) {
       type: coupon.type,
       target: coupon.target,
       discount: String(coupon.discount ?? 10),
-      item_id: firstItem?.item_id ?? '',
+      item_ids: (coupon.promotionItems ?? []).map((entry) => entry.item_id),
       expiry_date: coupon.expiry_date ?? '',
     })
     setShowCouponForm(true)
@@ -334,7 +336,7 @@ export function RestaurantCampaignsScreen({ session }) {
                   setPromotionDraft((current) => ({
                     ...current,
                     target: event.target.value,
-                    item_id: '',
+                    item_ids: [],
                   }))
                 }
               >
@@ -358,43 +360,52 @@ export function RestaurantCampaignsScreen({ session }) {
               />
             </label>
             {promotionDraft.target === 'PRODUCT' ? (
-              <label>
-                Produto
-                <select
-                  value={promotionDraft.item_id}
-                  onChange={(event) =>
-                    setPromotionDraft((current) => ({ ...current, item_id: event.target.value }))
-                  }
-                >
-                  <option value="">— escolher —</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
+              <fieldset className="rb-checkbox-list">
+                <legend>Produtos abrangidos</legend>
+                {products.length === 0 ? (
+                  <p><small>Sem produtos na cadeia.</small></p>
+                ) : (
+                  products.map((product) => (
+                    <label key={product.id} className="rb-checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={promotionDraft.item_ids.includes(product.id)}
+                        onChange={() =>
+                          setPromotionDraft((current) => ({
+                            ...current,
+                            item_ids: toggleId(current.item_ids, product.id),
+                          }))
+                        }
+                      />
                       {product.name} ({product.category_name})
-                    </option>
-                  ))}
-                </select>
-              </label>
+                    </label>
+                  ))
+                )}
+              </fieldset>
             ) : null}
             {promotionDraft.target === 'CATEGORY' ? (
-              <label>
-                Categoria
-                <select
-                  value={promotionDraft.item_id}
-                  onChange={(event) =>
-                    setPromotionDraft((current) => ({
-                      ...current,
-                      item_id: event.target.value,
-                    }))
-                  }
-                >
-                  <option value="">— escolher —</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
+              <fieldset className="rb-checkbox-list">
+                <legend>Categorias abrangidas</legend>
+                {categories.length === 0 ? (
+                  <p><small>Sem categorias na cadeia.</small></p>
+                ) : (
+                  categories.map((category) => (
+                    <label key={category.id} className="rb-checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={promotionDraft.item_ids.includes(category.id)}
+                        onChange={() =>
+                          setPromotionDraft((current) => ({
+                            ...current,
+                            item_ids: toggleId(current.item_ids, category.id),
+                          }))
+                        }
+                      />
                       {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                    </label>
+                  ))
+                )}
+              </fieldset>
             ) : null}
             <label>
               Inicio (ISO)
@@ -563,7 +574,7 @@ export function RestaurantCampaignsScreen({ session }) {
                   setCouponDraft((current) => ({
                     ...current,
                     target: event.target.value,
-                    item_id: '',
+                    item_ids: [],
                   }))
                 }
               >
@@ -587,40 +598,52 @@ export function RestaurantCampaignsScreen({ session }) {
               />
             </label>
             {couponDraft.target === 'PRODUCT' ? (
-              <label>
-                Produto
-                <select
-                  value={couponDraft.item_id}
-                  onChange={(event) =>
-                    setCouponDraft((current) => ({ ...current, item_id: event.target.value }))
-                  }
-                >
-                  <option value="">— escolher —</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>
+              <fieldset className="rb-checkbox-list">
+                <legend>Produtos abrangidos</legend>
+                {products.length === 0 ? (
+                  <p><small>Sem produtos na cadeia.</small></p>
+                ) : (
+                  products.map((product) => (
+                    <label key={product.id} className="rb-checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={couponDraft.item_ids.includes(product.id)}
+                        onChange={() =>
+                          setCouponDraft((current) => ({
+                            ...current,
+                            item_ids: toggleId(current.item_ids, product.id),
+                          }))
+                        }
+                      />
                       {product.name} ({product.category_name})
-                    </option>
-                  ))}
-                </select>
-              </label>
+                    </label>
+                  ))
+                )}
+              </fieldset>
             ) : null}
             {couponDraft.target === 'CATEGORY' ? (
-              <label>
-                Categoria
-                <select
-                  value={couponDraft.item_id}
-                  onChange={(event) =>
-                    setCouponDraft((current) => ({ ...current, item_id: event.target.value }))
-                  }
-                >
-                  <option value="">— escolher —</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
+              <fieldset className="rb-checkbox-list">
+                <legend>Categorias abrangidas</legend>
+                {categories.length === 0 ? (
+                  <p><small>Sem categorias na cadeia.</small></p>
+                ) : (
+                  categories.map((category) => (
+                    <label key={category.id} className="rb-checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={couponDraft.item_ids.includes(category.id)}
+                        onChange={() =>
+                          setCouponDraft((current) => ({
+                            ...current,
+                            item_ids: toggleId(current.item_ids, category.id),
+                          }))
+                        }
+                      />
                       {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                    </label>
+                  ))
+                )}
+              </fieldset>
             ) : null}
             <label>
               Validade (ISO)
