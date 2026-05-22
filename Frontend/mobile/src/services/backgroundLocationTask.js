@@ -36,7 +36,6 @@ async function readSession() {
 
 TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
   if (error) {
-    // eslint-disable-next-line no-console
     console.warn('Background location task error:', error)
     return
   }

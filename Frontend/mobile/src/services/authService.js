@@ -131,7 +131,7 @@ export async function registerMobileUser({ email, password, role = 'customer', t
       message.toLowerCase().includes('duplicate') ||
       message.toLowerCase().includes('already')
     ) {
-      throw new Error('Este email ja esta registado.')
+      throw new Error('Este email ja esta registado.', { cause: error })
     }
 
     throw error

@@ -21,15 +21,11 @@ import {
 } from './customer/childScreens'
 import { styles } from './customer/styles'
 import {
-  CANCELLABLE_STATUSES,
-  TRACKABLE_STATUSES,
   ICON,
   INBOX_MAX_ITEMS,
   eventTypeLabel,
-  formatCurrency,
   orderItemStatusChipStyle,
   orderItemStatusLabel,
-  orderStatusChipStyle,
   paymentMethodLabel,
   statusLabel,
 } from './customer/utils'
@@ -81,7 +77,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   const [route, setRoute] = useState('home')
   const [restaurants, setRestaurants] = useState([])
   const [restaurantId, setRestaurantId] = useState('')
-  const [availableCouriers, setAvailableCouriers] = useState(null)
+  const availableCouriers = null
   const [menuItems, setMenuItems] = useState([])
   const [cart, setCart] = useState(null)
   const [tracking, setTracking] = useState(null)
@@ -181,7 +177,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     [restaurantId, restaurants],
   )
 
-  const cartItems = cart?.items ?? []
+  const cartItems = useMemo(() => cart?.items ?? [], [cart])
   const itemCount = cartItems.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0)
   const localSubtotal = cartItems.reduce((sum, item) => sum + Number(item.line_total ?? 0), 0)
   const [checkoutPreview, setCheckoutPreview] = useState(null)
@@ -721,7 +717,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     }
   }
 
-  async function loadInbox({ append = false, currentLimit = INBOX_MAX_ITEMS } = {}) {
+  async function loadInbox({ currentLimit = INBOX_MAX_ITEMS } = {}) {
     if (!ensureOnline('atualizar inbox')) {
       return
     }
@@ -1496,7 +1492,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
     try {
       setIsPayingNow(true)
-      const payment = await payPaymentNow({
+      await payPaymentNow({
         session,
         paymentId: pendingPayment.paymentId,
       })

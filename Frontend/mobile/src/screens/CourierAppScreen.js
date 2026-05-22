@@ -29,30 +29,7 @@ import {
 } from '../services/backgroundLocationTask'
 import { openGoogleMaps, openWaze } from '../services/navigationLinks'
 import { eventTypeLabel } from './customer/utils'
-
-const OFFER_EXPIRY_FALLBACK_SECONDS = 30
-
-function statusText(status) {
-  if (status === 'AVAILABLE') return 'Online'
-  if (status === 'BUSY') return 'Ocupado'
-  return 'Offline'
-}
-
-function distanceMeters(a, b) {
-  if (!a || !b) return null
-
-  const earthRadius = 6371000
-  const dLat = ((Number(b.lat) - Number(a.lat)) * Math.PI) / 180
-  const dLng = ((Number(b.lng) - Number(a.lng)) * Math.PI) / 180
-  const lat1 = (Number(a.lat) * Math.PI) / 180
-  const lat2 = (Number(b.lat) * Math.PI) / 180
-
-  const value =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) * Math.sin(dLng / 2)
-
-  return earthRadius * (2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value)))
-}
+import { distanceMeters, OFFER_EXPIRY_FALLBACK_SECONDS, statusText } from './courier/utils'
 
 export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
   const [courierStatus, setCourierStatus] = useState('OFFLINE')
@@ -268,7 +245,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         orderId: activeDelivery.order_id,
         authToken: session?.token,
         devUserId: session?.devUserId,
-        onEvent: (eventName, payload) => {
+        onEvent: (eventName) => {
           if (eventName === 'ORDER_CANCELLED') {
             setErrorText('Pedido cancelado pelo cliente ou restaurante.')
             stopBackgroundLocation().catch(() => {})
