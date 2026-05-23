@@ -5,7 +5,6 @@ import {
   rejectRestaurantOrder,
 } from '../../../services/restaurantOpsService'
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
-import { useAutoToast } from '../../../components/common/ToastProvider'
 import { subscribeToRestaurantOrdersTopic } from '../../../services/realtime/topicsRealtime'
 
 function statusLabel(status) {
@@ -34,8 +33,6 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
   const [rejectReason, setRejectReason] = useState('')
   const [dialogLoading, setDialogLoading] = useState(false)
   const [realtimeState, setRealtimeState] = useState('offline')
-  useAutoToast({ message: infoText, kind: 'success' })
-  useAutoToast({ message: errorText, kind: 'error' })
 
   const loadOrders = useCallback(async () => {
     try {

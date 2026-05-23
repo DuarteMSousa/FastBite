@@ -91,22 +91,21 @@ export async function loginMobileUser({ email, password, token = '' }) {
   return buildSession({ user, email: trimmedEmail, role, token })
 }
 
-export async function registerMobileUser({ email, password, role = 'customer', token = '' }) {
+export async function registerMobileUser({ email, password, name, role = 'customer', token = '' }) {
   const trimmedEmail = String(email ?? '').trim()
   const trimmedPassword = String(password ?? '').trim()
+  const trimmedName = String(name ?? '').trim()
 
-  if (!trimmedEmail || !trimmedPassword) {
-    throw new Error('Preenche email e password.')
+  if (!trimmedName || !trimmedEmail || !trimmedPassword) {
+    throw new Error('Preenche nome, email e password.')
   }
-
-  const defaultName = trimmedEmail.split('@')[0] || 'utilizador'
 
   try {
     const data = await graphqlRequest({
       query: CREATE_USER_MUTATION,
       variables: {
         input: {
-          name: defaultName,
+          name: trimmedName,
           email: trimmedEmail,
           password: trimmedPassword,
         },

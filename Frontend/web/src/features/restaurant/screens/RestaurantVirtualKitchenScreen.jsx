@@ -8,7 +8,6 @@ import {
   updateOrderItemStatus,
 } from '../../../services/restaurantOpsService'
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
-import { useAutoToast } from '../../../components/common/ToastProvider'
 import { subscribeToRestaurantOrdersTopic } from '../../../services/realtime/topicsRealtime'
 import { formatEventType } from '../../../utils/orderEventLabel'
 
@@ -76,8 +75,6 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
   const [readyAnnouncementOrderId, setReadyAnnouncementOrderId] = useState('')
   const readyAnnouncementOrderIdRef = useRef('')
   const beepRef = useRef(null)
-  useAutoToast({ message: infoText, kind: 'success' })
-  useAutoToast({ message: errorText, kind: 'error' })
 
   useEffect(() => {
     readyAnnouncementOrderIdRef.current = readyAnnouncementOrderId

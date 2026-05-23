@@ -100,6 +100,63 @@ function toggleId(list, id) {
   return list.includes(id) ? list.filter((entry) => entry !== id) : [...list, id]
 }
 
+function selectedItemsLabel(draft, products, categories) {
+  const count = draft.item_ids.length
+  if (draft.target === 'PRODUCT') {
+    if (count === 0) return 'Nenhum produto escolhido'
+    return `${count} produto${count === 1 ? '' : 's'} escolhido${count === 1 ? '' : 's'}`
+  }
+  if (draft.target === 'CATEGORY') {
+    if (count === 0) return 'Nenhuma categoria escolhida'
+    return `${count} categoria${count === 1 ? '' : 's'} escolhida${count === 1 ? '' : 's'}`
+  }
+  return products.length || categories.length ? 'Sem seleção necessária' : 'Sem catálogo carregado'
+}
+
+function CampaignItemPicker({ draft, products, categories, onChange, onClose }) {
+  const isProductTarget = draft.target === 'PRODUCT'
+  const options = isProductTarget ? products : categories
+  const title = isProductTarget ? 'Escolher produtos' : 'Escolher categorias'
+  const emptyText = isProductTarget ? 'Sem produtos na cadeia.' : 'Sem categorias na cadeia.'
+
+  return (
+    <ConfirmDialog
+      open={draft.target === 'PRODUCT' || draft.target === 'CATEGORY'}
+      title={title}
+      description="Seleciona os itens abrangidos por esta campanha."
+      confirmLabel="Aplicar seleção"
+      cancelLabel="Fechar"
+      cardClassName="rb-dialog-card-wide"
+      bodyClassName="rb-create-modal-body"
+      onCancel={onClose}
+      onConfirm={onClose}
+    >
+      <fieldset className="rb-checkbox-list rb-campaign-picker-list">
+        <legend>{isProductTarget ? 'Produtos abrangidos' : 'Categorias abrangidas'}</legend>
+        {options.length === 0 ? (
+          <p><small>{emptyText}</small></p>
+        ) : (
+          options.map((option) => (
+            <label key={option.id} className="rb-checkbox-item">
+              <input
+                type="checkbox"
+                checked={draft.item_ids.includes(option.id)}
+                onChange={() =>
+                  onChange((current) => ({
+                    ...current,
+                    item_ids: toggleId(current.item_ids, option.id),
+                  }))
+                }
+              />
+              {isProductTarget ? `${option.name} (${option.category_name})` : option.name}
+            </label>
+          ))
+        )}
+      </fieldset>
+    </ConfirmDialog>
+  )
+}
+
 export function RestaurantCampaignsScreen({ session }) {
   const [promotions, setPromotions] = useState([])
   const [coupons, setCoupons] = useState([])
@@ -119,6 +176,8 @@ export function RestaurantCampaignsScreen({ session }) {
   const [expandedCouponId, setExpandedCouponId] = useState('')
   const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
+  const [promotionItemPickerOpen, setPromotionItemPickerOpen] = useState(false)
+  const [couponItemPickerOpen, setCouponItemPickerOpen] = useState(false)
 
   const load = useCallback(async () => {
     if (!session?.chainId) {
@@ -198,6 +257,7 @@ export function RestaurantCampaignsScreen({ session }) {
       }
       setPromotionDraft(emptyPromotionDraft())
       setShowPromotionForm(false)
+      setPromotionItemPickerOpen(false)
       setEditingPromotionId('')
       await load()
     } catch (error) {
@@ -279,6 +339,7 @@ export function RestaurantCampaignsScreen({ session }) {
       }
       setCouponDraft(emptyCouponDraft())
       setShowCouponForm(false)
+      setCouponItemPickerOpen(false)
       setEditingCouponId('')
       await load()
     } catch (error) {
@@ -338,6 +399,7 @@ export function RestaurantCampaignsScreen({ session }) {
             onClick={() => {
               setPromotionDraft(emptyPromotionDraft())
               setEditingPromotionId('')
+              setPromotionItemPickerOpen(false)
               setErrorText('')
               setShowPromotionForm(true)
             }}
@@ -443,6 +505,7 @@ export function RestaurantCampaignsScreen({ session }) {
             onClick={() => {
               setCouponDraft(emptyCouponDraft())
               setEditingCouponId('')
+              setCouponItemPickerOpen(false)
               setErrorText('')
               setShowCouponForm(true)
             }}
@@ -555,6 +618,7 @@ export function RestaurantCampaignsScreen({ session }) {
             setShowPromotionForm(false)
             setEditingPromotionId('')
             setPromotionDraft(emptyPromotionDraft())
+            setPromotionItemPickerOpen(false)
             setErrorText('')
           }
         }}
@@ -601,13 +665,14 @@ export function RestaurantCampaignsScreen({ session }) {
               Alvo
               <select
                 value={promotionDraft.target}
-                onChange={(event) =>
+                onChange={(event) => {
                   setPromotionDraft((current) => ({
                     ...current,
                     target: event.target.value,
                     item_ids: [],
                   }))
-                }
+                  setPromotionItemPickerOpen(false)
+                }}
               >
                 {DISCOUNT_TARGETS.map((target) => (
                   <option key={target} value={target}>
@@ -631,53 +696,17 @@ export function RestaurantCampaignsScreen({ session }) {
               placeholder="Ex: 10"
             />
           </label>
-          {promotionDraft.target === 'PRODUCT' ? (
-            <fieldset className="rb-checkbox-list">
-              <legend>Produtos abrangidos</legend>
-              {products.length === 0 ? (
-                <p><small>Sem produtos na cadeia.</small></p>
-              ) : (
-                products.map((product) => (
-                  <label key={product.id} className="rb-checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={promotionDraft.item_ids.includes(product.id)}
-                      onChange={() =>
-                        setPromotionDraft((current) => ({
-                          ...current,
-                          item_ids: toggleId(current.item_ids, product.id),
-                        }))
-                      }
-                    />
-                    {product.name} ({product.category_name})
-                  </label>
-                ))
-              )}
-            </fieldset>
-          ) : null}
-          {promotionDraft.target === 'CATEGORY' ? (
-            <fieldset className="rb-checkbox-list">
-              <legend>Categorias abrangidas</legend>
-              {categories.length === 0 ? (
-                <p><small>Sem categorias na cadeia.</small></p>
-              ) : (
-                categories.map((category) => (
-                  <label key={category.id} className="rb-checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={promotionDraft.item_ids.includes(category.id)}
-                      onChange={() =>
-                        setPromotionDraft((current) => ({
-                          ...current,
-                          item_ids: toggleId(current.item_ids, category.id),
-                        }))
-                      }
-                    />
-                    {category.name}
-                  </label>
-                ))
-              )}
-            </fieldset>
+          {promotionDraft.target === 'PRODUCT' || promotionDraft.target === 'CATEGORY' ? (
+            <div className="rb-campaign-items-summary">
+              <span>{selectedItemsLabel(promotionDraft, products, categories)}</span>
+              <button
+                type="button"
+                className="rb-btn-outline rb-btn-small"
+                onClick={() => setPromotionItemPickerOpen(true)}
+              >
+                Gerir {promotionDraft.target === 'PRODUCT' ? 'produtos' : 'categorias'}
+              </button>
+            </div>
           ) : null}
           <div className="rb-login-grid">
             <label>
@@ -706,6 +735,16 @@ export function RestaurantCampaignsScreen({ session }) {
         </div>
       </ConfirmDialog>
 
+      {promotionItemPickerOpen ? (
+        <CampaignItemPicker
+          draft={promotionDraft}
+          products={products}
+          categories={categories}
+          onChange={setPromotionDraft}
+          onClose={() => setPromotionItemPickerOpen(false)}
+        />
+      ) : null}
+
       <ConfirmDialog
         open={showCouponForm}
         title={editingCouponId ? 'Editar cupão' : 'Criar cupão'}
@@ -720,6 +759,7 @@ export function RestaurantCampaignsScreen({ session }) {
             setShowCouponForm(false)
             setEditingCouponId('')
             setCouponDraft(emptyCouponDraft())
+            setCouponItemPickerOpen(false)
             setErrorText('')
           }
         }}
@@ -766,13 +806,14 @@ export function RestaurantCampaignsScreen({ session }) {
               Alvo
               <select
                 value={couponDraft.target}
-                onChange={(event) =>
+                onChange={(event) => {
                   setCouponDraft((current) => ({
                     ...current,
                     target: event.target.value,
                     item_ids: [],
                   }))
-                }
+                  setCouponItemPickerOpen(false)
+                }}
               >
                 {DISCOUNT_TARGETS.map((target) => (
                   <option key={target} value={target}>
@@ -796,53 +837,17 @@ export function RestaurantCampaignsScreen({ session }) {
               placeholder="Ex: 10"
             />
           </label>
-          {couponDraft.target === 'PRODUCT' ? (
-            <fieldset className="rb-checkbox-list">
-              <legend>Produtos abrangidos</legend>
-              {products.length === 0 ? (
-                <p><small>Sem produtos na cadeia.</small></p>
-              ) : (
-                products.map((product) => (
-                  <label key={product.id} className="rb-checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={couponDraft.item_ids.includes(product.id)}
-                      onChange={() =>
-                        setCouponDraft((current) => ({
-                          ...current,
-                          item_ids: toggleId(current.item_ids, product.id),
-                        }))
-                      }
-                    />
-                    {product.name} ({product.category_name})
-                  </label>
-                ))
-              )}
-            </fieldset>
-          ) : null}
-          {couponDraft.target === 'CATEGORY' ? (
-            <fieldset className="rb-checkbox-list">
-              <legend>Categorias abrangidas</legend>
-              {categories.length === 0 ? (
-                <p><small>Sem categorias na cadeia.</small></p>
-              ) : (
-                categories.map((category) => (
-                  <label key={category.id} className="rb-checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={couponDraft.item_ids.includes(category.id)}
-                      onChange={() =>
-                        setCouponDraft((current) => ({
-                          ...current,
-                          item_ids: toggleId(current.item_ids, category.id),
-                        }))
-                      }
-                    />
-                    {category.name}
-                  </label>
-                ))
-              )}
-            </fieldset>
+          {couponDraft.target === 'PRODUCT' || couponDraft.target === 'CATEGORY' ? (
+            <div className="rb-campaign-items-summary">
+              <span>{selectedItemsLabel(couponDraft, products, categories)}</span>
+              <button
+                type="button"
+                className="rb-btn-outline rb-btn-small"
+                onClick={() => setCouponItemPickerOpen(true)}
+              >
+                Gerir {couponDraft.target === 'PRODUCT' ? 'produtos' : 'categorias'}
+              </button>
+            </div>
           ) : null}
           <label>
             Validade
@@ -858,6 +863,16 @@ export function RestaurantCampaignsScreen({ session }) {
           {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
         </div>
       </ConfirmDialog>
+
+      {couponItemPickerOpen ? (
+        <CampaignItemPicker
+          draft={couponDraft}
+          products={products}
+          categories={categories}
+          onChange={setCouponDraft}
+          onClose={() => setCouponItemPickerOpen(false)}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={Boolean(deletePromotionTarget)}

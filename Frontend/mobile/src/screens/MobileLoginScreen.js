@@ -1,14 +1,19 @@
 import { useState } from 'react'
 import { Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native'
 import { loginMobileUser, registerMobileUser } from '../services/authService'
+import { useAutoToast } from '../components/common/ToastProvider'
 
 export function MobileLoginScreen({ onLogin }) {
+  const [activeMode, setActiveMode] = useState('login')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [role, setRole] = useState('customer')
   const [loadingAction, setLoadingAction] = useState('')
   const [errorText, setErrorText] = useState('')
+
+  useAutoToast({ message: errorText, kind: 'error' })
 
   async function handleLogin() {
     try {
@@ -30,6 +35,7 @@ export function MobileLoginScreen({ onLogin }) {
     try {
       setLoadingAction('register')
       const session = await registerMobileUser({
+        name,
         email,
         password,
         role,
@@ -47,13 +53,47 @@ export function MobileLoginScreen({ onLogin }) {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <Text style={styles.brand}>FastBite</Text>
-        <Text style={styles.subtitle}>Inicia sessão</Text>
-        <View style={styles.roleRow}>
-          <RoleButton label="Cliente" active={role === 'customer'} onPress={() => setRole('customer')} />
-          <RoleButton label="Estafeta" active={role === 'courier'} onPress={() => setRole('courier')} />
-        </View>
-
+        <Text style={styles.subtitle}>
+          {activeMode === 'login' ? 'Inicia sessão' : 'Cria a tua conta'}
+        </Text>
         <View style={styles.formCard}>
+          <View style={styles.modeRow}>
+            <ModeButton
+              label="Entrar"
+              active={activeMode === 'login'}
+              onPress={() => {
+                setActiveMode('login')
+                setErrorText('')
+              }}
+            />
+            <ModeButton
+              label="Criar conta"
+              active={activeMode === 'register'}
+              onPress={() => {
+                setActiveMode('register')
+                setErrorText('')
+              }}
+            />
+          </View>
+
+          {activeMode === 'register' ? (
+            <>
+              <View style={styles.roleRow}>
+                <RoleButton label="Cliente" active={role === 'customer'} onPress={() => setRole('customer')} />
+                <RoleButton label="Estafeta" active={role === 'courier'} onPress={() => setRole('courier')} />
+              </View>
+
+              <Text style={styles.label}>Nome</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder={role === 'courier' ? 'Nome do estafeta' : 'Nome do cliente'}
+                placeholderTextColor="#95a5c0"
+              />
+            </>
+          ) : null}
+
           <Text style={styles.label}>Email</Text>
           <TextInput
             style={styles.input}
@@ -85,18 +125,28 @@ export function MobileLoginScreen({ onLogin }) {
             </Pressable>
           </View>
 
-          <Pressable style={styles.loginBtn} onPress={handleLogin} disabled={loadingAction !== ''}>
-            <Text style={styles.loginBtnText}>{loadingAction === 'login' ? 'A entrar...' : 'Entrar'}</Text>
-          </Pressable>
-          <Pressable style={styles.registerBtn} onPress={handleRegister} disabled={loadingAction !== ''}>
-            <Text style={styles.registerBtnText}>
-              {loadingAction === 'register' ? 'A criar conta...' : 'Criar conta'}
-            </Text>
-          </Pressable>
-          {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
+          {activeMode === 'login' ? (
+            <Pressable style={styles.loginBtn} onPress={handleLogin} disabled={loadingAction !== ''}>
+              <Text style={styles.loginBtnText}>{loadingAction === 'login' ? 'A entrar...' : 'Entrar'}</Text>
+            </Pressable>
+          ) : (
+            <Pressable style={styles.loginBtn} onPress={handleRegister} disabled={loadingAction !== ''}>
+              <Text style={styles.loginBtnText}>
+                {loadingAction === 'register' ? 'A criar conta...' : 'Criar conta'}
+              </Text>
+            </Pressable>
+          )}
         </View>
       </View>
     </SafeAreaView>
+  )
+}
+
+function ModeButton({ label, active, onPress }) {
+  return (
+    <Pressable style={[styles.modeBtn, active ? styles.modeBtnActive : null]} onPress={onPress}>
+      <Text style={[styles.modeBtnText, active ? styles.modeBtnTextActive : null]}>{label}</Text>
+    </Pressable>
   )
 }
 
@@ -135,6 +185,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     justifyContent: 'center',
+  },
+  modeRow: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    backgroundColor: '#f1f5f9',
+    padding: 4,
+    marginBottom: 8,
+    gap: 4,
+  },
+  modeBtn: {
+    flex: 1,
+    borderRadius: 9,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  modeBtnActive: {
+    backgroundColor: '#3278ee',
+  },
+  modeBtnText: {
+    color: '#475569',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  modeBtnTextActive: {
+    color: '#ffffff',
   },
   roleBtn: {
     borderWidth: 1,
@@ -212,21 +287,6 @@ const styles = StyleSheet.create({
   loginBtnText: {
     color: '#fff',
     fontSize: 17,
-    fontWeight: '800',
-  },
-  registerBtn: {
-    marginTop: 10,
-    borderRadius: 12,
-    height: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#3278ee',
-    backgroundColor: '#ffffff',
-  },
-  registerBtnText: {
-    color: '#1d4ed8',
-    fontSize: 16,
     fontWeight: '800',
   },
   errorText: {

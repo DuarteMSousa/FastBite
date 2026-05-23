@@ -1081,6 +1081,27 @@ body {
   cursor: pointer;
 }
 
+.rb-campaign-items-summary {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rb-campaign-items-summary span {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rb-campaign-picker-list {
+  max-height: 380px;
+}
+
 .rb-login-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1111,6 +1132,85 @@ body {
   border-radius: 10px;
   padding: 10px 12px;
   font-size: 15px;
+}
+
+.rb-address-map-picker {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.rb-address-map-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.rb-address-map-head strong {
+  color: #475569;
+  font-size: 13px;
+}
+
+.rb-address-map-box {
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #edf5ff;
+}
+
+.rb-address-map-box .leaflet-container {
+  font-family: inherit;
+}
+
+.rb-address-map-pin {
+  background: transparent;
+  border: none;
+}
+
+.rb-address-map-pin-shape {
+  position: relative;
+  width: 34px;
+  height: 42px;
+  display: grid;
+  place-items: start center;
+  filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.25));
+}
+
+.rb-address-map-pin-shape::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  clip-path: path('M17 0 C7 0 0 8 0 17 C0 30 17 42 17 42 C17 42 34 30 34 17 C34 8 27 0 17 0 Z');
+}
+
+.rb-address-map-pin-shape span {
+  position: relative;
+  z-index: 1;
+  margin-top: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rb-address-map-hint,
+.rb-address-map-status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.rb-address-map-status {
+  color: #b45309;
+  font-weight: 600;
 }
 
 .rb-chat {
@@ -2119,80 +2219,6 @@ body {
   color: var(--muted);
 }
 
-.rb-toast-stack {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 320px;
-  max-width: calc(100vw - 32px);
-}
-
-.rb-toast {
-  display: flex;
-  align-items: flex-start;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: #fff;
-  border: 1px solid var(--line);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
-  gap: 8px;
-  animation: rb-toast-in 0.18s ease;
-}
-
-@keyframes rb-toast-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.rb-toast-info {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-}
-
-.rb-toast-success {
-  border-color: #86efac;
-  background: #f0fdf4;
-}
-
-.rb-toast-error {
-  border-color: #fecaca;
-  background: #fef2f2;
-}
-
-.rb-toast-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  font-size: 13px;
-}
-
-.rb-toast-body strong {
-  color: var(--text);
-}
-
-.rb-toast-body span {
-  color: var(--muted);
-}
-
-.rb-toast-dismiss {
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 16px;
-}
-
 .rb-error-boundary {
   min-height: 100vh;
   display: flex;
@@ -2239,8 +2265,7 @@ body {
 @media print {
   .rb-sidebar,
   .rb-page-head-row > div:last-child,
-  .rb-detail-actions,
-  .rb-toast-stack {
+  .rb-detail-actions {
     display: none !important;
   }
 

@@ -8,7 +8,6 @@ import {
 } from '../../../services/restaurantOpsService'
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
 import { DeliveryLeafletMap } from '../../../components/common/DeliveryLeafletMap'
-import { useAutoToast } from '../../../components/common/ToastProvider'
 import { subscribeToOrderTrackingTopic } from '../../../services/realtime/topicsRealtime'
 import { formatEventType } from '../../../utils/orderEventLabel'
 
@@ -59,8 +58,6 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
   const [rejectOpen, setRejectOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [courierPosition, setCourierPosition] = useState(null)
-  useAutoToast({ message: infoText, kind: 'success' })
-  useAutoToast({ message: errorText, kind: 'error' })
 
   const loadDetail = useCallback(async () => {
     if (!selectedOrderId) {

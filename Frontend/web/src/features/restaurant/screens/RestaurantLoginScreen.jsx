@@ -5,6 +5,7 @@ import {
   fetchAllRestaurantChains,
   registerRestaurantUser,
 } from '../../../services/restaurantOpsService'
+import { RestaurantAddressMapPicker } from '../../../components/common/RestaurantAddressMapPicker'
 
 const DEFAULT_TOKEN = import.meta.env.VITE_AUTH_BEARER_TOKEN ?? ''
 
@@ -196,6 +197,14 @@ export function RestaurantLoginScreen({ onLogin }) {
 
   function updateRestaurantField(field, value) {
     setRestaurantForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateRestaurantLocation({ latitude, longitude }) {
+    setRestaurantForm((current) => ({
+      ...current,
+      latitude: String(latitude.toFixed(6)),
+      longitude: String(longitude.toFixed(6)),
+    }))
   }
 
   return (
@@ -477,6 +486,13 @@ export function RestaurantLoginScreen({ onLogin }) {
                     />
                   </label>
                 </div>
+
+                <RestaurantAddressMapPicker
+                  latitude={restaurantForm.latitude}
+                  longitude={restaurantForm.longitude}
+                  onChange={updateRestaurantLocation}
+                  height={220}
+                />
               </div>
 
               {setupErrorText ? <p className="rb-chat-error">{setupErrorText}</p> : null}

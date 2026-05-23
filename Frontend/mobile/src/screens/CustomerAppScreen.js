@@ -29,7 +29,7 @@ import {
   cancelClientOrderById,
   checkoutCart,
   clearCart,
-  createClientAddress,
+  createUserAddress,
   createClientReview,
   deleteClientReview,
   fetchClientReviewsHistory,
@@ -67,6 +67,7 @@ import {
   subscribeToCustomerOrdersTopic,
   subscribeToUserNotificationsTopic,
 } from '../services/realtime/topicsRealtime'
+import { useAutoToast } from '../components/common/ToastProvider'
 
 export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
   const navigationRef = useNavigationContainerRef()
@@ -88,6 +89,9 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState('')
   const [successText, setSuccessText] = useState('')
+
+  useAutoToast({ message: errorText, kind: 'error' })
+  useAutoToast({ message: successText, kind: 'success' })
   const [showInbox, setShowInbox] = useState(false)
   const [inboxItems, setInboxItems] = useState([])
   const [inboxLoading, setInboxLoading] = useState(false)
@@ -732,7 +736,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         savedId = updated.id
         setSuccessText('Morada atualizada.')
       } else {
-        const created = await createClientAddress({
+        const created = await createUserAddress({
           session,
           input: { ...trimmed, latitude: lat, longitude: lng },
         })
@@ -1743,6 +1747,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           loadTracking(order.id)
         },
         onReview: openReviewModal,
+        hasReviewFor,
         onOpenDetail: openOrderDetail,
         onLoadMore: () => loadOrdersHistory({ append: true }),
         hasMore: hasMoreOrders,
@@ -1809,7 +1814,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     cartItems,
     chatLoading,
     checkoutPreview,
-    clientReviews.length,
+    clientReviews,
     couponCode,
     deliveryFee,
     discountTotal,
@@ -1874,9 +1879,6 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           <CustomerNavigator />
         </NavigationContainer>
       </CustomerProvider>
-
-      {successText ? <Text style={styles.successText}>{ICON.check} {successText}</Text> : null}
-      {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
 
       <Modal
         visible={Boolean(reviewTarget)}
@@ -1945,7 +1947,11 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 disabled={isSubmittingReview}
               >
                 <Text style={styles.cancelDangerText}>
-                  {isSubmittingReview ? 'A enviar...' : 'Enviar avaliação'}
+                  {isSubmittingReview
+                    ? 'A enviar...'
+                    : editingReview
+                      ? 'Guardar avaliação'
+                      : 'Enviar avaliação'}
                 </Text>
               </Pressable>
             </View>

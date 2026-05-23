@@ -6,6 +6,7 @@ import {
   updateRestaurantChainProfile,
   updateRestaurantProfile,
 } from '../../../services/restaurantOpsService'
+import { RestaurantAddressMapPicker } from '../../../components/common/RestaurantAddressMapPicker'
 
 function restaurantToDraft(restaurant) {
   return {
@@ -83,6 +84,14 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
 
   function updateRestaurantField(field, value) {
     setRestaurantDraft((current) => ({ ...current, [field]: value }))
+  }
+
+  function updateRestaurantLocation({ latitude, longitude }) {
+    setRestaurantDraft((current) => ({
+      ...current,
+      latitude: String(latitude.toFixed(6)),
+      longitude: String(longitude.toFixed(6)),
+    }))
   }
 
   function handleSelectRestaurant(nextRestaurantId) {
@@ -382,6 +391,11 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
               placeholder="Ex: -9.1393"
             />
           </label>
+          <RestaurantAddressMapPicker
+            latitude={restaurantDraft.latitude}
+            longitude={restaurantDraft.longitude}
+            onChange={updateRestaurantLocation}
+          />
 
           <div className="rb-form-actions">
             <button

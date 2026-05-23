@@ -30,6 +30,7 @@ import {
 import { openGoogleMaps, openWaze } from '../services/navigationLinks'
 import { eventTypeLabel } from './customer/utils'
 import { distanceMeters, OFFER_EXPIRY_FALLBACK_SECONDS, statusText } from './courier/utils'
+import { useAutoToast } from '../components/common/ToastProvider'
 
 export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
   const [courierStatus, setCourierStatus] = useState('OFFLINE')
@@ -79,6 +80,8 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     .trim()
     .charAt(0)
     .toUpperCase() || 'E'
+
+  useAutoToast({ message: errorText, kind: 'error' })
 
   const activeOffer = useMemo(
     () => availableOffers.find((offer) => offer.offer_token === activeOfferId) ?? null,
@@ -1283,7 +1286,6 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             </Pressable>
           ) : null}
 
-          {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
         </ScrollView>
 
         <View style={styles.bottomBar}>

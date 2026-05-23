@@ -12,6 +12,7 @@ export function OrdersHistoryScreen({
   onRepeat,
   onTrack,
   onReview,
+  hasReviewFor,
   onOpenDetail,
   onLoadMore,
   hasMore,
@@ -55,6 +56,12 @@ export function OrdersHistoryScreen({
           const canTrack = TRACKABLE_STATUSES.includes(order.status)
           const canReview = order.status === 'DELIVERED'
           const isBusy = busyOrderId === order.id
+          const hasRestaurantReview = canReview && order.restaurant_id
+            ? hasReviewFor?.('RESTAURANT', order.restaurant_id)
+            : false
+          const hasCourierReview = canReview && order.courier_id
+            ? hasReviewFor?.('COURIER', order.courier_id)
+            : false
 
           return (
             <View key={order.id} style={styles.orderCard}>
@@ -119,7 +126,9 @@ export function OrdersHistoryScreen({
                       style={styles.orderActionBtn}
                       onPress={() => onReview(order, 'RESTAURANT', order.restaurant_id)}
                     >
-                      <Text style={styles.orderActionBtnText}>Avaliar restaurante</Text>
+                      <Text style={styles.orderActionBtnText}>
+                        {hasRestaurantReview ? 'Editar restaurante' : 'Avaliar restaurante'}
+                      </Text>
                     </Pressable>
                   ) : null}
                   {canReview && order.courier_id ? (
@@ -127,7 +136,9 @@ export function OrdersHistoryScreen({
                       style={styles.orderActionBtn}
                       onPress={() => onReview(order, 'COURIER', order.courier_id)}
                     >
-                      <Text style={styles.orderActionBtnText}>Avaliar estafeta</Text>
+                      <Text style={styles.orderActionBtnText}>
+                        {hasCourierReview ? 'Editar estafeta' : 'Avaliar estafeta'}
+                      </Text>
                     </Pressable>
                   ) : null}
                 </View>

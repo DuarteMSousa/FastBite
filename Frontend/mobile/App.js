@@ -8,6 +8,7 @@ import { CustomerAppScreen } from './src/screens/CustomerAppScreen';
 import { CourierAppScreen } from './src/screens/CourierAppScreen';
 import { registerDevicePushToken } from './src/services/pushNotificationService';
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
+import { ToastProvider } from './src/components/common/ToastProvider';
 
 // Expo Go (Android, SDK 53+) ja nao suporta push remoto. O modulo expo-notifications
 // emite warning automatico atraves do seu TokenAutoRegistration listener antes
@@ -22,7 +23,9 @@ const SESSION_STORAGE_KEY = 'fastbite_mobile_session';
 export default function App() {
   return (
     <ErrorBoundary>
-      <AppInner />
+      <ToastProvider>
+        <AppInner />
+      </ToastProvider>
     </ErrorBoundary>
   );
 }
