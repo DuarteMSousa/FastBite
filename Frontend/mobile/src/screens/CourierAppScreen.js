@@ -42,6 +42,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   const [errorText, setErrorText] = useState('')
   const [isOnline, setIsOnline] = useState(true)
   const [jobsRealtimeState, setJobsRealtimeState] = useState('offline')
+  const [trackingRealtimeState, setTrackingRealtimeState] = useState('offline')
   const [locationPermission, setLocationPermission] = useState('unknown')
   const [backgroundLocationPermission, setBackgroundLocationPermission] = useState('unknown')
   const [jobsRetryTick, setJobsRetryTick] = useState(0)
@@ -69,6 +70,10 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   const [chatLoading, setChatLoading] = useState(false)
   const [chatSending, setChatSending] = useState(false)
   const lastSentRef = useRef({ lat: null, lng: null, timestamp: 0 })
+  const courierStatusRef = useRef(courierStatus)
+  const phaseRef = useRef(phase)
+  const trackingPollInFlightRef = useRef(false)
+  const offersPollInFlightRef = useRef(false)
   const courierId = session?.userId || session?.devUserId
   const courierInitial = String(session?.operatorName ?? 'E')
     .trim()
@@ -94,6 +99,14 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     return null
   }, [isPickup, isCollected, isTransit, isCompleted])
 
+  useEffect(() => {
+    courierStatusRef.current = courierStatus
+  }, [courierStatus])
+
+  useEffect(() => {
+    phaseRef.current = phase
+  }, [phase])
+
   function ensureOnline(actionLabel) {
     if (isOnline) {
       return true
@@ -106,7 +119,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
       const nextOnline = Boolean(state.isConnected && state.isInternetReachable !== false)
-      setIsOnline(nextOnline)
+      setIsOnline((current) => (current === nextOnline ? current : nextOnline))
       if (!nextOnline) {
         setJobsRealtimeState('offline')
       }
@@ -125,11 +138,27 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     let retryTimer = null
     let cancelled = false
 
+    const scheduleRetry = () => {
+      if (cancelled || retryTimer) return
+
+      retryTimer = setTimeout(() => {
+        retryTimer = null
+        if (!cancelled) {
+          setJobsRetryTick((value) => value + 1)
+        }
+      }, 5000)
+    }
+
     const connect = () => {
       if (cancelled) return
 
       setJobsRealtimeState('connecting')
       try {
+        if (unsubscribe) {
+          unsubscribe()
+          unsubscribe = null
+        }
+
         unsubscribe = subscribeToCourierJobsTopic({
           courierId,
           authToken: session?.token,
@@ -138,7 +167,11 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             setJobsRealtimeState('live')
             setToast(`Evento realtime: ${eventName}`)
 
-            if (eventName === 'JOB_OFFERED' && courierStatus === 'AVAILABLE' && phase === 'offer') {
+            if (
+              eventName === 'JOB_OFFERED' &&
+              courierStatusRef.current === 'AVAILABLE' &&
+              phaseRef.current === 'offer'
+            ) {
               loadAvailableOffers()
             }
 
@@ -159,17 +192,14 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             }
           },
           onError: () => {
+            if (cancelled) return
             setJobsRealtimeState('error')
-            retryTimer = setTimeout(() => {
-              setJobsRetryTick((value) => value + 1)
-            }, 5000)
+            scheduleRetry()
           },
         })
       } catch {
         setJobsRealtimeState('error')
-        retryTimer = setTimeout(() => {
-          setJobsRetryTick((value) => value + 1)
-        }, 5000)
+        scheduleRetry()
       }
     }
 
@@ -182,8 +212,6 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     }
   }, [
     courierId,
-    courierStatus,
-    phase,
     isOnline,
     session?.token,
     session?.devUserId,
@@ -191,16 +219,23 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   ])
 
   useEffect(() => {
-    if (!activeDelivery?.order_id || isCompleted) {
+    if (!activeDelivery?.order_id || isCompleted || trackingRealtimeState === 'live') {
       return undefined
     }
 
-    const timer = setInterval(() => {
-      loadTracking(activeDelivery.order_id)
+    const timer = setInterval(async () => {
+      if (trackingPollInFlightRef.current) return
+
+      trackingPollInFlightRef.current = true
+      try {
+        await loadTracking(activeDelivery.order_id)
+      } finally {
+        trackingPollInFlightRef.current = false
+      }
     }, 12000)
 
     return () => clearInterval(timer)
-  }, [activeDelivery, isCompleted])
+  }, [activeDelivery?.order_id, isCompleted, trackingRealtimeState])
 
   useEffect(() => {
     if (!chatModalState.visible || !chatModalState.chat?.id) return undefined
@@ -236,16 +271,19 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
 
   useEffect(() => {
     if (!activeDelivery?.order_id || isCompleted || !isOnline) {
+      setTrackingRealtimeState('offline')
       return undefined
     }
 
     let unsubscribe = null
     try {
+      setTrackingRealtimeState('connecting')
       unsubscribe = subscribeToOrderTrackingTopic({
         orderId: activeDelivery.order_id,
         authToken: session?.token,
         devUserId: session?.devUserId,
         onEvent: (eventName) => {
+          setTrackingRealtimeState('live')
           if (eventName === 'ORDER_CANCELLED') {
             setErrorText('Pedido cancelado pelo cliente ou restaurante.')
             stopBackgroundLocation().catch(() => {})
@@ -268,11 +306,11 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           }
         },
         onError: () => {
-          // silent
+          setTrackingRealtimeState('error')
         },
       })
     } catch {
-      // ignore
+      setTrackingRealtimeState('error')
     }
 
     return () => {
@@ -285,15 +323,6 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     if (!activeDelivery?.delivery_id || !phaseAllowsTracking) {
       stopBackgroundLocation().catch(() => {})
       return undefined
-    }
-
-    if (backgroundLocationPermission === 'granted') {
-      startBackgroundLocation({
-        session,
-        deliveryId: activeDelivery.delivery_id,
-      }).catch((err) => {
-        setToast(`Background tracking falhou: ${err.message ?? err}`)
-      })
     }
 
     let subscription = null
@@ -314,11 +343,18 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
 
         if (backgroundPermission.status !== 'granted') {
           setToast('Permissao de localizacao em background negada. Tracking ativo apenas com app aberta.')
+        } else {
+          startBackgroundLocation({
+            session,
+            deliveryId: activeDelivery.delivery_id,
+          }).catch((err) => {
+            setToast(`Background tracking falhou: ${err.message ?? err}`)
+          })
         }
 
         subscription = await Location.watchPositionAsync(
           {
-            accuracy: Location.Accuracy.High,
+            accuracy: Location.Accuracy.Balanced,
             timeInterval: 8000,
             distanceInterval: 15,
           },
@@ -406,8 +442,15 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     }
 
     loadAvailableOffers()
-    const timer = setInterval(() => {
-      loadAvailableOffers()
+    const timer = setInterval(async () => {
+      if (offersPollInFlightRef.current) return
+
+      offersPollInFlightRef.current = true
+      try {
+        await loadAvailableOffers()
+      } finally {
+        offersPollInFlightRef.current = false
+      }
     }, 15000)
 
     return () => clearInterval(timer)

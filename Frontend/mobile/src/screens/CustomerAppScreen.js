@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Modal,
   Pressable,
@@ -161,6 +161,9 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   const [chatDraft, setChatDraft] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
   const [chatSending, setChatSending] = useState(false)
+  const trackingPollInFlightRef = useRef(false)
+  const activeOrderIdRef = useRef(activeOrderId)
+  const pendingPaymentRef = useRef(pendingPayment)
 
   const selectedAddress = useMemo(
     () => addresses.find((address) => address.id === selectedAddressId) ?? null,
@@ -175,8 +178,18 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   )
 
   const cartItems = useMemo(() => cart?.items ?? [], [cart])
-  const itemCount = cartItems.reduce((sum, item) => sum + Number(item.quantity ?? 0), 0)
-  const localSubtotal = cartItems.reduce((sum, item) => sum + Number(item.line_total ?? 0), 0)
+  const cartTotals = useMemo(
+    () =>
+      cartItems.reduce(
+        (totals, item) => ({
+          itemCount: totals.itemCount + Number(item.quantity ?? 0),
+          localSubtotal: totals.localSubtotal + Number(item.line_total ?? 0),
+        }),
+        { itemCount: 0, localSubtotal: 0 },
+      ),
+    [cartItems],
+  )
+  const { itemCount, localSubtotal } = cartTotals
   const [checkoutPreview, setCheckoutPreview] = useState(null)
   const subtotal = checkoutPreview?.subtotal ?? localSubtotal
   const deliveryFee = checkoutPreview?.delivery_fee ?? 0
@@ -197,6 +210,14 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   const [trackingLastUpdateMs, setTrackingLastUpdateMs] = useState(null)
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
 
+  useEffect(() => {
+    activeOrderIdRef.current = activeOrderId
+  }, [activeOrderId])
+
+  useEffect(() => {
+    pendingPaymentRef.current = pendingPayment
+  }, [pendingPayment])
+
   function ensureOnline(actionLabel) {
     if (isOnline) {
       return true
@@ -206,16 +227,16 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     return false
   }
 
-  function navigate(routeName) {
+  const navigate = useCallback((routeName) => {
     if (!navigationRef.isReady()) {
       setPendingNavigation({ routeName, reset: false })
       return
     }
 
     navigationRef.navigate(routeName)
-  }
+  }, [navigationRef])
 
-  function replace(routeName) {
+  const replace = useCallback((routeName) => {
     if (!navigationRef.isReady()) {
       setPendingNavigation({ routeName, reset: true })
       return
@@ -225,7 +246,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       index: 0,
       routes: [{ name: routeName }],
     })
-  }
+  }, [navigationRef])
 
   useEffect(() => {
     bootstrap()
@@ -266,7 +287,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener((state) => {
       const nextOnline = Boolean(state.isConnected && state.isInternetReachable !== false)
-      setIsOnline(nextOnline)
+      setIsOnline((current) => (current === nextOnline ? current : nextOnline))
       if (!nextOnline) {
         setRealtimeState('offline')
         setNotificationState('offline')
@@ -284,8 +305,15 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       return undefined
     }
 
-    const timer = setInterval(() => {
-      loadTracking(activeOrderId)
+    const timer = setInterval(async () => {
+      if (trackingPollInFlightRef.current) return
+
+      trackingPollInFlightRef.current = true
+      try {
+        await loadTracking(activeOrderId)
+      } finally {
+        trackingPollInFlightRef.current = false
+      }
     }, 8000)
 
     return () => clearInterval(timer)
@@ -308,8 +336,10 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           if (cancelled) return
 
           const eventOrderId = payload?.data?.order_id ?? payload?.orderId ?? null
+          const currentActiveOrderId = activeOrderIdRef.current
+          const currentPendingPayment = pendingPaymentRef.current
 
-          if (eventOrderId && activeOrderId && eventOrderId === activeOrderId) {
+          if (eventOrderId && currentActiveOrderId && eventOrderId === currentActiveOrderId) {
             loadTracking(eventOrderId)
           }
 
@@ -324,7 +354,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                   : order,
               ),
             )
-            if (activeOrderId === eventOrderId && eventName === 'ORDER_CANCELLED') {
+            if (currentActiveOrderId === eventOrderId && eventName === 'ORDER_CANCELLED') {
               setActiveOrderId('')
             }
             // Pos-entrega: abrir prompt de avaliação do restaurante automaticamente.
@@ -333,7 +363,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             }
           }
 
-          if (eventName === 'PAYMENT_COMPLETED' && pendingPayment?.orderId === eventOrderId) {
+          if (eventName === 'PAYMENT_COMPLETED' && currentPendingPayment?.orderId === eventOrderId) {
             setPendingPayment(null)
             setSuccessText('Pagamento confirmado via realtime.')
             navigate(CUSTOMER_ROUTES.TRACKING)
@@ -341,7 +371,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           }
 
           if (eventName === 'PAYMENT_FAILED' || eventName === 'PAYMENT_EXPIRED') {
-            if (pendingPayment?.orderId === eventOrderId) {
+            if (currentPendingPayment?.orderId === eventOrderId) {
               setPendingPayment(null)
               setErrorText('Pagamento falhado/expirado.')
             }
@@ -359,7 +389,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       cancelled = true
       if (unsubscribe) unsubscribe()
     }
-  }, [userId, isOnline, session?.token, session?.devUserId, activeOrderId, pendingPayment])
+  }, [userId, isOnline, session?.token, session?.devUserId, navigate])
 
   useEffect(() => {
     if (!chatModalState.visible || !chatModalState.chat?.id) {
@@ -443,11 +473,27 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     let retryTimer = null
     let cancelled = false
 
+    const scheduleRetry = () => {
+      if (cancelled || retryTimer) return
+
+      retryTimer = setTimeout(() => {
+        retryTimer = null
+        if (!cancelled) {
+          connect()
+        }
+      }, 6000)
+    }
+
     const connect = () => {
       if (cancelled) return
       setNotificationState('connecting')
 
       try {
+        if (unsubscribe) {
+          unsubscribe()
+          unsubscribe = null
+        }
+
         unsubscribe = subscribeToUserNotificationsTopic({
           userId,
           authToken: session?.token,
@@ -481,13 +527,14 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             })
           },
           onError: () => {
+            if (cancelled) return
             setNotificationState('error')
-            retryTimer = setTimeout(connect, 6000)
+            scheduleRetry()
           },
         })
       } catch {
         setNotificationState('error')
-        retryTimer = setTimeout(connect, 6000)
+        scheduleRetry()
       }
     }
 
@@ -510,6 +557,19 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     setTrackingLastUpdateMs(null)
 
     let unsubscribe = null
+    let retryTimer = null
+    let cancelled = false
+
+    const scheduleRetry = () => {
+      if (cancelled || retryTimer) return
+
+      retryTimer = setTimeout(() => {
+        retryTimer = null
+        if (!cancelled) {
+          setTrackingRetryTick((value) => value + 1)
+        }
+      }, 5000)
+    }
 
     try {
       setRealtimeState('connecting')
@@ -558,20 +618,21 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           })
         },
         onError: () => {
+          if (cancelled) return
           setRealtimeState('error')
-          setTimeout(() => {
-            setTrackingRetryTick((value) => value + 1)
-          }, 5000)
+          scheduleRetry()
         },
       })
     } catch {
       setRealtimeState('error')
-      setTimeout(() => {
-        setTrackingRetryTick((value) => value + 1)
-      }, 5000)
+      scheduleRetry()
     }
 
     return () => {
+      cancelled = true
+      if (retryTimer) {
+        clearTimeout(retryTimer)
+      }
       if (unsubscribe) {
         unsubscribe()
       }
@@ -1593,7 +1654,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     if (onConsumeDeepLink) onConsumeDeepLink()
   }, [deepLink])
 
-  function back() {
+  const back = useCallback(() => {
     setSuccessText('')
 
     if (currentRoute === CUSTOMER_ROUTES.MENU) {
@@ -1619,9 +1680,9 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     if (currentRoute === CUSTOMER_ROUTES.PROFILE) {
       replace(CUSTOMER_ROUTES.HOME)
     }
-  }
+  }, [currentRoute, navigate, ordersOriginRoute, replace])
 
-  const customerContextValue = {
+  const customerContextValue = useMemo(() => ({
     screens: {
       home: {
         restaurants,
@@ -1737,7 +1798,54 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         chatLoading,
       },
     },
-  }
+  }), [
+    activeOrderId,
+    addresses,
+    availableCouriers,
+    back,
+    busyOrderId,
+    cartRestaurantId,
+    cartRestaurantName,
+    cartItems,
+    chatLoading,
+    checkoutPreview,
+    clientReviews.length,
+    couponCode,
+    deliveryFee,
+    discountTotal,
+    hasMoreOrders,
+    inboxUnreadCount,
+    isLoadingOptions,
+    isOnline,
+    isPreviewLoading,
+    isSavingProfile,
+    itemCount,
+    lastCheckout,
+    loading,
+    menuCategory,
+    menuItems,
+    navigate,
+    notificationPreview,
+    notificationState,
+    ordersHistory,
+    ordersLoading,
+    ordersPage,
+    paymentMethod,
+    profileDraft,
+    pushStatus,
+    realtimeState,
+    restaurant,
+    restaurantFilters,
+    restaurants,
+    restaurantsLoading,
+    selectedAddress,
+    session,
+    subtotal,
+    total,
+    tracking,
+    trackingLastUpdateMs,
+    trackingUpdateCount,
+  ])
 
   return (
     <SafeAreaView style={styles.safe}>
