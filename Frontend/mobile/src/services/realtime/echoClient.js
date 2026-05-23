@@ -7,6 +7,7 @@ const DEV_BROADCAST_USER_ID = process.env.EXPO_PUBLIC_DEV_BROADCAST_USER_ID ?? '
 let gatewaySocket = null
 let gatewayClient = null
 let currentUserId = null
+let currentCourierId = null
 let reconnectTimer = null
 let reconnectAttempts = 0
 const pendingMessages = []
@@ -186,11 +187,16 @@ function connectGatewaySocket() {
 
   gatewaySocket.onopen = () => {
     reconnectAttempts = 0
-    sendOrQueue({
+    const helloMessage = {
       type: 'hello',
       user_id: currentUserId,
-      courier_id: currentUserId,
-    })
+    }
+
+    if (currentCourierId) {
+      helloMessage.courier_id = currentCourierId
+    }
+
+    sendOrQueue(helloMessage)
 
     channelStates.forEach((_channelState, channelName) => {
       subscribeChannel(channelName)
@@ -215,19 +221,24 @@ function connectGatewaySocket() {
   }
 }
 
-function ensureConnection(devUserId) {
+function ensureConnection(devUserId, courierId) {
   const resolvedUserId = String(devUserId || DEV_BROADCAST_USER_ID || '').trim()
+  const resolvedCourierId = String(courierId || '').trim()
 
   if (!resolvedUserId) {
     throw new Error('Missing user id for GatewayWorker hello message.')
   }
 
-  if (currentUserId && currentUserId !== resolvedUserId) {
+  if (
+    currentUserId &&
+    (currentUserId !== resolvedUserId || currentCourierId !== resolvedCourierId)
+  ) {
     disconnectEchoClient()
   }
 
   if (!currentUserId) {
     currentUserId = resolvedUserId
+    currentCourierId = resolvedCourierId
   }
 
   connectGatewaySocket()
@@ -265,8 +276,8 @@ function createChannelApi(channelName) {
   }
 }
 
-export function getEchoClient({ authToken: _authToken, devUserId } = {}) {
-  ensureConnection(devUserId)
+export function getEchoClient({ authToken: _authToken, devUserId, courierId } = {}) {
+  ensureConnection(devUserId, courierId)
 
   if (!gatewayClient) {
     gatewayClient = {
@@ -316,5 +327,6 @@ export function disconnectEchoClient() {
   channelStates.clear()
   gatewayClient = null
   currentUserId = null
+  currentCourierId = null
   reconnectAttempts = 0
 }

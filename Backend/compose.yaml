@@ -17,6 +17,7 @@ services:
             SUPERVISOR_PHP_COMMAND: '/usr/bin/php -d variables_order=EGPCS -d xdebug.mode=off -d xdebug.start_with_request=no /var/www/html/artisan serve --host=0.0.0.0 --port=80'
             RUN_COMPOSER_INSTALL: 'true'
             RUN_MIGRATIONS: 'true'
+            GATEWAY_WORKER_REGISTER_HOST: gateway
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
             IGNITION_LOCAL_SITES_PATH: '${PWD:-}'
@@ -54,6 +55,7 @@ services:
             WWWUSER: '${WWWUSER}'
             LARAVEL_SAIL: 1
             SUPERVISOR_PHP_COMMAND: '/usr/bin/php -d variables_order=EGPCS -d xdebug.mode=off -d xdebug.start_with_request=no /var/www/html/artisan queue:work --tries=3 --timeout=90'
+            GATEWAY_WORKER_REGISTER_HOST: gateway
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
         volumes:
@@ -84,6 +86,8 @@ services:
             WWWUSER: '${WWWUSER}'
             LARAVEL_SAIL: 1
             SUPERVISOR_PHP_COMMAND: '/usr/bin/php -d variables_order=EGPCS -d xdebug.mode=off -d xdebug.start_with_request=no /var/www/html/gateway/start.php start'
+            GATEWAY_WORKER_REGISTER_LISTEN_HOST: 0.0.0.0
+            GATEWAY_WORKER_REGISTER_HOST: 127.0.0.1
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
         volumes:
