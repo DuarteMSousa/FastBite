@@ -1,33 +1,20 @@
-# Frontend Setup
+# FastBite Frontend
 
-Este diretório contém os dois frontends do projeto:
+Este diretorio contem os dois clientes do projeto:
 
-- `web`: React.js com Vite
-- `mobile`: React Native com Expo
+- `web`: aplicacao React/Vite para gestao do restaurante.
+- `mobile`: aplicacao React Native/Expo para cliente e estafeta.
 
-## Estrutura base criada
+## Decisoes de ambito
 
-### Web (`Frontend/web/src`)
+Estas decisoes fazem parte do ambito atual do TP e nao sao consideradas funcionalidades em falta:
 
-- `components/common`: componentes reutilizáveis de UI
-- `components/layout`: containers/layouts de página
-- `screens`: ecras/páginas principais
-- `services`: chamadas a API e lógica de dados
+- Autenticacao/autorizacao real nao sera implementada nesta versao.
+- Protecao de canais WebSocket nao sera implementada nesta versao.
+- O realtime usa GatewayWorker/Workerman em vez de Laravel Reverb.
+- Pagamentos reais nao serao integrados; o pagamento e simulado atraves dos estados expostos pelo backend.
 
-### Mobile (`Frontend/mobile/src`)
-
-- `components/common`: componentes reutilizáveis de UI
-- `components/layout`: wrappers de ecrã
-- `screens`: ecras da app
-- `services`: chamadas a API e lógica de dados
-- `theme`: tokens visuais (cores)
-
-## Requisitos
-
-- Node.js 20+
-- npm 10+
-
-## Rodar o frontend web (React.js)
+## Frontend web
 
 ```bash
 cd Frontend/web
@@ -35,13 +22,16 @@ npm install
 npm run dev
 ```
 
-Por padrão, o Vite abre em `http://localhost:5173`.
+Por omissao, o Vite abre em `http://localhost:5173`.
 
-API base (opcional):
+Variaveis uteis:
 
-- criar `Frontend/web/.env` com `VITE_API_BASE_URL=http://localhost:8000`
+- `VITE_API_BASE_URL`
+- `VITE_GATEWAY_WORKER_HOST`
+- `VITE_GATEWAY_WORKER_PORT`
+- `VITE_GATEWAY_WORKER_SCHEME`
 
-## Rodar o frontend mobile (React Native)
+## Frontend mobile
 
 ```bash
 cd Frontend/mobile
@@ -49,27 +39,22 @@ npm install
 npm start
 ```
 
-Depois, no menu do Expo:
-
-- `a` para Android
-- `i` para iOS (macOS)
-- `w` para Web
-
-Também podes usar diretamente:
+Scripts uteis:
 
 ```bash
 npm run android
 npm run ios
 npm run web
+npm run lint
 ```
 
-API base (opcional):
+Variaveis uteis:
 
-- criar `Frontend/mobile/.env` com `EXPO_PUBLIC_API_BASE_URL=http://localhost:8000`
+- `EXPO_PUBLIC_API_BASE_URL`
+- `EXPO_PUBLIC_GATEWAY_WORKER_HOST`
+- `EXPO_PUBLIC_GATEWAY_WORKER_PORT`
+- `EXPO_PUBLIC_GATEWAY_WORKER_SCHEME`
 
-Realtime WebSocket (GatewayWorker):
+## Organizacao mobile
 
-- usar `Frontend/mobile/.env.example` como base
-- definir `EXPO_PUBLIC_GATEWAY_WORKER_*`
-- definir `EXPO_PUBLIC_TRACKING_ORDER_ID` com UUID real de encomenda
-- em ambiente local, podes usar `EXPO_PUBLIC_DEV_BROADCAST_USER_ID` para identificar o utilizador no handshake `hello`
+A camada `src/services/commerceService.js` e uma fachada para modulos separados em `src/services/commerce/`, agrupados por dominio: restaurantes, carrinho, encomendas, estafeta, tracking, chat, notificacoes, avaliacoes, moradas e pagamentos.

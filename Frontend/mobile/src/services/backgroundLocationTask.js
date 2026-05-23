@@ -65,9 +65,6 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
       deliveryId: stored.deliveryId,
       lat: latest.coords.latitude,
       lng: latest.coords.longitude,
-      heading: latest.coords.heading,
-      speed: latest.coords.speed,
-      accuracy: latest.coords.accuracy,
       recordedAt: new Date(latest.timestamp ?? Date.now()).toISOString(),
     })
   } catch (err) {

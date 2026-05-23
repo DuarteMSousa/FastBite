@@ -1,15 +1,30 @@
+type RoutePoint {
+  lat: Float!
+  lng: Float!
+}
+
 type OrderTracking {
   order: Order!
   delivery: Delivery
   courier: Courier
   last_position: CourierPosition
+  route_points: [RoutePoint!]!
+  route_distance_km: Float
+  route_duration_seconds: Int
+  distance_km_remaining: Float
   eta_seconds: Int
+  route_provider: String!
 }
 
 type DeliveryTracking {
   delivery: Delivery!
   last_position: CourierPosition
+  route_points: [RoutePoint!]!
+  route_distance_km: Float
+  route_duration_seconds: Int
+  distance_km_remaining: Float
   eta_seconds: Int
+  route_provider: String!
 }
 
 input UpdateCourierLocationInput {
@@ -17,9 +32,6 @@ input UpdateCourierLocationInput {
   delivery_id: ID!
   latitude: Float!
   longitude: Float!
-  heading: Float
-  speed: Float
-  accuracy: Float
   recorded_at: String
 }
 

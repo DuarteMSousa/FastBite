@@ -70,11 +70,27 @@ export function mapPosition(position) {
   }
 }
 
+function nullableNumber(value) {
+  if (value === null || value === undefined) return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
+}
+
+function mapRoutePoint(point) {
+  const lat = nullableNumber(point?.lat)
+  const lng = nullableNumber(point?.lng)
+
+  if (lat === null || lng === null) return null
+
+  return { lat, lng }
+}
+
 export function mapTracking(payload) {
   const order = payload?.order
   const delivery = payload?.delivery
   const positions = (delivery?.positionHistory ?? []).map(mapPosition).filter(Boolean).reverse()
   const lastPosition = mapPosition(payload?.last_position) ?? positions[0] ?? null
+  const routePoints = (payload?.route_points ?? []).map(mapRoutePoint).filter(Boolean)
 
   return {
     order_id: order?.id ?? null,
@@ -88,11 +104,11 @@ export function mapTracking(payload) {
     pickup_longitude: order?.restaurant?.address?.longitude ?? null,
     dropoff_latitude: order?.address?.latitude ?? null,
     dropoff_longitude: order?.address?.longitude ?? null,
-    route_provider: 'backend',
-    route_distance_km: null,
-    route_duration_seconds: null,
-    route_points: [],
-    distance_km_remaining: null,
+    route_provider: payload?.route_provider ?? 'none',
+    route_distance_km: nullableNumber(payload?.route_distance_km),
+    route_duration_seconds: nullableNumber(payload?.route_duration_seconds),
+    route_points: routePoints,
+    distance_km_remaining: nullableNumber(payload?.distance_km_remaining),
     eta_seconds: payload?.eta_seconds ?? null,
     latest_position: lastPosition,
     positions,

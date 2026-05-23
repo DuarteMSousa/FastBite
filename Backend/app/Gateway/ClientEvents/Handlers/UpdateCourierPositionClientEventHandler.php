@@ -31,9 +31,6 @@ class UpdateCourierPositionClientEventHandler implements ClientEventHandler
             'delivery_id' => $message->requiredString('delivery_id'),
             'latitude' => $message->requiredFloat('latitude'),
             'longitude' => $message->requiredFloat('longitude'),
-            'heading' => $message->nullableFloat('heading'),
-            'speed' => $message->nullableFloat('speed'),
-            'accuracy' => $message->nullableFloat('accuracy'),
             'recorded_at' => $message->string('recorded_at'),
         ]);
 

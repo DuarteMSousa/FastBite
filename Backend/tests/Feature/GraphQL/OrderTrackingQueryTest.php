@@ -6,11 +6,14 @@ use App\Models\Courier;
 use App\Models\CourierPositionHistory;
 use App\Models\Delivery;
 use App\Models\Order;
+use App\Models\OrderAddress;
 use App\Models\OrderEvent;
 use App\Models\Restaurant;
+use App\Models\RestaurantAddress;
 use App\Models\RestaurantChain;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 class OrderTrackingQueryTest extends TestCase
@@ -19,6 +22,8 @@ class OrderTrackingQueryTest extends TestCase
 
     public function test_customer_can_query_own_order_tracking(): void
     {
+        Config::set('services.osrm.enabled', false);
+
         $customer = User::query()->create([
             'name' => 'Cliente Demo',
             'email' => 'cliente_tracking@example.com',
@@ -48,12 +53,32 @@ class OrderTrackingQueryTest extends TestCase
             'delivery_radius' => 10,
         ]);
 
+        RestaurantAddress::query()->create([
+            'restaurant_id' => $restaurant->id,
+            'street' => 'Rua do Restaurante',
+            'city' => 'Porto',
+            'postal_code' => '4000-001',
+            'country' => 'PT',
+            'latitude' => 41.1579,
+            'longitude' => -8.6291,
+        ]);
+
         $order = Order::query()->create([
             'user_id' => $customer->id,
             'restaurant_id' => $restaurant->id,
             'status' => 'OUT_FOR_DELIVERY',
             'total' => 20,
             'restaurant_name_snapshot' => 'Urban Grill',
+        ]);
+
+        OrderAddress::query()->create([
+            'order_id' => $order->id,
+            'street' => 'Rua do Cliente',
+            'city' => 'Porto',
+            'postal_code' => '4100-001',
+            'country' => 'PT',
+            'latitude' => 41.1620,
+            'longitude' => -8.6320,
         ]);
 
         $delivery = Delivery::query()->create([
@@ -102,6 +127,15 @@ query OrderTracking($userId: ID!, $orderId: ID!) {
       latitude
       longitude
     }
+    route_points {
+      lat
+      lng
+    }
+    route_distance_km
+    route_duration_seconds
+    distance_km_remaining
+    eta_seconds
+    route_provider
   }
 }
 GRAPHQL;
@@ -120,7 +154,14 @@ GRAPHQL;
             ->assertJsonPath('data.orderTracking.delivery.id', $delivery->id)
             ->assertJsonPath('data.orderTracking.delivery.status', 'IN_TRANSIT')
             ->assertJsonPath('data.orderTracking.courier.user_id', $courierUser->id)
-            ->assertJsonPath('data.orderTracking.last_position.latitude', 41.1585);
+            ->assertJsonPath('data.orderTracking.last_position.latitude', 41.1585)
+            ->assertJsonPath('data.orderTracking.route_provider', 'fallback')
+            ->assertJsonPath('data.orderTracking.route_points.0.lat', 41.1585)
+            ->assertJsonPath('data.orderTracking.route_points.1.lat', 41.162);
+
+        $this->assertGreaterThan(0, $response->json('data.orderTracking.route_distance_km'));
+        $this->assertGreaterThan(0, $response->json('data.orderTracking.distance_km_remaining'));
+        $this->assertGreaterThanOrEqual(60, $response->json('data.orderTracking.eta_seconds'));
     }
 
     public function test_user_cannot_query_tracking_of_other_customer_order(): void

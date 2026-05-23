@@ -4,7 +4,12 @@ import { mapTracking, requestOptions, sessionUserId } from './core'
 const ORDER_TRACKING_QUERY = `
   query OrderTracking($userId: ID!, $orderId: ID!) {
     orderTracking(user_id: $userId, order_id: $orderId) {
+      route_points { lat lng }
+      route_distance_km
+      route_duration_seconds
+      distance_km_remaining
       eta_seconds
+      route_provider
       last_position { latitude longitude timestamp }
       courier { user_id }
       order {

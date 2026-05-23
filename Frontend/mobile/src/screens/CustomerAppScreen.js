@@ -512,6 +512,14 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
             const previous = current?.positions ?? []
             const nextPositions = [latest, ...previous].slice(0, 20)
+            const routePoints = Array.isArray(payload?.routePoints)
+              ? payload.routePoints
+                  .map((point) => ({
+                    lat: Number(point?.lat),
+                    lng: Number(point?.lng),
+                  }))
+                  .filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng))
+              : current?.route_points
 
             return {
               ...(current ?? {}),
@@ -520,6 +528,14 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               courier_id: payload?.courierId ?? current?.courier_id ?? null,
               latest_position: latest,
               positions: nextPositions,
+              route_points: routePoints,
+              route_distance_km: payload?.routeDistanceKm ?? current?.route_distance_km ?? null,
+              route_duration_seconds:
+                payload?.routeDurationSeconds ?? current?.route_duration_seconds ?? null,
+              distance_km_remaining:
+                payload?.distanceKmRemaining ?? current?.distance_km_remaining ?? null,
+              eta_seconds: payload?.etaSeconds ?? current?.eta_seconds ?? null,
+              route_provider: payload?.routeProvider ?? current?.route_provider ?? 'none',
             }
           })
         },

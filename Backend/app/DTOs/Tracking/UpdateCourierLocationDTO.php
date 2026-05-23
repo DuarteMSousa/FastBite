@@ -11,9 +11,6 @@ class UpdateCourierLocationDTO extends Data
         public readonly string $delivery_id,
         public readonly float $latitude,
         public readonly float $longitude,
-        public readonly ?float $heading = null,
-        public readonly ?float $speed = null,
-        public readonly ?float $accuracy = null,
         public readonly ?string $recorded_at = null,
     ) {
     }

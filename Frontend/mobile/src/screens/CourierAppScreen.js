@@ -357,18 +357,6 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                 deliveryId: activeDelivery.delivery_id,
                 lat,
                 lng,
-                heading:
-                  location.coords.heading !== null && location.coords.heading !== undefined
-                    ? Number(location.coords.heading)
-                    : null,
-                speed:
-                  location.coords.speed !== null && location.coords.speed !== undefined
-                    ? Number(location.coords.speed)
-                    : null,
-                accuracy:
-                  location.coords.accuracy !== null && location.coords.accuracy !== undefined
-                    ? Number(location.coords.accuracy)
-                    : null,
                 recordedAt,
               })
 

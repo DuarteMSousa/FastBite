@@ -249,9 +249,6 @@ export async function updateCourierLocation({
   deliveryId,
   lat,
   lng,
-  heading = null,
-  speed = null,
-  accuracy = null,
   recordedAt = null,
 }) {
   const data = await graphqlRequest({
@@ -262,9 +259,6 @@ export async function updateCourierLocation({
         delivery_id: deliveryId,
         latitude: lat,
         longitude: lng,
-        heading,
-        speed,
-        accuracy,
         recorded_at: recordedAt,
       },
     },

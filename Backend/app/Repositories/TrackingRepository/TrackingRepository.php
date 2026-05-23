@@ -10,19 +10,21 @@ class TrackingRepository implements TrackingRepositoryInterface
 {
     public function findOrderForUserTracking(string $userId, string $orderId)
     {
-        return Order::with(['delivery.courier', 'delivery.positionHistory'])
+        return Order::with(['address', 'restaurant.address', 'delivery.courier', 'delivery.positionHistory'])
             ->where('user_id', $userId)
             ->find($orderId);
     }
 
     public function findDeliveryForTracking(string $deliveryId)
     {
-        return Delivery::with(['courier', 'positionHistory'])->findOrFail($deliveryId);
+        return Delivery::with(['courier', 'positionHistory', 'order.address', 'order.restaurant.address'])->findOrFail($deliveryId);
     }
 
     public function findDeliveryForCourierOrFail(string $courierId, string $deliveryId)
     {
-        return Delivery::where('courier_id', $courierId)->findOrFail($deliveryId);
+        return Delivery::with(['courier', 'order.address', 'order.restaurant.address'])
+            ->where('courier_id', $courierId)
+            ->findOrFail($deliveryId);
     }
 
     public function findLastPositionForDelivery(string $deliveryId)

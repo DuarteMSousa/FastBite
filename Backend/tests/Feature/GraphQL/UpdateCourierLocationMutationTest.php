@@ -81,9 +81,6 @@ GRAPHQL;
                 'delivery_id' => $delivery->id,
                 'latitude' => 41.1579,
                 'longitude' => -8.6291,
-                'heading' => 120.5,
-                'speed' => 9.2,
-                'accuracy' => 6.1,
                 'recorded_at' => now()->format('Y-m-d H:i:s'),
             ],
         ];
