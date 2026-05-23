@@ -989,6 +989,46 @@ body {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+.rb-password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.rb-login-form .rb-password-field input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.rb-password-toggle {
+  position: absolute;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.rb-password-toggle:hover {
+  background: #f1f5f9;
+  color: var(--text);
+}
+
+.rb-password-toggle svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .rb-login-form input::placeholder,
 .rb-dialog-body input::placeholder,
 .rb-search::placeholder,
@@ -1849,6 +1889,15 @@ body {
   .rb-dialog-card-wide {
     max-width: 100%;
   }
+
+  .rb-option-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .rb-option-default {
+    justify-content: flex-start;
+  }
 }
 
 .rb-option-editor {
@@ -1923,6 +1972,14 @@ body {
   grid-template-columns: 2fr 1fr auto auto;
   gap: 8px;
   align-items: center;
+}
+
+.rb-option-field {
+  display: grid;
+  gap: 4px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .rb-option-row input {
@@ -2470,6 +2527,10 @@ body {
 
 .rb-empty-state-inline .rb-btn-accept {
   margin-top: 16px;
+}
+
+.rb-grid-empty {
+  grid-column: 1 / -1;
 }
 
 /* ========================================================================

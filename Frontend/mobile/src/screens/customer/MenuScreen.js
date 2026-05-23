@@ -41,7 +41,7 @@ export function MenuScreen({
       {noCouriersAvailable ? (
         <View style={styles.offlineBanner}>
           <Text style={styles.offlineBannerText}>
-            Sem estafetas disponiveis. Nao e possivel finalizar pedido neste momento.
+            Sem estafetas disponíveis. Não é possível finalizar pedido neste momento.
           </Text>
         </View>
       ) : null}
@@ -77,9 +77,16 @@ export function MenuScreen({
         contentContainerStyle={[styles.scrollContent, itemCount > 0 ? styles.withCartBar : null]}
         showsVerticalScrollIndicator={false}
       >
-        {loading && items.length === 0 ? <Text style={styles.mutedText}>A carregar...</Text> : null}
+        {loading && items.length === 0 ? (
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateTitle}>A carregar...</Text>
+          </View>
+        ) : null}
         {!loading && visibleItems.length === 0 ? (
-          <Text style={styles.mutedText}>Sem pratos nesta categoria.</Text>
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateTitle}>Sem pratos</Text>
+            <Text style={styles.emptyStateText}>Não há produtos nesta categoria.</Text>
+          </View>
         ) : null}
 
         {Object.entries(groupedItems).map(([category, group]) => (
@@ -92,10 +99,10 @@ export function MenuScreen({
                 </View>
                 <View style={styles.menuInfo}>
                   <Text style={styles.menuName}>{item.name ?? 'Produto'}</Text>
-                  <Text style={styles.menuDescription}>{item.description ?? 'Sem descricao'}</Text>
+                  <Text style={styles.menuDescription}>{item.description ?? 'Sem descrição'}</Text>
                   <Text style={styles.menuPrice}>{formatCurrency(item.price)}</Text>
                   <Text style={styles.menuRate}>
-                    {item.is_available ? 'Disponivel' : 'Indisponivel'}
+                    {item.is_available ? 'Disponível' : 'Indisponível'}
                   </Text>
                 </View>
 

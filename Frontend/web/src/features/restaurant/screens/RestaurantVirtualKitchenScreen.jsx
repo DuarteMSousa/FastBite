@@ -102,7 +102,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
     })
   }, [loadOrders])
 
-  // Polling de fallback apenas enquanto o socket nao esta live. Bind ao boolean
+  // Polling de fallback apenas enquanto o socket não está live. Bind ao boolean
   // para evitar reset do interval em cada flutuacao (connecting -> error -> live).
   const isRealtimeLive = realtimeState === 'live'
   useEffect(() => {
@@ -226,7 +226,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
     try {
       setBusyOrderId(orderId)
       await startPreparingRestaurantOrder({ session, orderId })
-      setInfoText('Encomenda passada para preparacao.')
+      setInfoText('Encomenda passada para preparação.')
       await loadOrders()
     } catch (error) {
       setErrorText(error.message)
@@ -264,7 +264,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Cozinha Virtual</h2>
-          <p>Gerir encomendas e preparacao de pratos</p>
+          <p>Gerir encomendas e preparação de pratos</p>
         </div>
         <div className={`rb-realtime-pill rb-realtime-${realtimeState}`}>
           <span className="rb-realtime-dot" />
@@ -297,7 +297,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
       {readyAnnouncementOrderId ? (
         <div className="rb-pending-alert" style={{ borderColor: '#3479ed', background: '#eaf2ff' }}>
           <strong>A procurar estafeta para #{String(readyAnnouncementOrderId).slice(0, 8)}</strong>
-          <span>Notificacao enviada por WebSocket. Aguarde atribuicao.</span>
+          <span>Notificação enviada por WebSocket. Aguarde atribuição.</span>
           <button
             type="button"
             className="rb-btn-outline"
@@ -380,10 +380,10 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
       </div>
 
       <h3 className="rb-section-title">
-        Em preparacao <span className="blue">{prepOrders.length}</span>
+        Em preparação <span className="blue">{prepOrders.length}</span>
       </h3>
 
-      {prepOrders.length === 0 ? <p>Sem encomendas em preparacao.</p> : null}
+      {prepOrders.length === 0 ? <p>Sem encomendas em preparação.</p> : null}
 
       {prepOrders.map((order) => (
         <article className="rb-prep-detail" key={order.order_id}>

@@ -344,7 +344,7 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
               />
             </label>
             <label>
-              Codigo postal
+              Código postal
               <input
                 value={restaurantDraft.postal_code}
                 onChange={(event) => updateRestaurantField('postal_code', event.target.value)}
@@ -354,7 +354,7 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
           </div>
           <div className="rb-login-grid">
             <label>
-              Pais
+              País
               <input
                 value={restaurantDraft.country}
                 onChange={(event) => updateRestaurantField('country', event.target.value)}

@@ -83,7 +83,7 @@ export async function loginMobileUser({ email, password, token = '' }) {
   const user = data?.authenticateByCredentials
 
   if (!user?.id) {
-    throw new Error('Nao foi possivel autenticar o utilizador.')
+    throw new Error('Não foi possível autenticar o utilizador.')
   }
 
   const role = await resolveMobileRole(user.id)

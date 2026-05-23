@@ -25,10 +25,18 @@ export function CartScreen({
   onChangeCouponCode,
   onOpenAddressPicker,
   onOpenPaymentPicker,
+  onBack,
 }) {
   const noCouriersAvailable = availableCouriers === 0
   return (
     <View style={styles.screen}>
+      <View style={styles.menuHeader}>
+        <Pressable style={styles.backButton} onPress={onBack}>
+          <Text style={styles.backArrow}>{ICON.back}</Text>
+        </Pressable>
+        <Text style={styles.menuHeaderTitle}>Carrinho</Text>
+      </View>
+
       <ScrollView
         contentContainerStyle={[styles.scrollContent, styles.cartScroll]}
         showsVerticalScrollIndicator={false}
@@ -36,12 +44,17 @@ export function CartScreen({
         {noCouriersAvailable ? (
           <View style={styles.offlineBanner}>
             <Text style={styles.offlineBannerText}>
-              Sem estafetas disponiveis. Nao podes finalizar o pedido agora.
+              Sem estafetas disponíveis. Não podes finalizar o pedido agora.
             </Text>
           </View>
         ) : null}
 
-        {items.length === 0 ? <Text style={styles.mutedText}>Carrinho vazio.</Text> : null}
+        {items.length === 0 ? (
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateTitle}>Carrinho vazio</Text>
+            <Text style={styles.emptyStateText}>Volta ao menu para adicionar produtos.</Text>
+          </View>
+        ) : null}
 
         {items.map((item) => (
           <View style={styles.cartCard} key={item.id}>
@@ -86,28 +99,28 @@ export function CartScreen({
 
           <Pressable style={styles.checkoutRow} onPress={onOpenPaymentPicker}>
             <View style={styles.checkoutRowText}>
-              <Text style={styles.checkoutRowLabel}>Metodo de pagamento</Text>
+              <Text style={styles.checkoutRowLabel}>Método de pagamento</Text>
               <Text style={styles.checkoutRowValue}>{paymentMethodLabel(paymentMethod)}</Text>
             </View>
             <Text style={styles.checkoutRowArrow}>{'>'}</Text>
           </Pressable>
 
           <View style={styles.couponRow}>
-            <Text style={styles.checkoutRowLabel}>Cupao</Text>
+            <Text style={styles.checkoutRowLabel}>Cupão</Text>
             <TextInput
               style={styles.couponInput}
               value={couponCode}
               onChangeText={onChangeCouponCode}
-              placeholder="Codigo de cupao (opcional)"
+              placeholder="Código de cupão (opcional)"
               placeholderTextColor="#94a3b8"
               autoCapitalize="characters"
             />
           </View>
           {couponCode?.trim() ? (
             couponError ? (
-              <Text style={styles.errorText}>Cupao invalido: {couponError}</Text>
+              <Text style={styles.errorText}>Cupão inválido: {couponError}</Text>
             ) : couponValid ? (
-              <Text style={styles.successText}>{ICON.check} Cupao aplicado.</Text>
+              <Text style={styles.successText}>{ICON.check} Cupão aplicado.</Text>
             ) : null
           ) : null}
         </View>
@@ -147,7 +160,7 @@ export function CartScreen({
             {loading
               ? 'A processar...'
               : noCouriersAvailable
-                ? 'Sem estafetas disponiveis'
+                ? 'Sem estafetas disponíveis'
                 : 'Fazer Pedido'}
           </Text>
         </Pressable>

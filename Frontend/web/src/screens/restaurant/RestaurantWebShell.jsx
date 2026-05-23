@@ -106,7 +106,7 @@ export function RestaurantWebShell() {
     setSelectedOrderId('')
     selectedOrderIdRef.current = ''
     setLogoutConfirmOpen(false)
-    navigate('/restaurant/dashboard', { replace: true })
+    navigate('/restaurant/login', { replace: true })
   }
 
   function handleSelectOrder(orderId) {
@@ -125,9 +125,16 @@ export function RestaurantWebShell() {
   if (!session) {
     return (
       <PageContainer restaurantUnit="Acesso de staff">
-        <RestaurantLoginScreen onLogin={handleLogin} />
+        <Routes>
+          <Route path="login" element={<RestaurantLoginScreen onLogin={handleLogin} />} />
+          <Route path="*" element={<Navigate to="/restaurant/login" replace />} />
+        </Routes>
       </PageContainer>
     )
+  }
+
+  if (routePath === 'login') {
+    return <Navigate to="/restaurant/dashboard" replace />
   }
 
   return (
@@ -186,8 +193,8 @@ export function RestaurantWebShell() {
 
       <ConfirmDialog
         open={logoutConfirmOpen}
-        title="Terminar sessao?"
-        description="Vais sair da conta. Tera de fazer login outra vez."
+        title="Terminar sessão?"
+        description="Vais sair da conta. Terás de iniciar sessão outra vez."
         confirmLabel="Sair"
         destructive
         onCancel={() => setLogoutConfirmOpen(false)}

@@ -341,7 +341,7 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
             <div className="rb-chat-stream-new" ref={streamRef}>
               {messageGroups.length === 0 ? (
                 <div className="rb-chat-empty-stream">
-                  <p>Ainda nao ha mensagens.</p>
+                  <p>Ainda não há mensagens.</p>
                   <small>Inicia a conversa enviando uma mensagem em baixo.</small>
                 </div>
               ) : (

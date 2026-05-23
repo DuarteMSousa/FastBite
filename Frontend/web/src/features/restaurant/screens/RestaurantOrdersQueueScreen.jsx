@@ -56,7 +56,7 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
     })
   }, [loadOrders])
 
-  // Polling de fallback apenas enquanto o socket nao esta live. Bind ao boolean
+  // Polling de fallback apenas enquanto o socket não está live. Bind ao boolean
   // para evitar reset do interval em cada flutuacao (connecting -> error -> live).
   const isRealtimeLive = realtimeState === 'live'
   useEffect(() => {

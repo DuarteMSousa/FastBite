@@ -26,7 +26,7 @@ function normalizeNotification(payload) {
     id: payload?.notificationId ?? payload?.eventId ?? `${Date.now()}-${Math.random()}`,
     type: payload?.type ?? 'INFO',
     title: payload?.title ?? 'Nova notificacao',
-    message: payload?.message ?? 'Sem descricao',
+    message: payload?.message ?? 'Sem descrição',
     timestamp: payload?.sentAt ?? new Date().toISOString(),
     read: false,
     read_at: null,
@@ -193,7 +193,7 @@ export function RestaurantNotificationsScreen({ session }) {
             className={`rb-filter ${showUnreadOnly ? 'active' : ''}`}
             onClick={() => setShowUnreadOnly((current) => !current)}
           >
-            {showUnreadOnly ? 'Mostrar todas' : 'Mostrar so nao lidas'}
+            {showUnreadOnly ? 'Mostrar todas' : 'Mostrar só não lidas'}
           </button>
           <button
             type="button"
@@ -256,7 +256,7 @@ export function RestaurantNotificationsScreen({ session }) {
                         )}
                       </div>
                     </div>
-                    {!item.read ? <span className="rb-notif-dot" aria-label="Nao lida" /> : null}
+                    {!item.read ? <span className="rb-notif-dot" aria-label="Não lida" /> : null}
                   </div>
                 )
               })}

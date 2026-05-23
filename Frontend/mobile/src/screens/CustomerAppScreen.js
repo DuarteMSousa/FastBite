@@ -202,7 +202,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       return true
     }
 
-    setErrorText(`Sem internet. Nao foi possivel ${actionLabel}.`)
+    setErrorText(`Sem internet. Não foi possível ${actionLabel}.`)
     return false
   }
 
@@ -327,7 +327,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             if (activeOrderId === eventOrderId && eventName === 'ORDER_CANCELLED') {
               setActiveOrderId('')
             }
-            // Pos-entrega: abrir prompt de avaliacao do restaurante automaticamente.
+            // Pos-entrega: abrir prompt de avaliação do restaurante automaticamente.
             if (eventName === 'ORDER_DELIVERED' && eventOrderId) {
               promptReviewAfterDelivery(eventOrderId)
             }
@@ -455,16 +455,16 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           onNotification: (payload) => {
             setNotificationState('live')
             setNotificationPreview({
-              title: payload?.title ?? payload?.type ?? 'Notificacao',
-              message: payload?.message ?? 'Nova atualizacao recebida.',
+              title: payload?.title ?? payload?.type ?? 'Notificação',
+              message: payload?.message ?? 'Nova atualização recebida.',
             })
-            setSuccessText(`${ICON.bell} ${payload?.title ?? 'Nova notificacao'}`)
+            setSuccessText(`${ICON.bell} ${payload?.title ?? 'Nova notificação'}`)
             setInboxItems((current) => {
               const incoming = {
                 id: payload?.notificationId ?? payload?.eventId ?? `${Date.now()}-${Math.random()}`,
                 type: payload?.type ?? 'INFO',
-                title: payload?.title ?? 'Nova notificacao',
-                message: payload?.message ?? 'Sem descricao',
+                title: payload?.title ?? 'Nova notificação',
+                message: payload?.message ?? 'Sem descrição',
                 sent_at: payload?.sentAt ?? new Date().toISOString(),
                 read_at: null,
                 read: false,
@@ -1029,7 +1029,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     const existingReview = findReviewForTarget(targetType, targetId)
     if (existingReview) {
       openEditReview(existingReview)
-      setSuccessText('Ja existe avaliacao para este destinatario. Modo edicao aberto.')
+      setSuccessText('Já existe avaliação para este destinatário. Modo de edição aberto.')
       return
     }
     setReviewTarget({
@@ -1090,7 +1090,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
   async function submitReview() {
     if (!reviewTarget) return
-    if (!ensureOnline('enviar avaliacao')) return
+    if (!ensureOnline('enviar avaliação')) return
 
     try {
       setIsSubmittingReview(true)
@@ -1101,7 +1101,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           rating: reviewRating,
           comment: reviewComment,
         })
-        setSuccessText('Avaliacao atualizada.')
+        setSuccessText('Avaliação atualizada.')
       } else {
         await createClientReview({
           session,
@@ -1110,7 +1110,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           targetType: reviewTarget.targetType,
           targetId: reviewTarget.targetId,
         })
-        setSuccessText('Avaliacao enviada. Obrigado!')
+        setSuccessText('Avaliação enviada. Obrigado!')
       }
       await refreshReviewsHistory()
       setErrorText('')
@@ -1138,7 +1138,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               rating: reviewRating,
               comment: reviewComment,
             })
-            setSuccessText('Avaliacao atualizada.')
+            setSuccessText('Avaliação atualizada.')
             setErrorText('')
             setReviewTarget(null)
             setReviewRating(5)
@@ -1170,11 +1170,11 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   }
 
   async function handleDeleteReview(review) {
-    if (!ensureOnline('apagar avaliacao')) return
+    if (!ensureOnline('apagar avaliação')) return
     try {
       await deleteClientReview({ session, reviewId: review.id })
       setClientReviews((current) => current.filter((item) => item.id !== review.id))
-      setSuccessText('Avaliacao apagada.')
+      setSuccessText('Avaliação apagada.')
     } catch (error) {
       setErrorText(error.message)
     }
@@ -1235,7 +1235,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     // availableCouriersCount foi removido do schema GraphQL.
     // Retorna null (= desconhecido); o checkout deixa de bloquear neste check
     // e o backend trata da atribuicao de estafeta atraves do
-    // AssignCourierToDeliveryJob (com fallback FAILED se nao houver).
+    // AssignCourierToDeliveryJob (com fallback FAILED se não houver).
     return null
   }
 
@@ -1484,7 +1484,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
     const latestCouriers = await refreshAvailableCouriers()
     if (latestCouriers === 0) {
-      setErrorText('Sem estafetas disponiveis neste momento. Tenta novamente em breve.')
+      setErrorText('Sem estafetas disponíveis neste momento. Tenta novamente em breve.')
       return
     }
 
@@ -1721,6 +1721,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         onChangeCouponCode: setCouponCode,
         onOpenAddressPicker: () => setShowAddressModal(true),
         onOpenPaymentPicker: () => setShowPaymentModal(true),
+        onBack: back,
       },
       tracking: {
         tracking,
@@ -1785,7 +1786,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             <Text style={styles.inboxSubtitle}>
               {reviewTarget?.restaurantName
                 ? `Pedido em ${reviewTarget.restaurantName}`
-                : 'Partilha a tua experiencia'}
+                : 'Partilha a tua experiência'}
             </Text>
 
             <View style={styles.starsRow}>
@@ -1836,7 +1837,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 disabled={isSubmittingReview}
               >
                 <Text style={styles.cancelDangerText}>
-                  {isSubmittingReview ? 'A enviar...' : 'Enviar avaliacao'}
+                  {isSubmittingReview ? 'A enviar...' : 'Enviar avaliação'}
                 </Text>
               </Pressable>
             </View>
@@ -1865,7 +1866,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 style={styles.inboxClose}
                 onPress={() => setOrderDetailModal({ visible: false, order: null, loading: false })}
               >
-                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
+                <Text style={styles.inboxCloseText}>{ICON.close}</Text>
               </Pressable>
             </View>
 
@@ -2003,19 +2004,19 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 style={styles.inboxClose}
                 onPress={() => setShowReviewsHistory(false)}
               >
-                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
+                <Text style={styles.inboxCloseText}>{ICON.close}</Text>
               </Pressable>
             </View>
 
             <ScrollView style={styles.inboxList} contentContainerStyle={styles.inboxListContent}>
               {clientReviews.length === 0 ? (
-                <Text style={styles.inboxEmpty}>Sem avaliacoes ainda.</Text>
+                <Text style={styles.inboxEmpty}>Sem avaliações ainda.</Text>
               ) : null}
               {clientReviews.map((review) => (
                 <View key={review.id} style={styles.inboxItem}>
                   <View style={styles.inboxItemTop}>
                     <Text style={styles.inboxItemTitle}>
-                      {review.target_type} Â· {Number(review.rating)}â˜…
+                      {review.target_type} {'\u00B7'} {Number(review.rating)}{ICON.star}
                     </Text>
                     <Text style={styles.inboxItemTimestamp}>
                       {review.created_at
@@ -2086,7 +2087,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       >
         <View style={styles.inboxBackdrop}>
           <View style={styles.failModalCardClient}>
-            <Text style={styles.inboxTitle}>Terminar sessao?</Text>
+            <Text style={styles.inboxTitle}>Terminar sessão?</Text>
             <Text style={styles.inboxSubtitle}>
               Vais sair da conta. Tera de fazer login outra vez.
             </Text>
@@ -2130,7 +2131,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 </Text>
               </View>
               <Pressable style={styles.inboxClose} onPress={closeChatModal}>
-                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
+                <Text style={styles.inboxCloseText}>{ICON.close}</Text>
               </Pressable>
             </View>
 
@@ -2161,7 +2162,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                       {message.timestamp
                         ? new Date(message.timestamp).toLocaleTimeString()
                         : ''}
-                      {isMine && message.read_at ? ' âœ“âœ“' : isMine ? ' âœ“' : ''}
+                      {isMine && message.read_at ? ` ${ICON.check}${ICON.check}` : isMine ? ` ${ICON.check}` : ''}
                     </Text>
                   </View>
                 )
@@ -2207,7 +2208,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             <Text style={styles.inboxTitle}>Pagamento pendente</Text>
             <Text style={styles.inboxSubtitle}>
               Confirma o pagamento {paymentMethodLabel(pendingPayment?.method ?? 'CARD')} no portal externo.
-              Apos confirmacao, o pedido fica em CONFIRMED.
+              Após confirmação, o pedido fica confirmado.
             </Text>
 
             <View style={styles.paymentCountdown}>
@@ -2289,7 +2290,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                   setOptionSelections({})
                 }}
               >
-                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
+                <Text style={styles.inboxCloseText}>{ICON.close}</Text>
               </Pressable>
             </View>
 
@@ -2401,7 +2402,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 </Text>
               </View>
               <Pressable style={styles.inboxClose} onPress={() => setShowAddressModal(false)}>
-                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
+                <Text style={styles.inboxCloseText}>{ICON.close}</Text>
               </Pressable>
             </View>
 
@@ -2428,7 +2429,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                       }}
                     >
                       <Text style={styles.addressOptionLabel}>
-                        {address.label || 'Morada'} {address.is_default ? 'Â· default' : ''}
+                        {address.label || 'Morada'} {address.is_default ? '\u00B7 predefinida' : ''}
                       </Text>
                       <Text style={styles.addressOptionDetail}>
                         {address.street}, {address.city}
@@ -2483,8 +2484,8 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                     { key: 'label', placeholder: 'Etiqueta (Casa, Trabalho)' },
                     { key: 'street', placeholder: 'Rua *' },
                     { key: 'city', placeholder: 'Cidade *' },
-                    { key: 'postal_code', placeholder: 'Codigo postal *' },
-                    { key: 'country', placeholder: 'Pais *' },
+                    { key: 'postal_code', placeholder: 'Código postal *' },
+                    { key: 'country', placeholder: 'País *' },
                     { key: 'latitude', placeholder: 'Latitude (ex: 41.1579)' },
                     { key: 'longitude', placeholder: 'Longitude (ex: -8.6291)' },
                   ].map((field) => (
@@ -2512,7 +2513,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                     }
                   >
                     <Text style={styles.addressDefaultToggleText}>
-                      {addressDraft.is_default ? '[x] Marcar como default' : '[ ] Marcar como default'}
+                      {addressDraft.is_default ? '[x] Marcar como predefinida' : '[ ] Marcar como predefinida'}
                     </Text>
                   </Pressable>
                   <View style={styles.cancelActionsRow}>
@@ -2597,7 +2598,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             <View style={styles.inboxHeader}>
               <Text style={styles.inboxTitle}>Metodo de pagamento</Text>
               <Pressable style={styles.inboxClose} onPress={() => setShowPaymentModal(false)}>
-                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
+                <Text style={styles.inboxCloseText}>{ICON.close}</Text>
               </Pressable>
             </View>
 
@@ -2641,7 +2642,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           <View style={styles.cancelOrderCard}>
             <Text style={styles.inboxTitle}>Cancelar pedido</Text>
             <Text style={styles.inboxSubtitle}>
-              Esta acao notifica o restaurante e termina o pedido. Indica o motivo (opcional).
+              Esta ação notifica o restaurante e termina o pedido. Indica o motivo (opcional).
             </Text>
 
             {cancelTargetOrder ? (
@@ -2701,15 +2702,15 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           <View style={styles.inboxCard}>
             <View style={styles.inboxHeader}>
               <View>
-                <Text style={styles.inboxTitle}>Notificacoes</Text>
+                <Text style={styles.inboxTitle}>Notificações</Text>
                 <Text style={styles.inboxSubtitle}>
                   {inboxUnreadCount > 0
-                    ? `${inboxUnreadCount} nao lidas`
-                    : 'Todas as notificacoes lidas'}
+                    ? `${inboxUnreadCount} não lidas`
+                    : 'Todas as notificações lidas'}
                 </Text>
               </View>
               <Pressable style={styles.inboxClose} onPress={() => setShowInbox(false)}>
-                <Text style={styles.inboxCloseText}>{'Ã—'}</Text>
+                <Text style={styles.inboxCloseText}>{ICON.close}</Text>
               </Pressable>
             </View>
 
@@ -2727,7 +2728,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                     inboxUnreadOnly ? styles.inboxFilterTextActive : null,
                   ]}
                 >
-                  {inboxUnreadOnly ? 'Mostrar todas' : 'So nao lidas'}
+                  {inboxUnreadOnly ? 'Mostrar todas' : 'Só não lidas'}
                 </Text>
               </Pressable>
               <Pressable
@@ -2813,7 +2814,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                   disabled={inboxLoading}
                 >
                   <Text style={styles.addressAddBtnText}>
-                    {inboxLoading ? 'A carregar...' : 'Carregar mais notificacoes'}
+                    {inboxLoading ? 'A carregar...' : 'Carregar mais notificações'}
                   </Text>
                 </Pressable>
               ) : null}

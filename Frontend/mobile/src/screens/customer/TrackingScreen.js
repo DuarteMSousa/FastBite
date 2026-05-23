@@ -51,7 +51,7 @@ export function TrackingScreen({
         {!isOnline ? (
           <View style={styles.offlineBanner}>
             <Text style={styles.offlineBannerText}>
-              Sem internet. O tracking sera atualizado automaticamente quando a ligacao voltar.
+              Sem internet. O tracking será atualizado automaticamente quando a ligação voltar.
             </Text>
           </View>
         ) : null}
@@ -97,7 +97,7 @@ export function TrackingScreen({
           <Text style={styles.trackSummarySub}>Entrega: {tracking?.delivery_status ?? '-'}</Text>
           <Text style={styles.trackSummarySub}>Realtime: {realtimeLabel}</Text>
           <Text style={styles.trackSummarySub}>
-            Posicao do estafeta: {hasCourierPosition ? `actualizada ${lastUpdateLabel}` : courierAssigned ? 'aguardando primeira posicao...' : 'sem estafeta atribuido'}
+            Posição do estafeta: {hasCourierPosition ? `atualizada ${lastUpdateLabel}` : courierAssigned ? 'aguardando primeira posição...' : 'sem estafeta atribuído'}
           </Text>
           <Text style={styles.trackSummarySub}>
             Atualizacoes recebidas: {realtimeUpdateCount}
@@ -118,7 +118,7 @@ export function TrackingScreen({
               ? `Posicao do estafeta actualizada ${lastUpdateLabel} (${realtimeLabel})`
               : courierAssigned
                 ? `A aguardar posicao do estafeta (${realtimeLabel})`
-                : 'Estafeta ainda nao atribuido'
+                : 'Estafeta ainda não atribuído'
           }
           pickup={
             tracking?.pickup_latitude !== null && tracking?.pickup_latitude !== undefined

@@ -13,7 +13,15 @@ function categoryLabel(value) {
 }
 
 function availabilityLabel(isAvailable) {
-  return isAvailable ? 'Disponivel' : 'Indisponivel'
+  return isAvailable ? 'Disponível' : 'Indisponível'
+}
+
+function validatePrice(value, label = 'O preço') {
+  const price = Number(value)
+  if (value === '' || !Number.isFinite(price) || price < 0.01) {
+    return `${label} tem de ser pelo menos 0.01 EUR.`
+  }
+  return ''
 }
 
 export function RestaurantMenuCatalogScreen({ session }) {
@@ -35,6 +43,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
   const loadProducts = useCallback(async () => {
     try {
       setLoading(true)
+      setProducts([])
       const data = await fetchRestaurantMenuProducts(session)
       setProducts(data)
       setErrorText('')
@@ -75,6 +84,11 @@ export function RestaurantMenuCatalogScreen({ session }) {
     return new Set(products.map((product) => product.product_id))
   }, [products])
 
+  const selectedEditingProduct = useMemo(
+    () => products.find((product) => product.restaurant_product_id === editingProductId) ?? null,
+    [editingProductId, products],
+  )
+
   const catalogCandidates = useMemo(() => {
     const query = catalogSearch.trim().toLowerCase()
     return chainCatalogProducts
@@ -90,6 +104,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
   }, [catalogSearch, chainCatalogProducts, existingChainProductIds])
 
   function startEdit(product) {
+    setErrorText('')
     setEditingProductId(product.restaurant_product_id)
     setEditDraft({
       price: String(Number(product.price ?? 0).toFixed(2)),
@@ -104,8 +119,19 @@ export function RestaurantMenuCatalogScreen({ session }) {
   }
 
   async function saveEdit(product) {
+    const priceError = validatePrice(editDraft.price)
+    if (priceError) {
+      setErrorText(priceError)
+      return
+    }
+    if (editDraft.prep.trim() !== '' && Number(editDraft.prep) < 1) {
+      setErrorText('O tempo de preparação tem de ser pelo menos 1 minuto.')
+      return
+    }
+
     try {
       setSaving(true)
+      setErrorText('')
       await updateRestaurantMenuProduct({
         session,
         input: {
@@ -171,6 +197,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
   }
 
   async function openAddFromCatalog() {
+    setErrorText('')
     setShowAddFromCatalog(true)
     setPickerDraft({ productId: '', localPrice: '', prep: '' })
     setCatalogSearch('')
@@ -184,12 +211,24 @@ export function RestaurantMenuCatalogScreen({ session }) {
 
   async function handleAddFromCatalog() {
     if (!pickerDraft.productId) {
-      setErrorText('Escolhe um produto do catalogo.')
+      setErrorText('Escolhe um produto do catálogo.')
+      return
+    }
+    if (pickerDraft.localPrice !== '') {
+      const priceError = validatePrice(pickerDraft.localPrice)
+      if (priceError) {
+        setErrorText(priceError)
+        return
+      }
+    }
+    if (pickerDraft.prep.trim() !== '' && Number(pickerDraft.prep) < 1) {
+      setErrorText('O tempo de preparação tem de ser pelo menos 1 minuto.')
       return
     }
 
     try {
       setSaving(true)
+      setErrorText('')
       await addChainProductToRestaurantMenu({
         session,
         productId: pickerDraft.productId,
@@ -219,11 +258,11 @@ export function RestaurantMenuCatalogScreen({ session }) {
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Menu do restaurante</h2>
-          <p>Escolhe produtos da cadeia e ajusta preco, tempo de preparacao e disponibilidade</p>
+          <p>Escolhe produtos da cadeia e ajusta preço, tempo de preparação e disponibilidade</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="rb-primary" onClick={openAddFromCatalog}>
-            + Adicionar do catalogo
+            + Adicionar do catálogo
           </button>
         </div>
       </header>
@@ -246,20 +285,26 @@ export function RestaurantMenuCatalogScreen({ session }) {
               {category}
             </button>
           ))}
-          <button type="button" className="rb-filter" onClick={loadProducts}>
+          <button type="button" className="rb-filter" onClick={loadProducts} disabled={loading}>
             Atualizar
           </button>
         </div>
       </article>
 
       <div className="rb-menu-grid">
-        {loading ? <p>A carregar menu...</p> : null}
+        {loading ? (
+          <div className="rb-empty-state rb-empty-state-inline rb-grid-empty">
+            <h3>A carregar menu...</h3>
+          </div>
+        ) : null}
         {!loading && visibleProducts.length === 0 ? (
-          <p>Ainda nao tens produtos no menu. Usa &quot;Adicionar do catalogo&quot;.</p>
+          <div className="rb-empty-state rb-empty-state-inline rb-grid-empty">
+            <h3>Sem produtos no menu</h3>
+            <p>Usa &quot;Adicionar do catálogo&quot; para escolher produtos da cadeia.</p>
+          </div>
         ) : null}
 
-        {visibleProducts.map((product) => {
-          const isEditing = editingProductId === product.restaurant_product_id
+        {!loading && visibleProducts.map((product) => {
           return (
             <article className="rb-menu-card" key={product.restaurant_product_id}>
               <div className="rb-menu-banner">{categoryLabel(product.category).toLowerCase()}</div>
@@ -269,8 +314,8 @@ export function RestaurantMenuCatalogScreen({ session }) {
                   <strong>{Number(product.price ?? 0).toFixed(2)} EUR</strong>
                 </div>
                 <span className="rb-menu-tag">{categoryLabel(product.category)}</span>
-                <p>{product.description || 'Sem descricao'}</p>
-                <p>Preparacao: {product.estimated_preparation_time_min ?? '-'} min</p>
+                <p>{product.description || 'Sem descrição'}</p>
+                <p>Preparação: {product.estimated_preparation_time_min ?? '-'} min</p>
                 <div className="rb-menu-bottom">
                   <span className={`rb-chip ${product.is_available ? 'done' : 'off'}`}>
                     {availabilityLabel(product.is_available)}
@@ -292,58 +337,6 @@ export function RestaurantMenuCatalogScreen({ session }) {
                   </div>
                 </div>
 
-                {isEditing ? (
-                  <div className="rb-login-form">
-                    <small>
-                      Nome, descricao e option groups vem do catalogo da cadeia e nao se editam aqui.
-                    </small>
-                    <label>
-                      Preco local (EUR)
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={editDraft.price}
-                        onChange={(event) =>
-                          setEditDraft((state) => ({ ...state, price: event.target.value }))
-                        }
-                      />
-                    </label>
-                    <label>
-                      Preparacao (min)
-                      <input
-                        type="number"
-                        min="1"
-                        value={editDraft.prep}
-                        onChange={(event) => setEditDraft((state) => ({ ...state, prep: event.target.value }))}
-                      />
-                    </label>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={editDraft.isAvailable}
-                        onChange={(event) =>
-                          setEditDraft((state) => ({ ...state, isAvailable: event.target.checked }))
-                        }
-                      />
-                      {' '}Disponivel
-                    </label>
-
-                    <div className="rb-card-actions">
-                      <button
-                        type="button"
-                        className="rb-icon-mini"
-                        onClick={() => saveEdit(product)}
-                        disabled={saving}
-                      >
-                        Guardar
-                      </button>
-                      <button type="button" className="rb-icon-mini danger" onClick={cancelEdit}>
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
               </div>
             </article>
           )
@@ -354,8 +347,61 @@ export function RestaurantMenuCatalogScreen({ session }) {
       {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
 
       <ConfirmDialog
+        open={Boolean(selectedEditingProduct)}
+        title="Editar item do menu"
+        description="Ajusta apenas os dados locais deste restaurante."
+        confirmLabel="Guardar alterações"
+        cancelLabel="Fechar"
+        loading={saving}
+        onCancel={() => {
+          if (!saving) cancelEdit()
+        }}
+        onConfirm={() => {
+          if (selectedEditingProduct) saveEdit(selectedEditingProduct)
+        }}
+      >
+        <div className="rb-login-form rb-create-product-modal-form">
+          <small>Nome, descrição e grupos de opções vêm do catálogo da cadeia.</small>
+          <label>
+            Preço local (EUR)
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={editDraft.price}
+              onChange={(event) =>
+                setEditDraft((state) => ({ ...state, price: event.target.value }))
+              }
+            />
+          </label>
+          <label>
+            Preparação (min)
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={editDraft.prep}
+              onChange={(event) => setEditDraft((state) => ({ ...state, prep: event.target.value }))}
+              placeholder="Opcional"
+            />
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={editDraft.isAvailable}
+              onChange={(event) =>
+                setEditDraft((state) => ({ ...state, isAvailable: event.target.checked }))
+              }
+            />
+            {' '}Disponível
+          </label>
+          {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
+        </div>
+      </ConfirmDialog>
+
+      <ConfirmDialog
         open={showAddFromCatalog}
-        title="Adicionar do catalogo"
+        title="Adicionar do catálogo"
         description="Escolhe um produto da cadeia para acrescentar a este restaurante."
         confirmLabel="Adicionar"
         cancelLabel="Fechar"
@@ -370,7 +416,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
         <div className="rb-login-form rb-create-product-modal-form">
           <input
             className="rb-search"
-            placeholder="Procurar no catalogo..."
+            placeholder="Procurar no catálogo..."
             value={catalogSearch}
             onChange={(event) => setCatalogSearch(event.target.value)}
           />
@@ -379,8 +425,8 @@ export function RestaurantMenuCatalogScreen({ session }) {
             {catalogCandidates.length === 0 ? (
               <small>
                 {chainCatalogProducts.length === 0
-                  ? 'Catalogo vazio.'
-                  : 'Sem produtos da cadeia que ainda nao estejam no menu.'}
+                  ? 'Catálogo vazio.'
+                  : 'Sem produtos da cadeia que ainda não estejam no menu.'}
               </small>
             ) : null}
             {catalogCandidates.map((product) => (
@@ -407,10 +453,10 @@ export function RestaurantMenuCatalogScreen({ session }) {
           {selectedCatalogProduct ? (
             <>
               <label>
-                Preco local (EUR)
+                Preço local (EUR)
                 <input
                   type="number"
-                  min="0"
+                  min="0.01"
                   step="0.01"
                   value={pickerDraft.localPrice}
                   onChange={(event) =>
@@ -420,10 +466,11 @@ export function RestaurantMenuCatalogScreen({ session }) {
                 />
               </label>
               <label>
-                Tempo de preparacao (min)
+                Tempo de preparação (min)
                 <input
                   type="number"
                   min="1"
+                  step="1"
                   value={pickerDraft.prep}
                   onChange={(event) =>
                     setPickerDraft((current) => ({ ...current, prep: event.target.value }))
@@ -433,6 +480,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
               </label>
             </>
           ) : null}
+          {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
         </div>
       </ConfirmDialog>
 

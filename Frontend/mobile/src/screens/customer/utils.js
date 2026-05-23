@@ -5,15 +5,15 @@ export const INBOX_MAX_ITEMS = 60
 export const ICON = {
   user: '\u{1F464}',
   search: '\u{1F50D}',
-  star: '★',
+  star: '\u2605',
   time: '\u{1F551}',
   bike: '\u{1F6B4}',
   plus: '+',
   cart: '\u{1F6D2}',
-  back: '←',
-  minus: '−',
-  close: '×',
-  check: '✔',
+  back: '\u2190',
+  minus: '\u2212',
+  close: '\u00D7',
+  check: '\u2713',
   bell: '\u{1F514}',
   prep: '\u{1F551}',
 }
@@ -38,7 +38,7 @@ export function statusLabel(status) {
 
 export function orderItemStatusLabel(status) {
   if (status === 'PENDING') return 'Pendente'
-  if (status === 'PREPARING') return 'Em preparacao'
+  if (status === 'PREPARING') return 'Em preparação'
   if (status === 'READY') return 'Pronto'
   if (status === 'CANCELLED') return 'Cancelado'
   return status ?? '-'
@@ -52,8 +52,8 @@ export function orderItemStatusChipStyle(status) {
 }
 
 export function paymentMethodLabel(method) {
-  if (method === 'CASH') return 'Dinheiro a entrega'
-  if (method === 'CARD') return 'Cartao'
+  if (method === 'CASH') return 'Dinheiro à entrega'
+  if (method === 'CARD') return 'Cartão'
   if (method === 'MBWAY') return 'MB Way'
   if (method === 'PAYPAL') return 'PayPal'
   return method
@@ -71,9 +71,9 @@ const EVENT_LABELS_PT = {
   ORDER_PAYMENT_COMPLETED: 'Pagamento confirmado',
   ORDER_CONFIRMED: 'Pedido confirmado',
   ORDER_REJECTED: 'Pedido rejeitado',
-  ORDER_PREPARING: 'Em preparacao',
+  ORDER_PREPARING: 'Em preparação',
   ORDER_READY: 'Pedido pronto',
-  ORDER_COURIER_ASSIGNED: 'Estafeta atribuido',
+  ORDER_COURIER_ASSIGNED: 'Estafeta atribuído',
   ORDER_PICKED_UP: 'Recolhido pelo estafeta',
   ORDER_OUT_FOR_DELIVERY: 'Em entrega',
   ORDER_DELIVERED: 'Entregue ao cliente',

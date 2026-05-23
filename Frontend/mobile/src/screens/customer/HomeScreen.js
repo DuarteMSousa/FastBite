@@ -99,7 +99,7 @@ export function HomeScreen({
         {noCouriersAvailable ? (
           <View style={styles.offlineBanner}>
             <Text style={styles.offlineBannerText}>
-              Sem estafetas disponiveis neste momento. Nao e possivel fazer pedidos.
+              Sem estafetas disponíveis neste momento. Não é possível fazer pedidos.
             </Text>
           </View>
         ) : null}
@@ -110,7 +110,7 @@ export function HomeScreen({
               {ICON.bell} {notificationPreview.title}
             </Text>
             <Text style={styles.notificationBannerText}>
-              {notificationPreview.message} Â· toca para abrir inbox
+              {notificationPreview.message} {'\u00B7'} toca para abrir inbox
             </Text>
           </Pressable>
         ) : null}
@@ -139,7 +139,7 @@ export function HomeScreen({
 
         {pushStatus === 'permission_denied' || pushStatus === 'error' ? (
           <Text style={styles.pushChip}>
-            Push desativado Â· ativa nas definicoes para receber atualizacoes
+            Push desativado {'\u00B7'} ativa nas definições para receber atualizações
           </Text>
         ) : null}
       </View>
@@ -156,7 +156,17 @@ export function HomeScreen({
         }
       >
         <Text style={styles.sectionTitle}>Restaurantes</Text>
-        {loading && restaurants.length === 0 ? <Text style={styles.mutedText}>A carregar...</Text> : null}
+        {loading && restaurants.length === 0 ? (
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateTitle}>A carregar...</Text>
+          </View>
+        ) : null}
+        {!loading && restaurants.length === 0 ? (
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateTitle}>Sem restaurantes</Text>
+            <Text style={styles.emptyStateText}>Ajusta os filtros ou tenta atualizar a lista.</Text>
+          </View>
+        ) : null}
         {restaurants.map((item) => (
           <Pressable
             key={item.id}
@@ -173,7 +183,7 @@ export function HomeScreen({
                   {item.name}
                 </Text>
                 <Text style={styles.cuisine} numberOfLines={1}>
-                  {item.city || 'Cidade nao definida'}
+                  {item.city || 'Cidade não definida'}
                 </Text>
               </View>
               <View style={styles.ratingPill}>

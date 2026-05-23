@@ -723,7 +723,7 @@ export async function bootstrapRestaurantSession({
   })
 
   if (!userData.authenticateByCredentials) {
-    throw new Error('Nao foi possivel autenticar o utilizador.')
+    throw new Error('Não foi possível autenticar o utilizador.')
   }
 
   const authenticatedUser = userData.authenticateByCredentials
@@ -754,7 +754,7 @@ export async function bootstrapRestaurantSession({
   const isChainManager = Boolean(managerChain?.id)
 
   if (trimmedRestaurantId && !resolvedRestaurant) {
-    throw new Error('Nao tens acesso a esse restaurante.')
+    throw new Error('Não tens acesso a esse restaurante.')
   }
 
   if (!resolvedRestaurant?.id) {
@@ -818,7 +818,7 @@ export async function refreshRestaurantSessionAccess(session) {
     : managedRestaurants[0]
 
   if (!resolvedRestaurant?.id) {
-    throw new Error('Nao tens nenhum restaurante associado.')
+    throw new Error('Não tens nenhum restaurante associado.')
   }
 
   return {
@@ -836,7 +836,7 @@ function assertRestaurantAccess(session, restaurantId) {
   const requestedRestaurantId = String(restaurantId ?? session?.restaurantId ?? '').trim()
 
   if (!requestedRestaurantId) {
-    throw new Error('Sem restaurantId na sessao.')
+    throw new Error('Sem restaurantId na sessão.')
   }
 
   if (!session?.isChainManager && requestedRestaurantId !== session?.restaurantId) {
@@ -1192,7 +1192,7 @@ export async function updateRestaurantMenuProduct({ session, input }) {
 export async function fetchChainCatalog({ session, chainId }) {
   const resolvedChainId = chainId ?? session?.chainId
   if (!resolvedChainId) {
-    throw new Error('Sem chain_id na sessao.')
+    throw new Error('Sem chain_id na sessão.')
   }
 
   const data = await graphqlRequest({
@@ -1221,7 +1221,7 @@ export async function fetchChainCatalog({ session, chainId }) {
 
 export async function createChainProduct({ session, input }) {
   if (!session?.chainId) {
-    throw new Error('Sem chain_id na sessao.')
+    throw new Error('Sem chain_id na sessão.')
   }
 
   const categoryId = await resolveCategoryId({
@@ -1306,7 +1306,7 @@ export async function addChainProductToRestaurantMenu({
   isAvailable = true,
 }) {
   if (!session?.restaurantId) {
-    throw new Error('Sem restaurantId na sessao.')
+    throw new Error('Sem restaurantId na sessão.')
   }
 
   const data = await graphqlRequest({
@@ -1376,6 +1376,7 @@ export async function createChainPromotion({ session, input }) {
         description: input.description ?? null,
         type: input.type,
         target: input.target,
+        discount: Number(input.discount),
         start_date: input.start_date ?? null,
         end_date: input.end_date ?? null,
         items: input.items ?? [],
@@ -1396,6 +1397,7 @@ export async function updateChainPromotion({ session, promotionId, input }) {
         description: input.description ?? null,
         type: input.type,
         target: input.target,
+        discount: Number(input.discount),
         start_date: input.start_date ?? null,
         end_date: input.end_date ?? null,
         items: input.items ?? [],

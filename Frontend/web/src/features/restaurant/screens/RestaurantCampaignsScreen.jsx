@@ -14,6 +14,10 @@ import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
 
 const DISCOUNT_TYPES = ['PERCENTAGE', 'FIXED_AMOUNT']
 const DISCOUNT_TARGETS = ['ORDER', 'PRODUCT', 'DELIVERY', 'CATEGORY']
+const DISCOUNT_TYPE_LABELS = {
+  PERCENTAGE: 'Percentagem',
+  FIXED_AMOUNT: 'Valor fixo',
+}
 
 function formatDiscount(type, discount) {
   const value = Number(discount ?? 0)
@@ -21,10 +25,14 @@ function formatDiscount(type, discount) {
   return `${value.toFixed(2)} EUR`
 }
 
+function discountTypeLabel(type) {
+  return DISCOUNT_TYPE_LABELS[type] ?? type
+}
+
 function targetLabel(target) {
   if (target === 'ORDER') return 'Encomenda inteira'
-  if (target === 'PRODUCT') return 'Produtos especificos'
-  if (target === 'CATEGORY') return 'Categorias especificas'
+  if (target === 'PRODUCT') return 'Produtos específicos'
+  if (target === 'CATEGORY') return 'Categorias específicas'
   if (target === 'DELIVERY') return 'Taxa de entrega'
   return target
 }
@@ -32,7 +40,28 @@ function targetLabel(target) {
 function itemLabel(item) {
   if (item?.product?.name) return `Produto: ${item.product.name}`
   if (item?.category?.name) return `Categoria: ${item.category.name}`
-  return 'Item nao identificado'
+  return 'Item não identificado'
+}
+
+function todayInputValue() {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 10)
+}
+
+function dateInputValue(value) {
+  return value ? String(value).slice(0, 10) : ''
+}
+
+function validateDiscount(draft) {
+  const value = Number(draft.discount)
+  if (draft.discount === '' || !Number.isFinite(value) || value <= 0) {
+    return 'O desconto tem de ser maior que zero.'
+  }
+  if (draft.type === 'PERCENTAGE' && value > 100) {
+    return 'O desconto em percentagem não pode ser maior que 100.'
+  }
+  return ''
 }
 
 function emptyPromotionDraft() {
@@ -93,11 +122,13 @@ export function RestaurantCampaignsScreen({ session }) {
 
   const load = useCallback(async () => {
     if (!session?.chainId) {
-      setErrorText('Sem chain_id na sessao. Esta vista exige permissoes de cadeia.')
+      setErrorText('Sem chain_id na sessão. Esta vista exige permissões de cadeia.')
       return
     }
     try {
       setLoading(true)
+      setPromotions([])
+      setCoupons([])
       const [promotionsList, couponsList, catalog] = await Promise.all([
         fetchChainPromotions({ session }),
         fetchChainCoupons({ session }),
@@ -121,7 +152,12 @@ export function RestaurantCampaignsScreen({ session }) {
 
   async function handleSavePromotion() {
     if (!promotionDraft.name.trim()) {
-      setErrorText('Nome obrigatorio.')
+      setErrorText('Nome obrigatório.')
+      return
+    }
+    const discountError = validateDiscount(promotionDraft)
+    if (discountError) {
+      setErrorText(discountError)
       return
     }
     if (promotionDraft.target === 'PRODUCT' && promotionDraft.item_ids.length === 0) {
@@ -130,6 +166,14 @@ export function RestaurantCampaignsScreen({ session }) {
     }
     if (promotionDraft.target === 'CATEGORY' && promotionDraft.item_ids.length === 0) {
       setErrorText('Escolhe pelo menos uma categoria.')
+      return
+    }
+    if (
+      promotionDraft.start_date &&
+      promotionDraft.end_date &&
+      promotionDraft.end_date < promotionDraft.start_date
+    ) {
+      setErrorText('A data de fim tem de ser posterior à data de início.')
       return
     }
 
@@ -147,10 +191,10 @@ export function RestaurantCampaignsScreen({ session }) {
       }
       if (editingPromotionId) {
         await updateChainPromotion({ session, promotionId: editingPromotionId, input })
-        setInfoText('Promocao atualizada.')
+        setInfoText('Promoção atualizada.')
       } else {
         await createChainPromotion({ session, input })
-        setInfoText('Promocao criada.')
+        setInfoText('Promoção criada.')
       }
       setPromotionDraft(emptyPromotionDraft())
       setShowPromotionForm(false)
@@ -170,8 +214,8 @@ export function RestaurantCampaignsScreen({ session }) {
       description: promotion.description ?? '',
       type: promotion.type,
       target: promotion.target,
-      start_date: promotion.start_date ?? '',
-      end_date: promotion.end_date ?? '',
+      start_date: dateInputValue(promotion.start_date),
+      end_date: dateInputValue(promotion.end_date),
       discount: String(promotion.discount ?? 10),
       item_ids: (promotion.promotionItems ?? []).map((entry) => entry.item_id),
     })
@@ -183,7 +227,7 @@ export function RestaurantCampaignsScreen({ session }) {
     try {
       setSaving(true)
       await deleteChainPromotion({ session, promotionId: deletePromotionTarget.id })
-      setInfoText('Promocao apagada.')
+      setInfoText('Promoção apagada.')
       setDeletePromotionTarget(null)
       await load()
     } catch (error) {
@@ -195,7 +239,12 @@ export function RestaurantCampaignsScreen({ session }) {
 
   async function handleSaveCoupon() {
     if (!couponDraft.code.trim()) {
-      setErrorText('Codigo de cupao obrigatorio.')
+      setErrorText('Código de cupão obrigatório.')
+      return
+    }
+    const discountError = validateDiscount(couponDraft)
+    if (discountError) {
+      setErrorText(discountError)
       return
     }
     if (couponDraft.target === 'PRODUCT' && couponDraft.item_ids.length === 0) {
@@ -204,6 +253,10 @@ export function RestaurantCampaignsScreen({ session }) {
     }
     if (couponDraft.target === 'CATEGORY' && couponDraft.item_ids.length === 0) {
       setErrorText('Escolhe pelo menos uma categoria.')
+      return
+    }
+    if (couponDraft.expiry_date && couponDraft.expiry_date < todayInputValue()) {
+      setErrorText('A validade do cupão não pode ser uma data passada.')
       return
     }
     try {
@@ -219,10 +272,10 @@ export function RestaurantCampaignsScreen({ session }) {
       }
       if (editingCouponId) {
         await updateChainCoupon({ session, couponId: editingCouponId, input })
-        setInfoText('Cupao atualizado.')
+        setInfoText('Cupão atualizado.')
       } else {
         await createChainCoupon({ session, input })
-        setInfoText('Cupao criado.')
+        setInfoText('Cupão criado.')
       }
       setCouponDraft(emptyCouponDraft())
       setShowCouponForm(false)
@@ -244,7 +297,7 @@ export function RestaurantCampaignsScreen({ session }) {
       target: coupon.target,
       discount: String(coupon.discount ?? 10),
       item_ids: (coupon.promotionItems ?? []).map((entry) => entry.item_id),
-      expiry_date: coupon.expiry_date ?? '',
+      expiry_date: dateInputValue(coupon.expiry_date),
     })
     setShowCouponForm(true)
   }
@@ -254,7 +307,7 @@ export function RestaurantCampaignsScreen({ session }) {
     try {
       setSaving(true)
       await deleteChainCoupon({ session, couponId: deleteCouponTarget.id })
-      setInfoText('Cupao apagado.')
+      setInfoText('Cupão apagado.')
       setDeleteCouponTarget(null)
       await load()
     } catch (error) {
@@ -269,7 +322,7 @@ export function RestaurantCampaignsScreen({ session }) {
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Campanhas</h2>
-          <p>Promocoes e cupoes da cadeia</p>
+          <p>Promoções e cupões da cadeia</p>
         </div>
         <button type="button" className="rb-btn-outline" onClick={load} disabled={loading}>
           {loading ? 'A carregar...' : 'Atualizar'}
@@ -278,171 +331,35 @@ export function RestaurantCampaignsScreen({ session }) {
 
       <article className="rb-table-card">
         <div className="rb-table-head">
-          <h3>Promocoes</h3>
+          <h3>Promoções</h3>
           <button
             type="button"
             className="rb-primary"
-            onClick={() => setShowPromotionForm((state) => !state)}
+            onClick={() => {
+              setPromotionDraft(emptyPromotionDraft())
+              setEditingPromotionId('')
+              setErrorText('')
+              setShowPromotionForm(true)
+            }}
           >
-            {showPromotionForm ? 'Fechar' : '+ Nova promocao'}
+            + Nova promoção
           </button>
         </div>
 
-        {showPromotionForm ? (
-          <div className="rb-login-form">
-            <label>
-              Nome
-              <input
-                value={promotionDraft.name}
-                onChange={(event) =>
-                  setPromotionDraft((current) => ({ ...current, name: event.target.value }))
-                }
-                placeholder="Ex: Almocos de semana"
-              />
-            </label>
-            <label>
-              Descricao
-              <input
-                value={promotionDraft.description}
-                onChange={(event) =>
-                  setPromotionDraft((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-                placeholder="Ex: Desconto nos pedidos ao almoco"
-              />
-            </label>
-            <label>
-              Tipo
-              <select
-                value={promotionDraft.type}
-                onChange={(event) =>
-                  setPromotionDraft((current) => ({ ...current, type: event.target.value }))
-                }
-              >
-                {DISCOUNT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Alvo
-              <select
-                value={promotionDraft.target}
-                onChange={(event) =>
-                  setPromotionDraft((current) => ({
-                    ...current,
-                    target: event.target.value,
-                    item_ids: [],
-                  }))
-                }
-              >
-                {DISCOUNT_TARGETS.map((target) => (
-                  <option key={target} value={target}>
-                    {target}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Valor desconto (% ou EUR)
-              <input
-                type="number"
-                step="0.01"
-                value={promotionDraft.discount}
-                onChange={(event) =>
-                  setPromotionDraft((current) => ({ ...current, discount: event.target.value }))
-                }
-                placeholder="Ex: 10"
-              />
-            </label>
-            {promotionDraft.target === 'PRODUCT' ? (
-              <fieldset className="rb-checkbox-list">
-                <legend>Produtos abrangidos</legend>
-                {products.length === 0 ? (
-                  <p><small>Sem produtos na cadeia.</small></p>
-                ) : (
-                  products.map((product) => (
-                    <label key={product.id} className="rb-checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={promotionDraft.item_ids.includes(product.id)}
-                        onChange={() =>
-                          setPromotionDraft((current) => ({
-                            ...current,
-                            item_ids: toggleId(current.item_ids, product.id),
-                          }))
-                        }
-                      />
-                      {product.name} ({product.category_name})
-                    </label>
-                  ))
-                )}
-              </fieldset>
-            ) : null}
-            {promotionDraft.target === 'CATEGORY' ? (
-              <fieldset className="rb-checkbox-list">
-                <legend>Categorias abrangidas</legend>
-                {categories.length === 0 ? (
-                  <p><small>Sem categorias na cadeia.</small></p>
-                ) : (
-                  categories.map((category) => (
-                    <label key={category.id} className="rb-checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={promotionDraft.item_ids.includes(category.id)}
-                        onChange={() =>
-                          setPromotionDraft((current) => ({
-                            ...current,
-                            item_ids: toggleId(current.item_ids, category.id),
-                          }))
-                        }
-                      />
-                      {category.name}
-                    </label>
-                  ))
-                )}
-              </fieldset>
-            ) : null}
-            <label>
-              Inicio (ISO)
-              <input
-                type="date"
-                value={promotionDraft.start_date}
-                onChange={(event) =>
-                  setPromotionDraft((current) => ({ ...current, start_date: event.target.value }))
-                }
-              />
-            </label>
-            <label>
-              Fim (ISO)
-              <input
-                type="date"
-                value={promotionDraft.end_date}
-                onChange={(event) =>
-                  setPromotionDraft((current) => ({ ...current, end_date: event.target.value }))
-                }
-              />
-            </label>
-            <button
-              type="button"
-              className="rb-btn-accept"
-              onClick={handleSavePromotion}
-              disabled={saving}
-            >
-              {editingPromotionId ? 'Guardar alteracoes' : 'Criar promocao'}
-            </button>
+        {loading ? (
+          <div className="rb-empty-state rb-empty-state-inline">
+            <h3>A carregar promoções...</h3>
           </div>
         ) : null}
 
         {promotions.length === 0 && !loading ? (
-          <p>Sem promocoes.</p>
+          <div className="rb-empty-state rb-empty-state-inline">
+            <h3>Sem promoções</h3>
+            <p>Cria uma promoção para a cadeia quando quiseres destacar uma oferta.</p>
+          </div>
         ) : null}
 
-        {promotions.map((promotion) => {
+        {!loading && promotions.map((promotion) => {
           const isExpanded = expandedPromotionId === promotion.id
           return (
             <div key={promotion.id}>
@@ -461,12 +378,12 @@ export function RestaurantCampaignsScreen({ session }) {
                   }}
                   style={{ cursor: 'pointer' }}
                 >
-                  <strong>{isExpanded ? '▼' : '▶'} {promotion.name}</strong>
+                  <strong>{isExpanded ? '\u25BE' : '\u25B8'} {promotion.name}</strong>
                   <br />
                   <small>
                     {formatDiscount(promotion.type, promotion.discount)} - {targetLabel(promotion.target)}
-                    {promotion.start_date ? ` - de ${promotion.start_date}` : ''}
-                    {promotion.end_date ? ` ate ${promotion.end_date}` : ''}
+                    {promotion.start_date ? ` - de ${dateInputValue(promotion.start_date)}` : ''}
+                    {promotion.end_date ? ` até ${dateInputValue(promotion.end_date)}` : ''}
                   </small>
                 </span>
                 <div className="rb-card-actions">
@@ -490,10 +407,10 @@ export function RestaurantCampaignsScreen({ session }) {
                 <div className="rb-detail-expanded">
                   {promotion.description ? <p>{promotion.description}</p> : null}
                   <p>
-                    <strong>Tipo:</strong> {promotion.type}
-                    {' · '}
+                    <strong>Tipo:</strong> {discountTypeLabel(promotion.type)}
+                    {' \u00B7 '}
                     <strong>Alvo:</strong> {targetLabel(promotion.target)}
-                    {' · '}
+                    {' \u00B7 '}
                     <strong>Desconto:</strong> {formatDiscount(promotion.type, promotion.discount)}
                   </p>
                   {promotion.target === 'PRODUCT' || promotion.target === 'CATEGORY' ? (
@@ -519,156 +436,35 @@ export function RestaurantCampaignsScreen({ session }) {
 
       <article className="rb-table-card">
         <div className="rb-table-head">
-          <h3>Cupoes</h3>
+          <h3>Cupões</h3>
           <button
             type="button"
             className="rb-primary"
-            onClick={() => setShowCouponForm((state) => !state)}
+            onClick={() => {
+              setCouponDraft(emptyCouponDraft())
+              setEditingCouponId('')
+              setErrorText('')
+              setShowCouponForm(true)
+            }}
           >
-            {showCouponForm ? 'Fechar' : '+ Novo cupao'}
+            + Novo cupão
           </button>
         </div>
 
-        {showCouponForm ? (
-          <div className="rb-login-form">
-            <label>
-              Codigo
-              <input
-                value={couponDraft.code}
-                onChange={(event) =>
-                  setCouponDraft((current) => ({ ...current, code: event.target.value }))
-                }
-                placeholder="Ex: LUNCH10"
-              />
-            </label>
-            <label>
-              Descricao
-              <input
-                value={couponDraft.description}
-                onChange={(event) =>
-                  setCouponDraft((current) => ({ ...current, description: event.target.value }))
-                }
-                placeholder="Ex: Cupao para a hora de almoco"
-              />
-            </label>
-            <label>
-              Tipo
-              <select
-                value={couponDraft.type}
-                onChange={(event) =>
-                  setCouponDraft((current) => ({ ...current, type: event.target.value }))
-                }
-              >
-                {DISCOUNT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Alvo
-              <select
-                value={couponDraft.target}
-                onChange={(event) =>
-                  setCouponDraft((current) => ({
-                    ...current,
-                    target: event.target.value,
-                    item_ids: [],
-                  }))
-                }
-              >
-                {DISCOUNT_TARGETS.map((target) => (
-                  <option key={target} value={target}>
-                    {target}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Valor desconto (% ou EUR)
-              <input
-                type="number"
-                step="0.01"
-                value={couponDraft.discount}
-                onChange={(event) =>
-                  setCouponDraft((current) => ({ ...current, discount: event.target.value }))
-                }
-                placeholder="Ex: 10"
-              />
-            </label>
-            {couponDraft.target === 'PRODUCT' ? (
-              <fieldset className="rb-checkbox-list">
-                <legend>Produtos abrangidos</legend>
-                {products.length === 0 ? (
-                  <p><small>Sem produtos na cadeia.</small></p>
-                ) : (
-                  products.map((product) => (
-                    <label key={product.id} className="rb-checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={couponDraft.item_ids.includes(product.id)}
-                        onChange={() =>
-                          setCouponDraft((current) => ({
-                            ...current,
-                            item_ids: toggleId(current.item_ids, product.id),
-                          }))
-                        }
-                      />
-                      {product.name} ({product.category_name})
-                    </label>
-                  ))
-                )}
-              </fieldset>
-            ) : null}
-            {couponDraft.target === 'CATEGORY' ? (
-              <fieldset className="rb-checkbox-list">
-                <legend>Categorias abrangidas</legend>
-                {categories.length === 0 ? (
-                  <p><small>Sem categorias na cadeia.</small></p>
-                ) : (
-                  categories.map((category) => (
-                    <label key={category.id} className="rb-checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={couponDraft.item_ids.includes(category.id)}
-                        onChange={() =>
-                          setCouponDraft((current) => ({
-                            ...current,
-                            item_ids: toggleId(current.item_ids, category.id),
-                          }))
-                        }
-                      />
-                      {category.name}
-                    </label>
-                  ))
-                )}
-              </fieldset>
-            ) : null}
-            <label>
-              Validade (ISO)
-              <input
-                type="date"
-                value={couponDraft.expiry_date}
-                onChange={(event) =>
-                  setCouponDraft((current) => ({ ...current, expiry_date: event.target.value }))
-                }
-              />
-            </label>
-            <button
-              type="button"
-              className="rb-btn-accept"
-              onClick={handleSaveCoupon}
-              disabled={saving}
-            >
-              {editingCouponId ? 'Guardar alteracoes' : 'Criar cupao'}
-            </button>
+        {loading ? (
+          <div className="rb-empty-state rb-empty-state-inline">
+            <h3>A carregar cupões...</h3>
           </div>
         ) : null}
 
-        {coupons.length === 0 && !loading ? <p>Sem cupoes.</p> : null}
+        {coupons.length === 0 && !loading ? (
+          <div className="rb-empty-state rb-empty-state-inline">
+            <h3>Sem cupões</h3>
+            <p>Cria um cupão quando quiseres lançar um código promocional.</p>
+          </div>
+        ) : null}
 
-        {coupons.map((coupon) => {
+        {!loading && coupons.map((coupon) => {
           const isExpanded = expandedCouponId === coupon.id
           return (
             <div key={coupon.id}>
@@ -687,11 +483,11 @@ export function RestaurantCampaignsScreen({ session }) {
                   }}
                   style={{ cursor: 'pointer' }}
                 >
-                  <strong>{isExpanded ? '▼' : '▶'} {coupon.code}</strong>
+                  <strong>{isExpanded ? '\u25BE' : '\u25B8'} {coupon.code}</strong>
                   <br />
                   <small>
                     {formatDiscount(coupon.type, coupon.discount)} - {targetLabel(coupon.target)}
-                    {coupon.expiry_date ? ` ate ${coupon.expiry_date}` : ''}
+                    {coupon.expiry_date ? ` até ${dateInputValue(coupon.expiry_date)}` : ''}
                   </small>
                 </span>
                 <div className="rb-card-actions">
@@ -715,10 +511,10 @@ export function RestaurantCampaignsScreen({ session }) {
                 <div className="rb-detail-expanded">
                   {coupon.description ? <p>{coupon.description}</p> : null}
                   <p>
-                    <strong>Tipo:</strong> {coupon.type}
-                    {' · '}
+                    <strong>Tipo:</strong> {discountTypeLabel(coupon.type)}
+                    {' \u00B7 '}
                     <strong>Alvo:</strong> {targetLabel(coupon.target)}
-                    {' · '}
+                    {' \u00B7 '}
                     <strong>Desconto:</strong> {formatDiscount(coupon.type, coupon.discount)}
                   </p>
                   {coupon.target === 'PRODUCT' || coupon.target === 'CATEGORY' ? (
@@ -746,8 +542,326 @@ export function RestaurantCampaignsScreen({ session }) {
       {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
 
       <ConfirmDialog
+        open={showPromotionForm}
+        title={editingPromotionId ? 'Editar promoção' : 'Criar promoção'}
+        description="Define o desconto e escolhe o alvo da promoção."
+        confirmLabel={editingPromotionId ? 'Guardar alterações' : 'Criar promoção'}
+        cancelLabel="Fechar"
+        cardClassName="rb-dialog-card-wide"
+        bodyClassName="rb-create-modal-body"
+        loading={saving}
+        onCancel={() => {
+          if (!saving) {
+            setShowPromotionForm(false)
+            setEditingPromotionId('')
+            setPromotionDraft(emptyPromotionDraft())
+            setErrorText('')
+          }
+        }}
+        onConfirm={handleSavePromotion}
+      >
+        <div className="rb-login-form rb-create-product-modal-form">
+          <label>
+            Nome
+            <input
+              value={promotionDraft.name}
+              onChange={(event) =>
+                setPromotionDraft((current) => ({ ...current, name: event.target.value }))
+              }
+              placeholder="Ex: Almoços de semana"
+            />
+          </label>
+          <label>
+            Descrição
+            <input
+              value={promotionDraft.description}
+              onChange={(event) =>
+                setPromotionDraft((current) => ({ ...current, description: event.target.value }))
+              }
+              placeholder="Ex: Desconto nos pedidos ao almoço"
+            />
+          </label>
+          <div className="rb-login-grid">
+            <label>
+              Tipo
+              <select
+                value={promotionDraft.type}
+                onChange={(event) =>
+                  setPromotionDraft((current) => ({ ...current, type: event.target.value }))
+                }
+              >
+                {DISCOUNT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {discountTypeLabel(type)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Alvo
+              <select
+                value={promotionDraft.target}
+                onChange={(event) =>
+                  setPromotionDraft((current) => ({
+                    ...current,
+                    target: event.target.value,
+                    item_ids: [],
+                  }))
+                }
+              >
+                {DISCOUNT_TARGETS.map((target) => (
+                  <option key={target} value={target}>
+                    {targetLabel(target)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label>
+            Valor do desconto ({promotionDraft.type === 'PERCENTAGE' ? '%' : 'EUR'})
+            <input
+              type="number"
+              min="0.01"
+              max={promotionDraft.type === 'PERCENTAGE' ? '100' : undefined}
+              step="0.01"
+              value={promotionDraft.discount}
+              onChange={(event) =>
+                setPromotionDraft((current) => ({ ...current, discount: event.target.value }))
+              }
+              placeholder="Ex: 10"
+            />
+          </label>
+          {promotionDraft.target === 'PRODUCT' ? (
+            <fieldset className="rb-checkbox-list">
+              <legend>Produtos abrangidos</legend>
+              {products.length === 0 ? (
+                <p><small>Sem produtos na cadeia.</small></p>
+              ) : (
+                products.map((product) => (
+                  <label key={product.id} className="rb-checkbox-item">
+                    <input
+                      type="checkbox"
+                      checked={promotionDraft.item_ids.includes(product.id)}
+                      onChange={() =>
+                        setPromotionDraft((current) => ({
+                          ...current,
+                          item_ids: toggleId(current.item_ids, product.id),
+                        }))
+                      }
+                    />
+                    {product.name} ({product.category_name})
+                  </label>
+                ))
+              )}
+            </fieldset>
+          ) : null}
+          {promotionDraft.target === 'CATEGORY' ? (
+            <fieldset className="rb-checkbox-list">
+              <legend>Categorias abrangidas</legend>
+              {categories.length === 0 ? (
+                <p><small>Sem categorias na cadeia.</small></p>
+              ) : (
+                categories.map((category) => (
+                  <label key={category.id} className="rb-checkbox-item">
+                    <input
+                      type="checkbox"
+                      checked={promotionDraft.item_ids.includes(category.id)}
+                      onChange={() =>
+                        setPromotionDraft((current) => ({
+                          ...current,
+                          item_ids: toggleId(current.item_ids, category.id),
+                        }))
+                      }
+                    />
+                    {category.name}
+                  </label>
+                ))
+              )}
+            </fieldset>
+          ) : null}
+          <div className="rb-login-grid">
+            <label>
+              Início
+              <input
+                type="date"
+                value={promotionDraft.start_date}
+                onChange={(event) =>
+                  setPromotionDraft((current) => ({ ...current, start_date: event.target.value }))
+                }
+              />
+            </label>
+            <label>
+              Fim
+              <input
+                type="date"
+                value={promotionDraft.end_date}
+                min={promotionDraft.start_date || undefined}
+                onChange={(event) =>
+                  setPromotionDraft((current) => ({ ...current, end_date: event.target.value }))
+                }
+              />
+            </label>
+          </div>
+          {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
+        </div>
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={showCouponForm}
+        title={editingCouponId ? 'Editar cupão' : 'Criar cupão'}
+        description="Define o código, o desconto e a validade do cupão."
+        confirmLabel={editingCouponId ? 'Guardar alterações' : 'Criar cupão'}
+        cancelLabel="Fechar"
+        cardClassName="rb-dialog-card-wide"
+        bodyClassName="rb-create-modal-body"
+        loading={saving}
+        onCancel={() => {
+          if (!saving) {
+            setShowCouponForm(false)
+            setEditingCouponId('')
+            setCouponDraft(emptyCouponDraft())
+            setErrorText('')
+          }
+        }}
+        onConfirm={handleSaveCoupon}
+      >
+        <div className="rb-login-form rb-create-product-modal-form">
+          <label>
+            Código
+            <input
+              value={couponDraft.code}
+              onChange={(event) =>
+                setCouponDraft((current) => ({ ...current, code: event.target.value }))
+              }
+              placeholder="Ex: LUNCH10"
+            />
+          </label>
+          <label>
+            Descrição
+            <input
+              value={couponDraft.description}
+              onChange={(event) =>
+                setCouponDraft((current) => ({ ...current, description: event.target.value }))
+              }
+              placeholder="Ex: Cupão para a hora de almoço"
+            />
+          </label>
+          <div className="rb-login-grid">
+            <label>
+              Tipo
+              <select
+                value={couponDraft.type}
+                onChange={(event) =>
+                  setCouponDraft((current) => ({ ...current, type: event.target.value }))
+                }
+              >
+                {DISCOUNT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {discountTypeLabel(type)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Alvo
+              <select
+                value={couponDraft.target}
+                onChange={(event) =>
+                  setCouponDraft((current) => ({
+                    ...current,
+                    target: event.target.value,
+                    item_ids: [],
+                  }))
+                }
+              >
+                {DISCOUNT_TARGETS.map((target) => (
+                  <option key={target} value={target}>
+                    {targetLabel(target)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <label>
+            Valor do desconto ({couponDraft.type === 'PERCENTAGE' ? '%' : 'EUR'})
+            <input
+              type="number"
+              min="0.01"
+              max={couponDraft.type === 'PERCENTAGE' ? '100' : undefined}
+              step="0.01"
+              value={couponDraft.discount}
+              onChange={(event) =>
+                setCouponDraft((current) => ({ ...current, discount: event.target.value }))
+              }
+              placeholder="Ex: 10"
+            />
+          </label>
+          {couponDraft.target === 'PRODUCT' ? (
+            <fieldset className="rb-checkbox-list">
+              <legend>Produtos abrangidos</legend>
+              {products.length === 0 ? (
+                <p><small>Sem produtos na cadeia.</small></p>
+              ) : (
+                products.map((product) => (
+                  <label key={product.id} className="rb-checkbox-item">
+                    <input
+                      type="checkbox"
+                      checked={couponDraft.item_ids.includes(product.id)}
+                      onChange={() =>
+                        setCouponDraft((current) => ({
+                          ...current,
+                          item_ids: toggleId(current.item_ids, product.id),
+                        }))
+                      }
+                    />
+                    {product.name} ({product.category_name})
+                  </label>
+                ))
+              )}
+            </fieldset>
+          ) : null}
+          {couponDraft.target === 'CATEGORY' ? (
+            <fieldset className="rb-checkbox-list">
+              <legend>Categorias abrangidas</legend>
+              {categories.length === 0 ? (
+                <p><small>Sem categorias na cadeia.</small></p>
+              ) : (
+                categories.map((category) => (
+                  <label key={category.id} className="rb-checkbox-item">
+                    <input
+                      type="checkbox"
+                      checked={couponDraft.item_ids.includes(category.id)}
+                      onChange={() =>
+                        setCouponDraft((current) => ({
+                          ...current,
+                          item_ids: toggleId(current.item_ids, category.id),
+                        }))
+                      }
+                    />
+                    {category.name}
+                  </label>
+                ))
+              )}
+            </fieldset>
+          ) : null}
+          <label>
+            Validade
+            <input
+              type="date"
+              min={todayInputValue()}
+              value={couponDraft.expiry_date}
+              onChange={(event) =>
+                setCouponDraft((current) => ({ ...current, expiry_date: event.target.value }))
+              }
+            />
+          </label>
+          {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
+        </div>
+      </ConfirmDialog>
+
+      <ConfirmDialog
         open={Boolean(deletePromotionTarget)}
-        title="Apagar promocao"
+        title="Apagar promoção"
         description={`Apagar "${deletePromotionTarget?.name ?? ''}". Os clientes deixam de a ver.`}
         confirmLabel="Apagar"
         destructive
@@ -760,8 +874,8 @@ export function RestaurantCampaignsScreen({ session }) {
 
       <ConfirmDialog
         open={Boolean(deleteCouponTarget)}
-        title="Apagar cupao"
-        description={`Apagar cupao "${deleteCouponTarget?.code ?? ''}".`}
+        title="Apagar cupão"
+        description={`Apagar cupão "${deleteCouponTarget?.code ?? ''}".`}
         confirmLabel="Apagar"
         destructive
         loading={saving}

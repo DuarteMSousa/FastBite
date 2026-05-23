@@ -109,4 +109,41 @@ GRAPHQL;
             $response->json('errors.0.message', ''),
         );
     }
+
+    public function test_create_coupon_rejects_past_expiry_date(): void
+    {
+        $chain = RestaurantChain::query()->create(['name' => 'FastBite']);
+
+        $mutation = <<<'GRAPHQL'
+mutation CreateCoupon($input: CreateCouponInput!) {
+  createCoupon(input: $input) {
+    id
+  }
+}
+GRAPHQL;
+
+        $response = $this->postJson('/graphql', [
+            'query' => $mutation,
+            'variables' => [
+                'input' => [
+                    'chain_id' => $chain->id,
+                    'code' => 'OLD10',
+                    'description' => 'Cupao antigo',
+                    'type' => 'PERCENTAGE',
+                    'target' => 'ORDER',
+                    'discount' => 10,
+                    'expiry_date' => now()->subDay()->toDateString(),
+                ],
+            ],
+        ]);
+
+        $response
+            ->assertOk()
+            ->assertJsonStructure(['errors']);
+
+        $this->assertStringContainsString(
+            'validade',
+            $response->json('errors.0.message', ''),
+        );
+    }
 }

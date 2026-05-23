@@ -27,10 +27,47 @@ const INITIAL_RESTAURANT_FORM = {
   longitude: -8.6109,
 }
 
+function PasswordField({ value, onChange, visible, onToggle, placeholder = 'Palavra-passe' }) {
+  return (
+    <div className="rb-password-field">
+      <input
+        value={value}
+        onChange={onChange}
+        type={visible ? 'text' : 'password'}
+        placeholder={placeholder}
+        required
+      />
+      <button
+        type="button"
+        className="rb-password-toggle"
+        onClick={onToggle}
+        aria-label={visible ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'}
+        title={visible ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'}
+      >
+        {visible ? (
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m3 3 18 18" />
+            <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+            <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.6 4.1 10 8a13.7 13.7 0 0 1-2.4 4" />
+            <path d="M6.3 6.3A13.4 13.4 0 0 0 2 12c1.4 3.9 5 8 10 8 1.5 0 2.9-.4 4.1-1" />
+          </svg>
+        ) : (
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        )}
+      </button>
+    </div>
+  )
+}
+
 export function RestaurantLoginScreen({ onLogin }) {
   const [activeMode, setActiveMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showLoginPassword, setShowLoginPassword] = useState(false)
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false)
   const [registerForm, setRegisterForm] = useState(INITIAL_REGISTER_FORM)
   const [pendingUser, setPendingUser] = useState(null)
   const [setupMode, setSetupMode] = useState('existing-chain')
@@ -47,12 +84,12 @@ export function RestaurantLoginScreen({ onLogin }) {
   const setupDescription = useMemo(() => {
     if (!pendingUser) return ''
     if (pendingUser.isChainManager) {
-      return 'Este gestor ja esta associado a uma chain. Cria o primeiro restaurante para entrar no painel.'
+      return 'Este gestor já está associado a uma cadeia. Cria o primeiro restaurante para entrar no painel.'
     }
 
     return setupMode === 'new-chain'
-      ? 'Ao criares uma nova chain, este utilizador passa a ser gestor de chain.'
-      : 'Ao criares um restaurante numa chain existente, este utilizador passa a ser gestor local.'
+      ? 'Ao criares uma nova cadeia, este utilizador passa a ser gestor de cadeia.'
+      : 'Ao criares um restaurante numa cadeia existente, este utilizador passa a ser gestor local.'
   }, [pendingUser, setupMode])
 
   useEffect(() => {
@@ -190,7 +227,7 @@ export function RestaurantLoginScreen({ onLogin }) {
         {activeMode === 'login' ? (
           <>
             <h2>Entrar no painel do restaurante</h2>
-            <p>Utiliza email e password. O restaurante e resolvido automaticamente.</p>
+            <p>Utiliza email e palavra-passe. O restaurante é resolvido automaticamente.</p>
 
             <form className="rb-login-form" onSubmit={handleSubmit}>
               <label>
@@ -204,13 +241,12 @@ export function RestaurantLoginScreen({ onLogin }) {
                 />
               </label>
               <label>
-                Password
-                <input
+                Palavra-passe
+                <PasswordField
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
-                  type="password"
-                  placeholder="Password"
-                  required
+                  visible={showLoginPassword}
+                  onToggle={() => setShowLoginPassword((current) => !current)}
                 />
               </label>
 
@@ -222,7 +258,7 @@ export function RestaurantLoginScreen({ onLogin }) {
         ) : (
           <>
             <h2>Criar utilizador de restaurante</h2>
-            <p>Depois de criar a conta, configuras logo a chain e o restaurante numa modal.</p>
+            <p>Depois de criar a conta, configuras logo a cadeia e o restaurante numa modal.</p>
 
             <form className="rb-login-form" onSubmit={handleRegister}>
               <label>
@@ -246,13 +282,12 @@ export function RestaurantLoginScreen({ onLogin }) {
                 />
               </label>
               <label>
-                Password
-                <input
+                Palavra-passe
+                <PasswordField
                   value={registerForm.password}
                   onChange={(event) => updateRegisterField('password', event.target.value)}
-                  type="password"
-                  placeholder="Password"
-                  required
+                  visible={showRegisterPassword}
+                  onToggle={() => setShowRegisterPassword((current) => !current)}
                 />
               </label>
 
@@ -290,21 +325,21 @@ export function RestaurantLoginScreen({ onLogin }) {
                   disabled={!hasChains}
                   onClick={() => setSetupMode('existing-chain')}
                 >
-                  Restaurante numa chain
+                  Restaurante numa cadeia
                 </button>
                 <button
                   type="button"
                   className={setupMode === 'new-chain' ? 'active' : ''}
                   onClick={() => setSetupMode('new-chain')}
                 >
-                  Nova chain + restaurante
+                  Nova cadeia + restaurante
                 </button>
               </div>
 
               <div className="rb-login-form rb-create-product-modal-form">
                 {setupMode === 'existing-chain' ? (
                   <label>
-                    Chain existente
+                    Cadeia existente
                     <select
                       value={selectedChainId}
                       onChange={(event) => setSelectedChainId(event.target.value)}
@@ -319,7 +354,7 @@ export function RestaurantLoginScreen({ onLogin }) {
                   </label>
                 ) : (
                   <label>
-                    Nome da chain
+                    Nome da cadeia
                     <input
                       value={chainName}
                       onChange={(event) => setChainName(event.target.value)}
@@ -342,7 +377,7 @@ export function RestaurantLoginScreen({ onLogin }) {
                     />
                   </label>
                   <label>
-                    Raio de entrega km
+                    Raio de entrega (km)
                     <input
                       value={restaurantForm.delivery_radius}
                       onChange={(event) => updateRestaurantField('delivery_radius', event.target.value)}
@@ -400,7 +435,7 @@ export function RestaurantLoginScreen({ onLogin }) {
 
                 <div className="rb-login-grid">
                   <label>
-                    Codigo postal
+                    Código postal
                     <input
                       value={restaurantForm.postal_code}
                       onChange={(event) => updateRestaurantField('postal_code', event.target.value)}
@@ -410,7 +445,7 @@ export function RestaurantLoginScreen({ onLogin }) {
                     />
                   </label>
                   <label>
-                    Pais
+                    País
                     <input
                       value={restaurantForm.country}
                       onChange={(event) => updateRestaurantField('country', event.target.value)}

@@ -1,5 +1,6 @@
 ﻿import { Pressable, ScrollView, Text, TextInput, View } from 'react-native'
 import { styles } from './styles'
+import { ICON } from './utils'
 
 export function ProfileScreen({
   session,
@@ -19,7 +20,7 @@ export function ProfileScreen({
     <View style={styles.screen}>
       <View style={styles.trackHeader}>
         <Pressable onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backArrow}>{'â†'}</Text>
+          <Text style={styles.backArrow}>{ICON.back}</Text>
         </Pressable>
         <Text style={styles.trackTitle}>Perfil</Text>
         <Text style={styles.trackSub}>{session?.email ?? '-'}</Text>
@@ -75,38 +76,38 @@ export function ProfileScreen({
         <View style={styles.checkoutCard}>
           <Text style={styles.checkoutSectionTitle}>Meus pedidos</Text>
           <Text style={styles.checkoutRowValue}>
-            Historico completo de encomendas, com detalhe, repetir e cancelar.
+            Histórico completo de encomendas, com detalhe, repetir e cancelar.
           </Text>
           <Pressable
             style={[styles.addressAddBtn, { marginTop: 12 }]}
             onPress={onOpenOrdersHistory}
           >
-            <Text style={styles.addressAddBtnText}>Ver historico</Text>
+            <Text style={styles.addressAddBtnText}>Ver histórico</Text>
           </Pressable>
         </View>
 
         <View style={styles.checkoutCard}>
-          <Text style={styles.checkoutSectionTitle}>Minhas avaliacoes</Text>
+          <Text style={styles.checkoutSectionTitle}>Minhas avaliações</Text>
           <Text style={styles.checkoutRowValue}>
             {reviewsCount === 0
-              ? 'Sem avaliacoes ainda.'
-              : `${reviewsCount} avaliacao(oes) submetida(s).`}
+              ? 'Sem avaliações ainda.'
+              : `${reviewsCount} avaliação(ões) submetida(s).`}
           </Text>
           <Pressable
             style={[styles.addressAddBtn, { marginTop: 12 }]}
             onPress={onOpenReviewsHistory}
           >
-            <Text style={styles.addressAddBtnText}>Ver avaliacoes</Text>
+            <Text style={styles.addressAddBtnText}>Ver avaliações</Text>
           </Pressable>
         </View>
 
         <View style={styles.checkoutCard}>
-          <Text style={styles.checkoutSectionTitle}>Sessao</Text>
+          <Text style={styles.checkoutSectionTitle}>Sessão</Text>
           <Pressable
             style={[styles.cancelDanger, { marginTop: 8 }]}
             onPress={onLogoutRequest}
           >
-            <Text style={styles.cancelDangerText}>Terminar sessao</Text>
+            <Text style={styles.cancelDangerText}>Terminar sessão</Text>
           </Pressable>
         </View>
       </ScrollView>

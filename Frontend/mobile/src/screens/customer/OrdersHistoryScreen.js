@@ -1,6 +1,6 @@
 ﻿import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { styles } from './styles'
-import { CANCELLABLE_STATUSES, TRACKABLE_STATUSES, orderStatusChipStyle, statusLabel } from './utils'
+import { CANCELLABLE_STATUSES, ICON, TRACKABLE_STATUSES, orderStatusChipStyle, statusLabel } from './utils'
 
 export function OrdersHistoryScreen({
   orders,
@@ -20,10 +20,10 @@ export function OrdersHistoryScreen({
     <View style={styles.screen}>
       <View style={styles.trackHeader}>
         <Pressable onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backArrow}>{'â†'}</Text>
+          <Text style={styles.backArrow}>{ICON.back}</Text>
         </Pressable>
         <Text style={styles.trackTitle}>Meus pedidos</Text>
-        <Text style={styles.trackSub}>Historico de encomendas</Text>
+        <Text style={styles.trackSub}>Histórico de encomendas</Text>
       </View>
 
       <ScrollView
@@ -40,11 +40,14 @@ export function OrdersHistoryScreen({
         </Pressable>
 
         {!loading && orders.length === 0 ? (
-          <Text style={styles.mutedText}>Sem pedidos no historico.</Text>
+          <View style={styles.emptyStateCard}>
+            <Text style={styles.emptyStateTitle}>Sem pedidos</Text>
+            <Text style={styles.emptyStateText}>O histórico fica aqui depois da primeira encomenda.</Text>
+          </View>
         ) : null}
 
         {orders.length > 0 && hasMore ? null : orders.length > 0 ? (
-          <Text style={styles.mutedText}>Fim do historico.</Text>
+          <Text style={styles.mutedText}>Fim do histórico.</Text>
         ) : null}
 
         {orders.map((order) => {

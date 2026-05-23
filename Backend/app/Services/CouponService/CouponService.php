@@ -11,6 +11,8 @@ use App\Repositories\CategoryRepository\CategoryRepositoryInterface;
 use App\Repositories\CouponRepository\CouponRepositoryInterface;
 use App\Repositories\ProductRepository\ProductRepositoryInterface;
 use App\Repositories\RestaurantChainRepository\RestaurantChainRepositoryInterface;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Validation\ValidationException;
 
 class CouponService implements CouponServiceInterface
@@ -54,7 +56,7 @@ class CouponService implements CouponServiceInterface
     public function createCoupon(CreateCouponDTO $data): Coupon
     {
         $items = $data->items?->toArray() ?? [];
-        $this->validateCoupon($data->chain_id, $data->target, $data->discount, $items);
+        $this->validateCoupon($data->chain_id, $data->target, $data->discount, $items, $data->expiry_date);
 
         $coupon = $this->coupons->createCoupon($data);
         $this->coupons->replaceItems($coupon->id, $items);
@@ -82,7 +84,13 @@ class CouponService implements CouponServiceInterface
                 ])->all()
         );
 
-        $this->validateCoupon($coupon->chain_id, $target, $data->discount ?? $coupon->discount, $itemsForValidation);
+        $this->validateCoupon(
+            $coupon->chain_id,
+            $target,
+            $data->discount ?? $coupon->discount,
+            $itemsForValidation,
+            $data->expiry_date ?? $coupon->expiry_date,
+        );
 
         $this->coupons->updateCoupon($id, $data);
 
@@ -114,7 +122,7 @@ class CouponService implements CouponServiceInterface
         ];
     }
 
-    private function validateCoupon(string $chainId, DiscountTarget $target, ?float $discount, array $items): void
+    private function validateCoupon(string $chainId, DiscountTarget $target, ?float $discount, array $items, mixed $expiryDate): void
     {
         $errors = [];
 
@@ -124,6 +132,20 @@ class CouponService implements CouponServiceInterface
 
         if ($discount === null || $discount <= 0) {
             $errors['discount'][] = 'Discount must be greater than zero.';
+        }
+
+        if ($expiryDate !== null) {
+            try {
+                $expiresAt = $expiryDate instanceof CarbonInterface
+                    ? CarbonImmutable::instance($expiryDate)
+                    : CarbonImmutable::parse($expiryDate);
+
+                if ($expiresAt->startOfDay()->lt(now()->startOfDay())) {
+                    $errors['expiry_date'][] = 'A validade do cupão não pode ser uma data passada.';
+                }
+            } catch (\Throwable) {
+                $errors['expiry_date'][] = 'Data de validade inválida.';
+            }
         }
 
         if (in_array($target, [DiscountTarget::ORDER, DiscountTarget::DELIVERY], true)) {

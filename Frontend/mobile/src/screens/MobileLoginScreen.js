@@ -5,6 +5,7 @@ import { loginMobileUser, registerMobileUser } from '../services/authService'
 export function MobileLoginScreen({ onLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [role, setRole] = useState('customer')
   const [loadingAction, setLoadingAction] = useState('')
   const [errorText, setErrorText] = useState('')
@@ -46,7 +47,7 @@ export function MobileLoginScreen({ onLogin }) {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <Text style={styles.brand}>FastBite</Text>
-        <Text style={styles.subtitle}>Inicia sessao</Text>
+        <Text style={styles.subtitle}>Inicia sessão</Text>
         <View style={styles.roleRow}>
           <RoleButton label="Cliente" active={role === 'customer'} onPress={() => setRole('customer')} />
           <RoleButton label="Estafeta" active={role === 'courier'} onPress={() => setRole('courier')} />
@@ -65,14 +66,24 @@ export function MobileLoginScreen({ onLogin }) {
           />
 
           <Text style={styles.label}>Palavra-passe</Text>
-          <TextInput
-            style={styles.input}
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Palavra-passe"
-            placeholderTextColor="#95a5c0"
-          />
+          <View style={styles.passwordField}>
+            <TextInput
+              style={[styles.input, styles.passwordInput]}
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Palavra-passe"
+              placeholderTextColor="#95a5c0"
+            />
+            <Pressable
+              style={styles.passwordToggle}
+              onPress={() => setShowPassword((current) => !current)}
+              accessibilityRole="button"
+              accessibilityLabel={showPassword ? 'Ocultar palavra-passe' : 'Mostrar palavra-passe'}
+            >
+              <Text style={styles.passwordToggleText}>{showPassword ? '\u25CC' : '\u{1F441}'}</Text>
+            </Pressable>
+          </View>
 
           <Pressable style={styles.loginBtn} onPress={handleLogin} disabled={loadingAction !== ''}>
             <Text style={styles.loginBtnText}>{loadingAction === 'login' ? 'A entrar...' : 'Entrar'}</Text>
@@ -168,6 +179,27 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: '#0f172a',
     fontSize: 15,
+  },
+  passwordField: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  passwordInput: {
+    paddingRight: 46,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 6,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  passwordToggleText: {
+    color: '#64748b',
+    fontSize: 18,
+    fontWeight: '800',
   },
   loginBtn: {
     marginTop: 16,

@@ -166,7 +166,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
     return (
       <section className="rb-page">
         <header className="rb-page-head">
-          <h2>Pedido nao encontrado</h2>
+          <h2>Pedido não encontrado</h2>
         </header>
         {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
       </section>
@@ -284,7 +284,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
               <div className="rb-detail-row">
                 <span>Estafeta</span>
                 <strong>
-                  {order.delivery.courier?.user?.name ?? order.delivery.courier_id ?? 'Nao atribuido'}
+                  {order.delivery.courier?.user?.name ?? order.delivery.courier_id ?? 'Não atribuído'}
                 </strong>
               </div>
               <div className="rb-detail-row">
@@ -357,7 +357,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
               <small>
                 {liveCourier
                   ? courierPosition
-                    ? 'Posicao em tempo real (WebSocket)'
+                    ? 'Posição em tempo real (WebSocket)'
                     : 'Ultima posicao conhecida'
                   : 'Pickup e dropoff'}
               </small>
@@ -423,7 +423,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
             onClick={() =>
               withBusy(
                 () => startPreparingRestaurantOrder({ session, orderId: order.id }),
-                'Encomenda em preparacao.',
+                'Encomenda em preparação.',
               )
             }
           >

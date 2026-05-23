@@ -38,7 +38,7 @@ export function RestaurantSideNav({ views, operatorName, onLogout, session }) {
           Sessao: <strong>{operatorName}</strong>
         </p>
         <button type="button" className="rb-link-btn" onClick={onLogout}>
-          Terminar sessao
+          Terminar sessão
         </button>
       </div>
     </aside>

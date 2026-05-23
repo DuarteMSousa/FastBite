@@ -14,7 +14,7 @@ export function RestaurantReviewsScreen({ session }) {
 
   const load = useCallback(async () => {
     if (!session?.restaurantId) {
-      setErrorText('Sem restaurantId na sessao.')
+      setErrorText('Sem restaurantId na sessão.')
       return
     }
     try {

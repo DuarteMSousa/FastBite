@@ -29,6 +29,22 @@ export function buildAuthHeaders({ devUserId, token } = {}) {
   return headers
 }
 
+function firstValidationMessage(validation) {
+  if (!validation || typeof validation !== 'object') return ''
+  const firstKey = Object.keys(validation)[0]
+  const firstValue = firstKey ? validation[firstKey] : null
+  if (Array.isArray(firstValue)) return firstValue[0] ?? ''
+  return firstValue ? String(firstValue) : ''
+}
+
+function graphqlErrorMessage(error) {
+  return (
+    firstValidationMessage(error?.extensions?.validation) ||
+    error?.message ||
+    'GraphQL request failed.'
+  )
+}
+
 export async function apiFetch(endpoint, options = {}) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     headers: buildBaseHeaders(options.headers ?? {}),
@@ -68,7 +84,7 @@ export async function graphqlRequest({ query, variables = {}, headers = {} }) {
   const payload = await response.json()
 
   if (payload.errors?.length) {
-    throw new Error(payload.errors[0]?.message ?? 'GraphQL request failed.')
+    throw new Error(graphqlErrorMessage(payload.errors[0]))
   }
 
   return payload.data

@@ -7,9 +7,9 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/restaurant/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/restaurant/login" replace />} />
           <Route path="/restaurant/*" element={<RestaurantWebShell />} />
-          <Route path="*" element={<Navigate to="/restaurant/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/restaurant/login" replace />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>
