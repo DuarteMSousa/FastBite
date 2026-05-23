@@ -9,16 +9,11 @@ import {
   View,
 } from 'react-native'
 import NetInfo from '@react-native-community/netinfo'
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native'
 import { AddressMapPicker } from '../components/maps/AddressMapPicker'
-import {
-  CartScreen,
-  HomeScreen,
-  MenuScreen,
-  OrdersHistoryScreen,
-  ProfileScreen,
-  SummaryLine,
-  TrackingScreen,
-} from './customer/childScreens'
+import { CustomerProvider } from './customer/CustomerContext'
+import { CUSTOMER_ROUTES, CustomerNavigator } from './customer/CustomerRoutes'
+import { SummaryLine } from './customer/SummaryLine'
 import { styles } from './customer/styles'
 import {
   ICON,
@@ -74,7 +69,9 @@ import {
 } from '../services/realtime/topicsRealtime'
 
 export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
-  const [route, setRoute] = useState('home')
+  const navigationRef = useNavigationContainerRef()
+  const [currentRoute, setCurrentRoute] = useState(CUSTOMER_ROUTES.HOME)
+  const [pendingNavigation, setPendingNavigation] = useState(null)
   const [restaurants, setRestaurants] = useState([])
   const [restaurantId, setRestaurantId] = useState('')
   const availableCouriers = null
@@ -195,7 +192,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   )
   const [pendingRestaurantSwitch, setPendingRestaurantSwitch] = useState(null)
   const [isSwitchingRestaurant, setIsSwitchingRestaurant] = useState(false)
-  const [ordersOriginRoute, setOrdersOriginRoute] = useState('home')
+  const [ordersOriginRoute, setOrdersOriginRoute] = useState(CUSTOMER_ROUTES.HOME)
   const [trackingUpdateCount, setTrackingUpdateCount] = useState(0)
   const [trackingLastUpdateMs, setTrackingLastUpdateMs] = useState(null)
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
@@ -207,6 +204,27 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
     setErrorText(`Sem internet. Nao foi possivel ${actionLabel}.`)
     return false
+  }
+
+  function navigate(routeName) {
+    if (!navigationRef.isReady()) {
+      setPendingNavigation({ routeName, reset: false })
+      return
+    }
+
+    navigationRef.navigate(routeName)
+  }
+
+  function replace(routeName) {
+    if (!navigationRef.isReady()) {
+      setPendingNavigation({ routeName, reset: true })
+      return
+    }
+
+    navigationRef.reset({
+      index: 0,
+      routes: [{ name: routeName }],
+    })
   }
 
   useEffect(() => {
@@ -318,7 +336,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           if (eventName === 'PAYMENT_COMPLETED' && pendingPayment?.orderId === eventOrderId) {
             setPendingPayment(null)
             setSuccessText('Pagamento confirmado via realtime.')
-            setRoute('tracking')
+            navigate(CUSTOMER_ROUTES.TRACKING)
             loadTracking(eventOrderId)
           }
 
@@ -850,8 +868,10 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   }
 
   function openOrdersHistory() {
-    setOrdersOriginRoute(route === 'profile' ? 'profile' : 'home')
-    setRoute('orders')
+    setOrdersOriginRoute(
+      currentRoute === CUSTOMER_ROUTES.PROFILE ? CUSTOMER_ROUTES.PROFILE : CUSTOMER_ROUTES.HOME,
+    )
+    navigate(CUSTOMER_ROUTES.ORDERS)
     setOrdersPage(1)
     setHasMoreOrders(true)
     loadOrdersHistory({ append: false })
@@ -1203,7 +1223,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       setCart(nextCart)
       setSuccessText(`Itens de ${order.restaurant_name ?? 'pedido anterior'} adicionados ao carrinho.`)
       setErrorText('')
-      setRoute('cart')
+      navigate(CUSTOMER_ROUTES.CART)
     } catch (error) {
       setErrorText(error.message)
     } finally {
@@ -1246,7 +1266,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         refreshAvailableCouriers(),
       ])
       setMenuItems(nextMenu)
-      setRoute('menu')
+      navigate(CUSTOMER_ROUTES.MENU)
       setErrorText('')
     } catch (error) {
       setErrorText(error.message)
@@ -1491,7 +1511,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         })
         setSuccessText('Pedido criado. Falta confirmar o pagamento.')
       } else {
-        setRoute('tracking')
+        navigate(CUSTOMER_ROUTES.TRACKING)
         setSuccessText('Pedido criado com sucesso.')
         await loadTracking(result.order_id)
       }
@@ -1515,7 +1535,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       setSuccessText('Pagamento confirmado.')
       setErrorText('')
       setPendingPayment(null)
-      setRoute('tracking')
+      navigate(CUSTOMER_ROUTES.TRACKING)
       await loadTracking(pendingPayment.orderId)
     } catch (error) {
       setErrorText(error.message)
@@ -1534,7 +1554,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       if (payment?.status === 'COMPLETED') {
         setPendingPayment(null)
         setSuccessText('Pagamento confirmado externamente.')
-        setRoute('tracking')
+        navigate(CUSTOMER_ROUTES.TRACKING)
         await loadTracking(pendingPayment.orderId)
       } else if (payment?.status === 'FAILED') {
         setPendingPayment(null)
@@ -1568,7 +1588,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     if (deepLink.target && deepLink.target !== 'tracking') return
 
     setActiveOrderId(deepLink.orderId)
-    setRoute('tracking')
+    navigate(CUSTOMER_ROUTES.TRACKING)
     loadTracking(deepLink.orderId)
     if (onConsumeDeepLink) onConsumeDeepLink()
   }, [deepLink])
@@ -1576,157 +1596,175 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   function back() {
     setSuccessText('')
 
-    if (route === 'menu') {
-      setRoute('home')
+    if (currentRoute === CUSTOMER_ROUTES.MENU) {
+      replace(CUSTOMER_ROUTES.HOME)
       return
     }
 
-    if (route === 'cart') {
-      setRoute('menu')
+    if (currentRoute === CUSTOMER_ROUTES.CART) {
+      navigate(CUSTOMER_ROUTES.MENU)
       return
     }
 
-    if (route === 'tracking') {
-      setRoute('home')
+    if (currentRoute === CUSTOMER_ROUTES.TRACKING) {
+      replace(CUSTOMER_ROUTES.HOME)
       return
     }
 
-    if (route === 'orders') {
-      setRoute(ordersOriginRoute || 'home')
+    if (currentRoute === CUSTOMER_ROUTES.ORDERS) {
+      navigate(ordersOriginRoute || CUSTOMER_ROUTES.HOME)
       return
     }
 
-    if (route === 'profile') {
-      setRoute('home')
+    if (currentRoute === CUSTOMER_ROUTES.PROFILE) {
+      replace(CUSTOMER_ROUTES.HOME)
     }
+  }
+
+  const customerContextValue = {
+    screens: {
+      home: {
+        restaurants,
+        loading: loading || restaurantsLoading,
+        isOnline,
+        pushStatus,
+        notificationState,
+        notificationPreview,
+        availableCouriers,
+        onOpenRestaurant: openRestaurant,
+        onOpenTracking: () => {
+          if (activeOrderId) {
+            navigate(CUSTOMER_ROUTES.TRACKING)
+            loadTracking(activeOrderId)
+          }
+        },
+        hasActiveOrder: Boolean(activeOrderId),
+        onOpenProfile: () => navigate(CUSTOMER_ROUTES.PROFILE),
+        inboxUnreadCount,
+        onOpenInbox: openInbox,
+        onOpenOrders: openOrdersHistory,
+        filters: restaurantFilters,
+        onChangeFilters: setRestaurantFilters,
+        onApplyFilters: () => applyRestaurantFilters(restaurantFilters),
+        onResetFilters: () => {
+          setRestaurantFilters({ q: '', city: '', postalCode: '' })
+          applyRestaurantFilters({})
+        },
+      },
+      profile: {
+        session,
+        profileDraft,
+        onChangeDraft: setProfileDraft,
+        isSavingProfile,
+        onSave: handleSaveProfile,
+        onBack: back,
+        onLogoutRequest: () => setShowLogoutConfirm(true),
+        addresses,
+        onOpenAddresses: () => setShowAddressModal(true),
+        onOpenReviewsHistory: () => {
+          setShowReviewsHistory(true)
+          refreshReviewsHistory()
+        },
+        reviewsCount: clientReviews.length,
+        onOpenOrdersHistory: openOrdersHistory,
+      },
+      orders: {
+        orders: ordersHistory,
+        loading: ordersLoading,
+        busyOrderId,
+        onBack: back,
+        onRefresh: () => loadOrdersHistory({ append: false }),
+        onCancel: requestCancelOrder,
+        onRepeat: handleRepeatOrder,
+        onTrack: (order) => {
+          setActiveOrderId(order.id)
+          navigate(CUSTOMER_ROUTES.TRACKING)
+          loadTracking(order.id)
+        },
+        onReview: openReviewModal,
+        onOpenDetail: openOrderDetail,
+        onLoadMore: () => loadOrdersHistory({ append: true }),
+        hasMore: hasMoreOrders,
+      },
+      menu: {
+        restaurant,
+        items: menuItems,
+        itemCount,
+        total,
+        loading: loading || isLoadingOptions,
+        availableCouriers,
+        onBack: back,
+        onAdd: handleAddProductWithOptions,
+        onOpenCart: () => navigate(CUSTOMER_ROUTES.CART),
+        activeCategory: menuCategory,
+        onChangeCategory: setMenuCategory,
+      },
+      cart: {
+        items: cartItems,
+        subtotal,
+        deliveryFee,
+        discountTotal,
+        appliedDiscounts: checkoutPreview?.discounts ?? [],
+        couponValid: checkoutPreview?.coupon_valid ?? false,
+        couponError: checkoutPreview?.coupon_error ?? null,
+        previewLoading: isPreviewLoading,
+        total,
+        loading,
+        availableCouriers,
+        onDecrease: decrease,
+        onIncrease: increase,
+        onRemove: remove,
+        onPlaceOrder: placeOrder,
+        selectedAddress,
+        paymentMethod,
+        couponCode,
+        onChangeCouponCode: setCouponCode,
+        onOpenAddressPicker: () => setShowAddressModal(true),
+        onOpenPaymentPicker: () => setShowPaymentModal(true),
+      },
+      tracking: {
+        tracking,
+        checkout: lastCheckout,
+        realtimeState,
+        realtimeUpdateCount: trackingUpdateCount,
+        realtimeLastUpdateMs: trackingLastUpdateMs,
+        isOnline,
+        onBack: back,
+        onRefresh: () => activeOrderId && loadTracking(activeOrderId),
+        onOpenChatRestaurant: () => openChatForCurrentOrder('CUSTOMER_RESTAURANT'),
+        onOpenChatCourier: () => openChatForCurrentOrder('CUSTOMER_COURIER'),
+        chatLoading,
+      },
+    },
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      {route === 'home' && (
-        <HomeScreen
-          restaurants={restaurants}
-          loading={loading || restaurantsLoading}
-          isOnline={isOnline}
-          pushStatus={pushStatus}
-          notificationState={notificationState}
-          notificationPreview={notificationPreview}
-          availableCouriers={availableCouriers}
-          onOpenRestaurant={openRestaurant}
-          onOpenTracking={() => {
-            if (activeOrderId) {
-              setRoute('tracking')
-              loadTracking(activeOrderId)
+      <CustomerProvider value={customerContextValue}>
+        <NavigationContainer
+          independent
+          ref={navigationRef}
+          onReady={() => {
+            setCurrentRoute(navigationRef.getCurrentRoute()?.name ?? CUSTOMER_ROUTES.HOME)
+            if (pendingNavigation?.routeName) {
+              if (pendingNavigation.reset) {
+                navigationRef.reset({
+                  index: 0,
+                  routes: [{ name: pendingNavigation.routeName }],
+                })
+              } else {
+                navigationRef.navigate(pendingNavigation.routeName)
+              }
+              setPendingNavigation(null)
             }
           }}
-          hasActiveOrder={Boolean(activeOrderId)}
-          onOpenProfile={() => setRoute('profile')}
-          inboxUnreadCount={inboxUnreadCount}
-          onOpenInbox={openInbox}
-          onOpenOrders={openOrdersHistory}
-          filters={restaurantFilters}
-          onChangeFilters={setRestaurantFilters}
-          onApplyFilters={() => applyRestaurantFilters(restaurantFilters)}
-          onResetFilters={() => {
-            setRestaurantFilters({ q: '', city: '', postalCode: '' })
-            applyRestaurantFilters({})
+          onStateChange={() => {
+            setCurrentRoute(navigationRef.getCurrentRoute()?.name ?? CUSTOMER_ROUTES.HOME)
           }}
-        />
-      )}
-      {route === 'profile' && (
-        <ProfileScreen
-          session={session}
-          profileDraft={profileDraft}
-          onChangeDraft={setProfileDraft}
-          isSavingProfile={isSavingProfile}
-          onSave={handleSaveProfile}
-          onBack={back}
-          onLogoutRequest={() => setShowLogoutConfirm(true)}
-          addresses={addresses}
-          onOpenAddresses={() => setShowAddressModal(true)}
-          onOpenReviewsHistory={() => {
-            setShowReviewsHistory(true)
-            refreshReviewsHistory()
-          }}
-          reviewsCount={clientReviews.length}
-          onOpenOrdersHistory={openOrdersHistory}
-        />
-      )}
-      {route === 'orders' && (
-        <OrdersHistoryScreen
-          orders={ordersHistory}
-          loading={ordersLoading}
-          busyOrderId={busyOrderId}
-          onBack={back}
-          onRefresh={() => loadOrdersHistory({ append: false })}
-          onCancel={requestCancelOrder}
-          onRepeat={handleRepeatOrder}
-          onTrack={(order) => {
-            setActiveOrderId(order.id)
-            setRoute('tracking')
-            loadTracking(order.id)
-          }}
-          onReview={openReviewModal}
-          onOpenDetail={openOrderDetail}
-          onLoadMore={() => loadOrdersHistory({ append: true })}
-          hasMore={hasMoreOrders}
-        />
-      )}
-      {route === 'menu' && (
-        <MenuScreen
-          restaurant={restaurant}
-          items={menuItems}
-          itemCount={itemCount}
-          total={total}
-          loading={loading || isLoadingOptions}
-          availableCouriers={availableCouriers}
-          onBack={back}
-          onAdd={handleAddProductWithOptions}
-          onOpenCart={() => setRoute('cart')}
-          activeCategory={menuCategory}
-          onChangeCategory={setMenuCategory}
-        />
-      )}
-      {route === 'cart' && (
-        <CartScreen
-          items={cartItems}
-          subtotal={subtotal}
-          deliveryFee={deliveryFee}
-          discountTotal={discountTotal}
-          appliedDiscounts={checkoutPreview?.discounts ?? []}
-          couponValid={checkoutPreview?.coupon_valid ?? false}
-          couponError={checkoutPreview?.coupon_error ?? null}
-          previewLoading={isPreviewLoading}
-          total={total}
-          loading={loading}
-          availableCouriers={availableCouriers}
-          onDecrease={decrease}
-          onIncrease={increase}
-          onRemove={remove}
-          onPlaceOrder={placeOrder}
-          selectedAddress={selectedAddress}
-          paymentMethod={paymentMethod}
-          couponCode={couponCode}
-          onChangeCouponCode={setCouponCode}
-          onOpenAddressPicker={() => setShowAddressModal(true)}
-          onOpenPaymentPicker={() => setShowPaymentModal(true)}
-        />
-      )}
-      {route === 'tracking' && (
-        <TrackingScreen
-          tracking={tracking}
-          checkout={lastCheckout}
-          realtimeState={realtimeState}
-          realtimeUpdateCount={trackingUpdateCount}
-          realtimeLastUpdateMs={trackingLastUpdateMs}
-          isOnline={isOnline}
-          onBack={back}
-          onRefresh={() => activeOrderId && loadTracking(activeOrderId)}
-          onOpenChatRestaurant={() => openChatForCurrentOrder('CUSTOMER_RESTAURANT')}
-          onOpenChatCourier={() => openChatForCurrentOrder('CUSTOMER_COURIER')}
-          chatLoading={chatLoading}
-        />
-      )}
+        >
+          <CustomerNavigator />
+        </NavigationContainer>
+      </CustomerProvider>
 
       {successText ? <Text style={styles.successText}>{ICON.check} {successText}</Text> : null}
       {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
@@ -2786,5 +2824,6 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     </SafeAreaView>
   )
 }
+
 
 
