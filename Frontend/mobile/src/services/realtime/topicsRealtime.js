@@ -157,7 +157,7 @@ export function subscribeToCourierJobsTopic({
   onEvent,
   onError,
 }) {
-  const echo = getEchoClient({ authToken, devUserId })
+  const echo = getEchoClient({ authToken, devUserId, courierId })
   const channelName = `courier.${courierId}.jobs`
   const channel = echo.private(channelName)
 

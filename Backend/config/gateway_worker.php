@@ -6,6 +6,7 @@ return [
     'websocket_host' => env('GATEWAY_WORKER_WEBSOCKET_HOST', '0.0.0.0'),
     'websocket_port' => env('GATEWAY_WORKER_WEBSOCKET_PORT', 8090),
 
+    'register_listen_host' => env('GATEWAY_WORKER_REGISTER_LISTEN_HOST', env('GATEWAY_WORKER_REGISTER_HOST', '127.0.0.1')),
     'register_host' => env('GATEWAY_WORKER_REGISTER_HOST', '127.0.0.1'),
     'register_port' => env('GATEWAY_WORKER_REGISTER_PORT', 1236),
 
