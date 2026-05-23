@@ -34,9 +34,9 @@ RUN apt-get update && apt-get upgrade -y \
 RUN groupadd --force -g ${WWWGROUP:-1000} sail \
     && useradd -ms /bin/bash --no-user-group -g ${WWWGROUP:-1000} -u 1337 sail
 
-COPY vendor/laravel/sail/runtimes/8.5/start-container /usr/local/bin/start-container
-COPY vendor/laravel/sail/runtimes/8.5/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY vendor/laravel/sail/runtimes/8.5/php.ini /etc/php/8.5/cli/conf.d/99-sail.ini
+COPY docker/start-container /usr/local/bin/start-container
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/php.ini /etc/php/8.5/cli/conf.d/99-sail.ini
 RUN chmod +x /usr/local/bin/start-container
 
 # Stage 2: Copy application code
@@ -44,11 +44,13 @@ FROM base
 
 WORKDIR /var/www/html
 
-# Copy the full application (vendor included) into the image
+# Copy the application and install PHP dependencies inside the image
 COPY . .
 
-RUN chown -R sail:sail /var/www/html/storage /var/www/html/bootstrap/cache
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader \
+    && chmod +x /var/www/html/docker-entrypoint \
+    && chown -R sail:sail /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80
 
-ENTRYPOINT ["start-container"]
+ENTRYPOINT ["/var/www/html/docker-entrypoint"]

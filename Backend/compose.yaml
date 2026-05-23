@@ -15,9 +15,11 @@ services:
             WWWUSER: '${WWWUSER}'
             LARAVEL_SAIL: 1
             SUPERVISOR_PHP_COMMAND: '/usr/bin/php -d variables_order=EGPCS -d xdebug.mode=off -d xdebug.start_with_request=no /var/www/html/artisan serve --host=0.0.0.0 --port=80'
+            RUN_COMPOSER_INSTALL: 'true'
+            RUN_MIGRATIONS: 'true'
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
-            IGNITION_LOCAL_SITES_PATH: '${PWD}'
+            IGNITION_LOCAL_SITES_PATH: '${PWD:-}'
         volumes:
             - './app:/var/www/html/app'
             - './config:/var/www/html/config'
@@ -31,7 +33,18 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
+            pgsql:
+                condition: service_healthy
+        healthcheck:
+            test:
+                - CMD
+                - test
+                - '-f'
+                - /tmp/laravel-ready
+            retries: 10
+            timeout: 5s
+            interval: 5s
+            start_period: 5s
 
     queue:
         image: 'sail-8.5/app'
@@ -56,8 +69,10 @@ services:
         networks:
             - sail
         depends_on:
-            - laravel.test
-            - pgsql
+            laravel.test:
+                condition: service_healthy
+            pgsql:
+                condition: service_healthy
 
     gateway:
         image: 'sail-8.5/app'
@@ -84,8 +99,10 @@ services:
         networks:
             - sail
         depends_on:
-            - laravel.test
-            - pgsql
+            laravel.test:
+                condition: service_healthy
+            pgsql:
+                condition: service_healthy
             
     pgsql:
         image: 'postgres:18-alpine'
@@ -98,7 +115,7 @@ services:
             POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
         volumes:
             - 'sail-pgsql:/var/lib/postgresql'
-            - './vendor/laravel/sail/database/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
+            - './docker/pgsql/create-testing-database.sql:/docker-entrypoint-initdb.d/10-create-testing-database.sql'
         networks:
             - sail
         healthcheck:
@@ -110,8 +127,10 @@ services:
                 - '${DB_DATABASE}'
                 - '-U'
                 - '${DB_USERNAME}'
-            retries: 3
+            retries: 10
             timeout: 5s
+            interval: 5s
+            start_period: 10s
 
     pgadmin:
         image: 'dpage/pgadmin4'
@@ -123,7 +142,8 @@ services:
         networks:
             - sail
         depends_on:
-            - pgsql
+            pgsql:
+                condition: service_healthy
 
 networks:
     sail:

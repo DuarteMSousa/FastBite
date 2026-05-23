@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -e
+
+cd /var/www/html
+
+rm -f /tmp/laravel-ready
+
+if [ -f .env ]; then
+    set -a
+    # shellcheck disable=SC1091
+    . ./.env
+    set +a
+fi
+
+if [ "${DB_CONNECTION:-}" = "pgsql" ] && [ -n "${DB_HOST:-}" ]; then
+    echo "Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT:-5432}..."
+
+    until php -r '
+        $host = getenv("DB_HOST") ?: "pgsql";
+        $port = getenv("DB_PORT") ?: "5432";
+        $database = getenv("DB_DATABASE") ?: "postgres";
+        $username = getenv("DB_USERNAME") ?: "postgres";
+        $password = getenv("DB_PASSWORD") ?: "";
+
+        try {
+            new PDO("pgsql:host={$host};port={$port};dbname={$database}", $username, $password, [
+                PDO::ATTR_TIMEOUT => 2,
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+        } catch (Throwable $e) {
+            exit(1);
+        }
+    '; do
+        sleep 2
+    done
+
+    echo "PostgreSQL is ready."
+fi
+
+if [ "${RUN_COMPOSER_INSTALL:-false}" = "true" ]; then
+    echo "Installing Composer dependencies..."
+    composer install --no-interaction --prefer-dist --optimize-autoloader
+fi
+
+echo "Clearing Laravel cached bootstrap files..."
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan event:clear
+
+if [ "${RUN_MIGRATIONS:-false}" = "true" ]; then
+    echo "Running Laravel migrations..."
+    php artisan migrate --force
+fi
+
+touch /tmp/laravel-ready
+
+exec start-container "$@"
