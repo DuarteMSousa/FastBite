@@ -134,6 +134,7 @@ body {
   border-radius: 12px;
   background: transparent;
   color: #334155;
+  text-decoration: none;
   text-align: left;
   padding: 12px;
   display: flex;

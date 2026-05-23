@@ -1,6 +1,7 @@
 import { NavIcon } from './NavIcon'
+import { NavLink } from 'react-router-dom'
 
-export function RestaurantSideNav({ views, activeViewId, onSelect, operatorName, onLogout, session }) {
+export function RestaurantSideNav({ views, operatorName, onLogout, session }) {
   const isChainManager = Boolean(session?.isChainManager)
   const visibleViews = views.filter((view) => {
     if (view.hideFromNav) return false
@@ -13,18 +14,17 @@ export function RestaurantSideNav({ views, activeViewId, onSelect, operatorName,
   return (
     <aside className="rb-sidebar">
       {visibleViews.map((view) => (
-        <button
+        <NavLink
           key={view.id}
-          type="button"
-          className={`rb-sidebar-item ${view.id === activeViewId ? 'active' : ''}`}
-          onClick={() => onSelect(view.id)}
+          to={`/restaurant/${view.path}`}
+          className={({ isActive }) => `rb-sidebar-item ${isActive ? 'active' : ''}`}
         >
           <span className="rb-sidebar-icon">
             <NavIcon id={view.id} size={20} />
           </span>
           <span>{view.label}</span>
           {view.badge ? <span className="rb-sidebar-badge">{view.badge}</span> : null}
-        </button>
+        </NavLink>
       ))}
       <div className="rb-sidebar-status">
         <p>

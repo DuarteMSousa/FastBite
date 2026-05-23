@@ -14,30 +14,35 @@ import { RestaurantProfileScreen } from './screens/RestaurantProfileScreen'
 export const RESTAURANT_VIEWS = [
   {
     id: 'dashboard',
+    path: 'dashboard',
     label: 'Dashboard',
     icon: 'DB',
     Component: RestaurantOrdersQueueScreen,
   },
   {
     id: 'kitchen',
+    path: 'kitchen',
     label: 'Cozinha virtual',
     icon: 'KV',
     Component: RestaurantVirtualKitchenScreen,
   },
   {
     id: 'history',
+    path: 'history',
     label: 'Historico',
     icon: 'HS',
     Component: RestaurantOrdersHistoryScreen,
   },
   {
     id: 'stats',
+    path: 'stats',
     label: 'Estatisticas',
     icon: 'ST',
     Component: RestaurantStatsScreen,
   },
   {
     id: 'order-detail',
+    path: 'orders/detail',
     label: 'Detalhe pedido',
     icon: 'DP',
     Component: RestaurantOrderDetailScreen,
@@ -45,6 +50,7 @@ export const RESTAURANT_VIEWS = [
   },
   {
     id: 'chain-catalog',
+    path: 'chain-catalog',
     label: 'Catalogo da cadeia',
     icon: 'CC',
     Component: RestaurantChainCatalogScreen,
@@ -52,18 +58,21 @@ export const RESTAURANT_VIEWS = [
   },
   {
     id: 'menu',
+    path: 'menu',
     label: 'Menu do restaurante',
     icon: 'GM',
     Component: RestaurantMenuCatalogScreen,
   },
   {
     id: 'reviews',
+    path: 'reviews',
     label: 'Avaliacoes',
     icon: 'AV',
     Component: RestaurantReviewsScreen,
   },
   {
     id: 'campaigns',
+    path: 'campaigns',
     label: 'Campanhas',
     icon: 'CP',
     Component: RestaurantCampaignsScreen,
@@ -71,6 +80,7 @@ export const RESTAURANT_VIEWS = [
   },
   {
     id: 'profile',
+    path: 'profile',
     label: 'Perfil',
     icon: 'PF',
     Component: RestaurantProfileScreen,
@@ -78,14 +88,25 @@ export const RESTAURANT_VIEWS = [
   },
   {
     id: 'chat',
+    path: 'chat',
     label: 'Chat',
     icon: 'CH',
     Component: RestaurantChatScreen,
   },
   {
     id: 'notifications',
+    path: 'notifications',
     label: 'Notificacoes',
     icon: 'NT',
     Component: RestaurantNotificationsScreen,
   },
 ]
+
+export function viewPath(viewId) {
+  return RESTAURANT_VIEWS.find((view) => view.id === viewId)?.path ?? RESTAURANT_VIEWS[0].path
+}
+
+export function viewByPath(pathname) {
+  const normalized = String(pathname ?? '').replace(/^\/+|\/+$/g, '')
+  return RESTAURANT_VIEWS.find((view) => view.path === normalized) ?? null
+}

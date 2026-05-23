@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { PageContainer } from '../../components/layout/PageContainer'
-import { RESTAURANT_VIEWS } from '../../features/restaurant/views'
+import { RESTAURANT_VIEWS, viewByPath, viewPath } from '../../features/restaurant/views'
 import { RestaurantSideNav } from '../../features/restaurant/components/RestaurantSideNav'
 import { RestaurantLoginScreen } from '../../features/restaurant/screens/RestaurantLoginScreen'
 import { ConfirmDialog } from '../../components/common/ConfirmDialog'
@@ -19,21 +20,33 @@ function loadStoredSession() {
 }
 
 export function RestaurantWebShell() {
-  const [activeViewId, setActiveViewId] = useState('dashboard')
+  const location = useLocation()
+  const navigate = useNavigate()
   const [session, setSession] = useState(loadStoredSession)
   const [selectedOrderId, setSelectedOrderId] = useState('')
+  const selectedOrderIdRef = useRef('')
   const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false)
 
   const isChainManager = Boolean(session?.isChainManager)
 
+  const routePath = location.pathname.replace(/^\/restaurant\/?/, '')
   const activeView = useMemo(() => {
     const fallback = RESTAURANT_VIEWS[0]
-    const candidate = RESTAURANT_VIEWS.find((view) => view.id === activeViewId)
+    const candidate = viewByPath(routePath)
     if (!candidate) return fallback
     if (candidate.chainOnly && !isChainManager) return fallback
     return candidate
-  }, [activeViewId, isChainManager])
-  const ActiveScreen = activeView.Component
+  }, [routePath, isChainManager])
+
+  const accessibleViews = useMemo(
+    () => RESTAURANT_VIEWS.filter((view) => !view.chainOnly || isChainManager),
+    [isChainManager],
+  )
+
+  const selectedOrderIdFromUrl = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return params.get('orderId') ?? ''
+  }, [location.search])
 
   useEffect(() => {
     if (session) {
@@ -43,6 +56,12 @@ export function RestaurantWebShell() {
 
     window.localStorage.removeItem(SESSION_STORAGE_KEY)
   }, [session])
+
+  useEffect(() => {
+    if (!selectedOrderIdFromUrl || selectedOrderIdFromUrl === selectedOrderIdRef.current) return
+    selectedOrderIdRef.current = selectedOrderIdFromUrl
+    setSelectedOrderId(selectedOrderIdFromUrl)
+  }, [selectedOrderIdFromUrl])
 
   useEffect(() => {
     const storedSession = loadStoredSession()
@@ -73,7 +92,8 @@ export function RestaurantWebShell() {
   function handleLogin(nextSession) {
     setSession(nextSession)
     setSelectedOrderId('')
-    setActiveViewId('dashboard')
+    selectedOrderIdRef.current = ''
+    navigate('/restaurant/dashboard', { replace: true })
   }
 
   function handleLogout() {
@@ -84,7 +104,22 @@ export function RestaurantWebShell() {
     disconnectEchoClient()
     setSession(null)
     setSelectedOrderId('')
+    selectedOrderIdRef.current = ''
     setLogoutConfirmOpen(false)
+    navigate('/restaurant/dashboard', { replace: true })
+  }
+
+  function handleSelectOrder(orderId) {
+    selectedOrderIdRef.current = orderId
+    setSelectedOrderId(orderId)
+  }
+
+  function navigateToView(viewId) {
+    const nextPath = viewPath(viewId)
+    const orderScoped = viewId === 'chat' || viewId === 'order-detail'
+    const orderId = selectedOrderIdRef.current
+    const search = orderScoped && orderId ? `?orderId=${encodeURIComponent(orderId)}` : ''
+    navigate(`/restaurant/${nextPath}${search}`)
   }
 
   if (!session) {
@@ -102,7 +137,7 @@ export function RestaurantWebShell() {
         <button
           type="button"
           className={`rb-store-profile-btn ${activeView.id === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveViewId('profile')}
+          onClick={() => navigateToView('profile')}
           aria-label="Abrir perfil do restaurante"
           title="Perfil do restaurante"
         >
@@ -118,20 +153,34 @@ export function RestaurantWebShell() {
       <div className="rb-shell">
         <RestaurantSideNav
           views={RESTAURANT_VIEWS}
-          activeViewId={activeView.id}
-          onSelect={setActiveViewId}
           operatorName={session.operatorName}
           onLogout={handleLogout}
           session={session}
         />
         <section className="rb-main">
-          <ActiveScreen
-            session={session}
-            selectedOrderId={selectedOrderId}
-            onSelectOrder={setSelectedOrderId}
-            onNavigate={setActiveViewId}
-            onSessionChange={setSession}
-          />
+          <Routes>
+            <Route index element={<Navigate to={viewPath('dashboard')} replace />} />
+            {accessibleViews.map((view) => {
+              const Screen = view.Component
+
+              return (
+                <Route
+                  key={view.id}
+                  path={view.path}
+                  element={
+                    <Screen
+                      session={session}
+                      selectedOrderId={selectedOrderId}
+                      onSelectOrder={handleSelectOrder}
+                      onNavigate={navigateToView}
+                      onSessionChange={setSession}
+                    />
+                  }
+                />
+              )
+            })}
+            <Route path="*" element={<Navigate to={viewPath('dashboard')} replace />} />
+          </Routes>
         </section>
       </div>
 
