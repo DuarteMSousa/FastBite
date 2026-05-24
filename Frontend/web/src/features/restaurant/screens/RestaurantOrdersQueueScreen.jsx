@@ -68,7 +68,12 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
     }
 
     let unsubscribe = null
-    setRealtimeState('connecting')
+    let cancelled = false
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setRealtimeState('connecting')
+      }
+    })
     try {
       unsubscribe = subscribeToRestaurantOrdersTopic({
         restaurantId: session.restaurantId,
@@ -87,10 +92,15 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
         },
       })
     } catch {
-      setRealtimeState('error')
+      queueMicrotask(() => {
+        if (!cancelled) {
+          setRealtimeState('error')
+        }
+      })
     }
 
     return () => {
+      cancelled = true
       if (unsubscribe) unsubscribe()
     }
   }, [session?.restaurantId, session?.token, session?.devUserId, loadOrders])
@@ -147,7 +157,7 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
   }
 
   const stats = useMemo(() => {
-    const pending = orders.filter((order) => order.order_status === 'PENDING').length
+    const pending = orders.filter((order) => ['PENDING', 'CONFIRMED'].includes(order.order_status)).length
     const preparing = orders.filter((order) => order.order_status === 'PREPARING').length
     const outForDelivery = orders.filter((order) => order.order_status === 'OUT_FOR_DELIVERY').length
     const totalValue = orders.reduce((sum, order) => sum + Number(order.total ?? 0), 0)
@@ -243,7 +253,7 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
                   </td>
                   <td>{order.created_at ? new Date(order.created_at).toLocaleTimeString() : '-'}</td>
                   <td>
-                    {order.order_status === 'PENDING' ? (
+                    {['PENDING', 'CONFIRMED'].includes(order.order_status) ? (
                       <div className="rb-kitchen-actions">
                         <button
                           type="button"
