@@ -357,6 +357,10 @@ export function getEchoClient({ devUserId } = {}) {
 
         channelStates.delete(channelName)
         unsubscribeChannel(channelName)
+
+        if (channelStates.size === 0) {
+          disconnectEchoClient()
+        }
       },
       send(message, options) {
         return sendWithAck(message, options)

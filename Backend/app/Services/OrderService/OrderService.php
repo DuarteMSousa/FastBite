@@ -176,7 +176,7 @@ class OrderService implements OrderServiceInterface
         $pricing = app(OrderPricingService::class)->price($cart, $restaurant, $address, $data->coupon_code);
         $method = $data->payment_method;
         $paymentStatus = $method === PaymentMethod::CASH ? PaymentStatus::COMPLETED : PaymentStatus::PENDING;
-        $orderStatus = OrderStatus::PENDING;
+        $orderStatus = $paymentStatus === PaymentStatus::COMPLETED ? OrderStatus::CONFIRMED : OrderStatus::PENDING;
 
         $order = $this->orders->createOrder(
             $this->checkoutCreateOrderDTO($clientUserId, $restaurant, $address, $cart, $pricing, $orderStatus)
@@ -227,8 +227,6 @@ class OrderService implements OrderServiceInterface
                 now(),
                 [],
             ));
-            $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED);
-            $this->dispatchCourierAssignmentForOrder($order);
         } else {
             ExpirePendingPaymentJob::dispatch($payment->id)
                 ->delay($payment->expired_at)
@@ -280,6 +278,10 @@ class OrderService implements OrderServiceInterface
         $order = $this->orders->findByIdOrFail($orderId);
 
         $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
+        $order->loadMissing(['restaurant.address', 'address']);
+        $deliveryFee = app(OrderPricingService::class)->deliveryFee($order->restaurant, $order->address);
+        $delivery = app(DeliveryServiceInterface::class)->createDeliveryForOrder($order->id, $deliveryFee);
+        AssignCourierToDeliveryJob::dispatch($delivery->id)->afterCommit();
 
         return $order;
     }
@@ -302,6 +304,10 @@ class OrderService implements OrderServiceInterface
         $order = $this->orders->findByIdOrFail($orderId);
 
         $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
+        $order->loadMissing(['restaurant.address', 'address']);
+        $deliveryFee = app(OrderPricingService::class)->deliveryFee($order->restaurant, $order->address);
+        $delivery = app(DeliveryServiceInterface::class)->createDeliveryForOrder($order->id, $deliveryFee);
+        AssignCourierToDeliveryJob::dispatch($delivery->id)->afterCommit();
 
         return $order;
     }
@@ -387,29 +393,16 @@ class OrderService implements OrderServiceInterface
     public function confirmOrderAfterPayment(Order $order): Order
     {
         $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED);
-        $this->dispatchCourierAssignmentForOrder($order);
 
-        return $order->refresh()->load($this->with);
+        return $this->transition($order, OrderStatus::CONFIRMED, OrderEventType::ORDER_CONFIRMED);
     }
 
     #[Transactional]
     public function recordCourierAssignedToOrder(Order $order): Order
     {
-        if ($order->status === OrderStatus::PENDING) {
-            $order = $this->transition($order, OrderStatus::CONFIRMED, OrderEventType::ORDER_CONFIRMED);
-        }
-
         $this->recordEvent($order, OrderEventType::ORDER_COURIER_ASSIGNED);
 
         return $order->refresh()->load($this->with);
-    }
-
-    private function dispatchCourierAssignmentForOrder(Order $order): void
-    {
-        $order->loadMissing(['restaurant.address', 'address']);
-        $deliveryFee = app(OrderPricingService::class)->deliveryFee($order->restaurant, $order->address);
-        $delivery = app(DeliveryServiceInterface::class)->createDeliveryForOrder($order->id, $deliveryFee);
-        AssignCourierToDeliveryJob::dispatch($delivery->id)->afterCommit();
     }
 
     #[Transactional]
