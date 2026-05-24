@@ -252,7 +252,6 @@ function connectGatewaySocket() {
     sendOrQueue({
       type: 'hello',
       user_id: currentUserId,
-      courier_id: currentUserId,
     })
 
     channelStates.forEach((_channelState, channelName) => {
@@ -358,9 +357,6 @@ export function getEchoClient({ devUserId } = {}) {
         channelStates.delete(channelName)
         unsubscribeChannel(channelName)
 
-        if (channelStates.size === 0) {
-          disconnectEchoClient()
-        }
       },
       send(message, options) {
         return sendWithAck(message, options)

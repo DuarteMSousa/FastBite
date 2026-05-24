@@ -3,6 +3,7 @@
 namespace App\Gateway\ClientEvents\Handlers;
 
 use App\DTOs\Chat\SendMessageDTO;
+use App\Enums\OutboxEventName;
 use App\Gateway\ClientEvents\ClientEventHandler;
 use App\Gateway\ClientEvents\ClientSocketMessage;
 use App\Gateway\ClientEvents\ReadsClientPayload;
@@ -11,6 +12,7 @@ use App\Gateway\SocketClientEventType;
 use App\Gateway\SocketMessage;
 use App\Services\ChatService\ChatServiceInterface;
 use GatewayWorker\Lib\Gateway;
+use Illuminate\Support\Str;
 
 class SendChatMessageClientEventHandler implements ClientEventHandler
 {
@@ -35,6 +37,20 @@ class SendChatMessageClientEventHandler implements ClientEventHandler
         $chatMessage = $this->chatService->sendChatMessage(
             $senderUserId,
             $data
+        );
+
+        Gateway::sendToGroup(
+            "chat.{$data->chat_id}",
+            SocketMessage::event(OutboxEventName::CHAT_MESSAGE_SENT->value, "chat.{$data->chat_id}", [
+                'event_id' => (string) Str::uuid(),
+                'event_name' => OutboxEventName::CHAT_MESSAGE_SENT->value,
+                'chat_id' => $data->chat_id,
+                'message_id' => $chatMessage->id,
+                'sender_user_id' => $senderUserId,
+                'sender_participant_id' => $chatMessage->sender_participant_id,
+                'content' => $chatMessage->content,
+                'timestamp' => $chatMessage->timestamp?->toIso8601String(),
+            ])
         );
 
         Gateway::sendToClient($clientId, SocketMessage::response(

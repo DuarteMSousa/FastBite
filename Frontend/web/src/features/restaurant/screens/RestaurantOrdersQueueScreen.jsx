@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   acceptRestaurantOrder,
   fetchRestaurantActiveOrders,
+  mapRestaurantOrder,
   rejectRestaurantOrder,
 } from '../../../services/restaurantOpsService'
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
@@ -21,6 +22,23 @@ function statusTone(status) {
   if (status === 'CONFIRMED' || status === 'PREPARING') return 'prep'
   if (status === 'READY' || status === 'OUT_FOR_DELIVERY') return 'done'
   return 'off'
+}
+
+function reconcileActiveOrderList(current, order) {
+  if (!order?.order_id) return current
+  if (['CANCELLED', 'DELIVERED'].includes(order.order_status)) {
+    return current.filter((entry) => entry.order_id !== order.order_id)
+  }
+
+  const next = current.some((entry) => entry.order_id === order.order_id)
+    ? current.map((entry) => (entry.order_id === order.order_id ? order : entry))
+    : [...current, order]
+
+  return next.sort((a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime())
+}
+
+function orderFromRealtimePayload(payload) {
+  return payload?.order ? mapRestaurantOrder(payload.order) : null
 }
 
 export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate }) {
@@ -53,47 +71,52 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
     })
   }, [loadOrders])
 
-  // Polling de fallback apenas enquanto o socket não está live. Bind ao boolean
-  // para evitar reset do interval em cada flutuacao (connecting -> error -> live).
-  const isRealtimeLive = realtimeState === 'live'
-  useEffect(() => {
-    if (isRealtimeLive) return undefined
-    const timer = setInterval(loadOrders, 30000)
-    return () => clearInterval(timer)
-  }, [isRealtimeLive, loadOrders])
-
   useEffect(() => {
     if (!session?.restaurantId) {
       return undefined
     }
 
     let unsubscribe = null
-    setRealtimeState('connecting')
+    let cancelled = false
+    queueMicrotask(() => {
+      if (!cancelled) setRealtimeState('connecting')
+    })
     try {
       unsubscribe = subscribeToRestaurantOrdersTopic({
         restaurantId: session.restaurantId,
         authToken: session.token,
         devUserId: session.devUserId,
-        onSubscribed: () => setRealtimeState('live'),
-        onEvent: (eventName) => {
+        onSubscribed: () => {
+          if (!cancelled) setRealtimeState('live')
+        },
+        onEvent: (eventName, payload) => {
+          if (cancelled) return
           setRealtimeState('live')
-          if (eventName === 'ORDER_CREATED') {
+          const realtimeOrder = orderFromRealtimePayload(payload)
+          if (realtimeOrder) {
+            setOrders((current) => reconcileActiveOrderList(current, realtimeOrder))
+          }
+          if (eventName === 'ORDER_COURIER_ASSIGNED') {
+            setInfoText('Novo pedido com estafeta atribuido.')
+          } else if (eventName === 'ORDER_CREATED') {
             setInfoText('Novo pedido recebido.')
           }
-          loadOrders()
         },
         onError: () => {
-          setRealtimeState('error')
+          if (!cancelled) setRealtimeState('error')
         },
       })
     } catch {
-      setRealtimeState('error')
+      queueMicrotask(() => {
+        if (!cancelled) setRealtimeState('error')
+      })
     }
 
     return () => {
+      cancelled = true
       if (unsubscribe) unsubscribe()
     }
-  }, [session?.restaurantId, session?.token, session?.devUserId, loadOrders])
+  }, [session?.restaurantId, session?.token, session?.devUserId])
 
   async function handleAccept(orderId) {
     try {

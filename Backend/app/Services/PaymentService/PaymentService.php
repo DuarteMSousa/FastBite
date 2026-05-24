@@ -122,7 +122,16 @@ class PaymentService implements PaymentServiceInterface
 
     private function recordEvent(Payment $payment, PaymentEventType $eventType, array $payload): void
     {
+        $payment->loadMissing('order');
         $occurredAt = now();
+        $channels = [
+            "customer.{$payment->order->user_id}.orders",
+        ];
+
+        if ($payment->order?->delivery()->whereNotNull('courier_id')->exists()) {
+            $channels[] = "restaurant.{$payment->order->restaurant_id}.orders";
+        }
+
         $eventPayload = [
             'eventId' => (string) Str::uuid(),
             'eventName' => $eventType->value,
@@ -132,10 +141,7 @@ class PaymentService implements PaymentServiceInterface
             'orderId' => $payment->order_id,
             'occurredAt' => $occurredAt->toIso8601String(),
             'data' => $payload,
-            'channels' => [
-                "customer.{$payment->order->user_id}.orders",
-                "restaurant.{$payment->order->restaurant_id}.orders",
-            ],
+            'channels' => $channels,
         ];
 
         $this->payments->createEvent($payment, new CreatePaymentEventDTO(

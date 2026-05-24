@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Modal, Pressable, SafeAreaView, ScrollView, Text, TextInput, Vibration, View } from 'react-native'
+import { Keyboard, Modal, Pressable, SafeAreaView, ScrollView, Text, TextInput, Vibration, View } from 'react-native'
 import { styles } from './courier/styles'
 import * as Location from 'expo-location'
 import NetInfo from '@react-native-community/netinfo'
@@ -46,13 +46,19 @@ function normalizeSocketChatMessage(payload) {
   }
 }
 
-function prependUniqueChatMessage(messages, message, limit = 80) {
+function sortChatMessagesAsc(messages) {
+  return [...(messages ?? [])].sort(
+    (a, b) => new Date(a?.timestamp ?? 0).getTime() - new Date(b?.timestamp ?? 0).getTime(),
+  )
+}
+
+function mergeChatMessage(messages, message, limit = 80) {
   const messageId = message?.id
   const withoutDuplicate = messageId
     ? messages.filter((current) => current.id !== messageId)
     : messages
 
-  return [message, ...withoutDuplicate].slice(0, limit)
+  return sortChatMessagesAsc([...withoutDuplicate, message]).slice(-limit)
 }
 
 export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
@@ -66,7 +72,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   const [errorText, setErrorText] = useState('')
   const [isOnline, setIsOnline] = useState(true)
   const [jobsRealtimeState, setJobsRealtimeState] = useState('offline')
-  const [trackingRealtimeState, setTrackingRealtimeState] = useState('offline')
+  const [, setTrackingRealtimeState] = useState('offline')
   const [locationPermission, setLocationPermission] = useState('unknown')
   const [backgroundLocationPermission, setBackgroundLocationPermission] = useState('unknown')
   const [jobsRetryTick, setJobsRetryTick] = useState(0)
@@ -90,14 +96,13 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     messages: [],
     type: null,
   })
+  const chatScrollRef = useRef(null)
   const [chatDraft, setChatDraft] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
   const [chatSending, setChatSending] = useState(false)
   const lastSentRef = useRef({ lat: null, lng: null, timestamp: 0 })
   const courierStatusRef = useRef(courierStatus)
   const phaseRef = useRef(phase)
-  const trackingPollInFlightRef = useRef(false)
-  const offersPollInFlightRef = useRef(false)
   const courierId = session?.userId || session?.devUserId
   const courierInitial = String(session?.operatorName ?? 'E')
     .trim()
@@ -245,25 +250,6 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   ])
 
   useEffect(() => {
-    if (!activeDelivery?.order_id || isCompleted || trackingRealtimeState === 'live') {
-      return undefined
-    }
-
-    const timer = setInterval(async () => {
-      if (trackingPollInFlightRef.current) return
-
-      trackingPollInFlightRef.current = true
-      try {
-        await loadTracking(activeDelivery.order_id)
-      } finally {
-        trackingPollInFlightRef.current = false
-      }
-    }, 12000)
-
-    return () => clearInterval(timer)
-  }, [activeDelivery?.order_id, isCompleted, trackingRealtimeState])
-
-  useEffect(() => {
     if (!chatModalState.visible || !chatModalState.chat?.id) return undefined
     let unsubscribe = null
     try {
@@ -276,7 +262,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             if (!current.visible) return current
             return {
               ...current,
-              messages: prependUniqueChatMessage(
+              messages: mergeChatMessage(
                 current.messages,
                 normalizeSocketChatMessage(payload),
               ),
@@ -466,18 +452,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     }
 
     loadAvailableOffers()
-    const timer = setInterval(async () => {
-      if (offersPollInFlightRef.current) return
-
-      offersPollInFlightRef.current = true
-      try {
-        await loadAvailableOffers()
-      } finally {
-        offersPollInFlightRef.current = false
-      }
-    }, 15000)
-
-    return () => clearInterval(timer)
+    return undefined
   }, [courierStatus, phase])
 
   useEffect(() => {
@@ -539,7 +514,8 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           updated.add(activeOffer.offer_token)
           return updated
         })
-        loadAvailableOffers()
+        setActiveOfferId(null)
+        queueMicrotask(() => loadAvailableOffers())
       }
     }, 1000)
 
@@ -898,7 +874,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
       setChatModalState({
         visible: true,
         chat: target,
-        messages: target.messages ?? [],
+        messages: sortChatMessagesAsc(target.messages ?? []),
         type: targetType,
       })
       setErrorText('')
@@ -916,6 +892,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     setChatDraft('')
     try {
       setChatSending(true)
+      Keyboard.dismiss()
       const ack = await sendChatMessageOverSocket({
         chatId: chatModalState.chat.id,
         content: draft,
@@ -924,7 +901,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
       })
       setChatModalState((current) => ({
         ...current,
-        messages: prependUniqueChatMessage(current.messages, {
+        messages: mergeChatMessage(current.messages, {
           id: ack.id,
           chat_id: ack.chat_id,
           content: draft,
@@ -943,6 +920,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   }
 
   function closeChatModal() {
+    Keyboard.dismiss()
     setChatModalState({ visible: false, chat: null, messages: [], type: null })
     setChatDraft('')
   }
@@ -1706,7 +1684,13 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               </Pressable>
             </View>
 
-            <ScrollView style={styles.courierChatList} contentContainerStyle={{ paddingBottom: 8 }}>
+            <ScrollView
+              ref={chatScrollRef}
+              style={styles.courierChatList}
+              contentContainerStyle={{ paddingBottom: 8 }}
+              keyboardShouldPersistTaps="handled"
+              onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
+            >
               {chatModalState.messages.length === 0 ? (
                 <Text style={styles.offerMeta}>Sem mensagens ainda.</Text>
               ) : null}
@@ -1738,6 +1722,10 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                 placeholderTextColor="#94a3b8"
                 editable={!chatSending}
                 multiline
+                blurOnSubmit
+                returnKeyType="send"
+                submitBehavior="blurAndSubmit"
+                onSubmitEditing={handleSendChatMessage}
               />
               <Pressable
                 style={styles.acceptBtn}

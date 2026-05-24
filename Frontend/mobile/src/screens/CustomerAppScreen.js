@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  Keyboard,
   Modal,
   Pressable,
   SafeAreaView,
@@ -46,7 +47,6 @@ import {
   fetchClientOrdersHistory,
   fetchMyCart,
   fetchMyOrders,
-  fetchOrderPayment,
   fetchOrderTracking,
   fetchProductOptionGroups,
   fetchRestaurantMenu,
@@ -83,13 +83,19 @@ function normalizeSocketChatMessage(payload) {
   }
 }
 
-function prependUniqueChatMessage(messages, message, limit = 80) {
+function sortChatMessagesAsc(messages) {
+  return [...(messages ?? [])].sort(
+    (a, b) => new Date(a?.timestamp ?? 0).getTime() - new Date(b?.timestamp ?? 0).getTime(),
+  )
+}
+
+function mergeChatMessage(messages, message, limit = 80) {
   const messageId = message?.id
   const withoutDuplicate = messageId
     ? messages.filter((current) => current.id !== messageId)
     : messages
 
-  return [message, ...withoutDuplicate].slice(0, limit)
+  return sortChatMessagesAsc([...withoutDuplicate, message]).slice(-limit)
 }
 
 export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
@@ -185,10 +191,10 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     type: null,
     participants: [],
   })
+  const chatScrollRef = useRef(null)
   const [chatDraft, setChatDraft] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
   const [chatSending, setChatSending] = useState(false)
-  const trackingPollInFlightRef = useRef(false)
   const activeOrderIdRef = useRef(activeOrderId)
   const pendingPaymentRef = useRef(pendingPayment)
 
@@ -325,28 +331,6 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   }, [])
 
   useEffect(() => {
-    if (!activeOrderId || !isOnline) {
-      return undefined
-    }
-    if (realtimeState === 'live') {
-      return undefined
-    }
-
-    const timer = setInterval(async () => {
-      if (trackingPollInFlightRef.current) return
-
-      trackingPollInFlightRef.current = true
-      try {
-        await loadTracking(activeOrderId)
-      } finally {
-        trackingPollInFlightRef.current = false
-      }
-    }, 8000)
-
-    return () => clearInterval(timer)
-  }, [activeOrderId, realtimeState, isOnline])
-
-  useEffect(() => {
     if (!userId || !isOnline) {
       return undefined
     }
@@ -434,7 +418,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             if (!current.visible) return current
             return {
               ...current,
-              messages: prependUniqueChatMessage(
+              messages: mergeChatMessage(
                 current.messages,
                 normalizeSocketChatMessage(payload),
               ),
@@ -477,13 +461,8 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       }
     }, 1000)
 
-    const poll = setInterval(() => {
-      refreshPendingPaymentStatus()
-    }, 5000)
-
     return () => {
       clearInterval(tick)
-      clearInterval(poll)
     }
   }, [pendingPayment])
 
@@ -1030,7 +1009,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       setChatModalState({
         visible: true,
         chat: target,
-        messages: target.messages ?? [],
+        messages: sortChatMessagesAsc(target.messages ?? []),
         type: targetType,
         participants: target.participants ?? [],
       })
@@ -1050,6 +1029,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     setChatDraft('')
     try {
       setChatSending(true)
+      Keyboard.dismiss()
       const ack = await sendChatMessageOverSocket({
         chatId: chatModalState.chat.id,
         content: draft,
@@ -1058,7 +1038,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       })
       setChatModalState((current) => ({
         ...current,
-        messages: prependUniqueChatMessage(current.messages, {
+        messages: mergeChatMessage(current.messages, {
           id: ack.id,
           chat_id: ack.chat_id,
           content: draft,
@@ -1078,6 +1058,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   }
 
   function closeChatModal() {
+    Keyboard.dismiss()
     setChatModalState({
       visible: false,
       chat: null,
@@ -1099,7 +1080,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       })
       setChatModalState((current) => ({
         ...current,
-        messages: older,
+        messages: sortChatMessagesAsc(older),
       }))
     } catch (error) {
       setErrorText(error.message)
@@ -1638,27 +1619,6 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     }
   }
 
-  async function refreshPendingPaymentStatus() {
-    if (!pendingPayment) return
-    try {
-      const payment = await fetchOrderPayment({
-        session,
-        orderId: pendingPayment.orderId,
-      })
-      if (payment?.status === 'COMPLETED') {
-        setPendingPayment(null)
-        setSuccessText('Pagamento confirmado externamente.')
-        navigate(CUSTOMER_ROUTES.TRACKING)
-        await loadTracking(pendingPayment.orderId)
-      } else if (payment?.status === 'FAILED') {
-        setPendingPayment(null)
-        setErrorText('Pagamento expirou ou falhou.')
-      }
-    } catch {
-      // ignore polling errors silently
-    }
-  }
-
   async function loadTracking(orderId) {
     if (!ensureOnline('carregar tracking')) {
       return
@@ -2151,7 +2111,13 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               </Pressable>
             </View>
 
-            <ScrollView style={styles.inboxList} contentContainerStyle={styles.inboxListContent}>
+            <ScrollView
+              ref={chatScrollRef}
+              style={styles.inboxList}
+              contentContainerStyle={styles.inboxListContent}
+              keyboardShouldPersistTaps="handled"
+              onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
+            >
               {clientReviews.length === 0 ? (
                 <Text style={styles.inboxEmpty}>Sem avaliações ainda.</Text>
               ) : null}
@@ -2321,6 +2287,10 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 placeholderTextColor="#94a3b8"
                 editable={!chatSending}
                 multiline
+                blurOnSubmit
+                returnKeyType="send"
+                submitBehavior="blurAndSubmit"
+                onSubmitEditing={sendChatMessageFromModal}
               />
               <Pressable
                 style={styles.chatSendBtn}

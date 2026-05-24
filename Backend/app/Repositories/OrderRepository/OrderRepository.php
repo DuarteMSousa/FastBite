@@ -54,6 +54,7 @@ class OrderRepository implements OrderRepositoryInterface
     {
         return Order::with($this->defaultRelations)
             ->where('restaurant_id', $restaurantId)
+            ->whereHas('delivery', fn ($query) => $query->whereNotNull('courier_id'))
             ->find($orderId);
     }
 
@@ -86,6 +87,7 @@ class OrderRepository implements OrderRepositoryInterface
     {
         return Order::with($this->defaultRelations)
             ->where('restaurant_id', $restaurantId)
+            ->whereHas('delivery', fn ($query) => $query->whereNotNull('courier_id'))
             ->when($statuses, fn ($query) => $query->whereIn('status', $statuses))
             ->orderByDesc('created_at')
             ->paginate($pageSize, ['*'], 'page', $pageNumber);
@@ -95,6 +97,7 @@ class OrderRepository implements OrderRepositoryInterface
     {
         return Order::with($this->defaultRelations)
             ->where('restaurant_id', $restaurantId)
+            ->whereHas('delivery', fn ($query) => $query->whereNotNull('courier_id'))
             ->whereNotIn('status', [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value])
             ->orderBy('created_at')
             ->get();

@@ -369,9 +369,6 @@ export function getEchoClient({ authToken: _authToken, devUserId, courierId } = 
         channelStates.delete(channelName)
         unsubscribeChannel(channelName)
 
-        if (channelStates.size === 0) {
-          disconnectEchoClient()
-        }
       },
       send(message, options) {
         return sendWithAck(message, options)

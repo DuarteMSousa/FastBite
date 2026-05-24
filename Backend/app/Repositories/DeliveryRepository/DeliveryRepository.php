@@ -60,8 +60,6 @@ class DeliveryRepository implements DeliveryRepositoryInterface
             ->where('status', DeliveryStatus::PENDING->value)
             ->whereHas('order', fn ($query) => $query->whereIn('status', [
                 OrderStatus::CONFIRMED->value,
-                OrderStatus::PREPARING->value,
-                OrderStatus::READY->value,
             ]))
             ->orderBy('created_at')
             ->limit($limit)

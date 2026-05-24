@@ -23,6 +23,14 @@ function createClientMessageId() {
     .join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`
 }
 
+function listenMany(channel, events, callback) {
+  events.forEach((eventName) => {
+    channel.listen(`.${eventName}`, (payload) => {
+      callback(eventName, payload)
+    })
+  })
+}
+
 export function subscribeToChatTopic({ chatId, authToken, devUserId, onMessage, onError, onSubscribed }) {
   const echo = getEchoClient({ authToken, devUserId })
   const channelName = `chat.${chatId}`
@@ -146,6 +154,7 @@ export function subscribeToOrderTrackingTopic({
   orderId,
   authToken,
   devUserId,
+  onEvent,
   onPositionUpdated,
   onError,
   onSubscribed,
@@ -158,9 +167,29 @@ export function subscribeToOrderTrackingTopic({
     channel.subscribed(() => onSubscribed())
   }
 
-  channel.listen('.COURIER_POSITION_UPDATED', (payload) => {
-    if (onPositionUpdated) onPositionUpdated(payload)
-  })
+  listenMany(
+    channel,
+    [
+      'COURIER_POSITION_UPDATED',
+      'ORDER_COURIER_ASSIGNED',
+      'ORDER_PREPARING',
+      'ORDER_READY',
+      'ORDER_PICKED_UP',
+      'ORDER_OUT_FOR_DELIVERY',
+      'ORDER_DELIVERED',
+      'ORDER_CANCELLED',
+      'DELIVERY_PICKED_UP',
+      'DELIVERY_IN_TRANSIT',
+      'DELIVERY_DELIVERED',
+      'DELIVERY_FAILED',
+    ],
+    (eventName, payload) => {
+      if (eventName === 'COURIER_POSITION_UPDATED' && onPositionUpdated) {
+        onPositionUpdated(payload)
+      }
+      if (onEvent) onEvent(eventName, payload)
+    },
+  )
 
   channel.error((error) => {
     if (onError) onError(error)

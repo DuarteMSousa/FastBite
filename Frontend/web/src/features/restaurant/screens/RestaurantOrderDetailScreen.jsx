@@ -88,6 +88,14 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
         orderId: selectedOrderId,
         authToken: session.token,
         devUserId: session.devUserId,
+        onEvent: (_eventName, payload) => {
+          if (payload?.order) {
+            setOrder((current) => ({
+              ...(current ?? {}),
+              ...payload.order,
+            }))
+          }
+        },
         onPositionUpdated: (payload) => {
           setCourierPosition({
             lat: Number(payload?.lat),
@@ -106,7 +114,14 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
   }, [selectedOrderId, session?.token, session?.devUserId])
 
   useEffect(() => {
-    setCourierPosition(null)
+    let cancelled = false
+    queueMicrotask(() => {
+      if (!cancelled) setCourierPosition(null)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [selectedOrderId])
 
   async function withBusy(action, message) {

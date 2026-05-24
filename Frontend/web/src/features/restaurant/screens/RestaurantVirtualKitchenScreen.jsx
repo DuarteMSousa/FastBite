@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   acceptRestaurantOrder,
   fetchRestaurantActiveOrders,
+  mapRestaurantOrder,
   markRestaurantOrderReady,
   rejectRestaurantOrder,
   startPreparingRestaurantOrder,
@@ -60,6 +61,23 @@ function playKitchenBeep(ref) {
   }
 }
 
+function reconcileActiveOrderList(current, order) {
+  if (!order?.order_id) return current
+  if (['CANCELLED', 'DELIVERED'].includes(order.order_status)) {
+    return current.filter((entry) => entry.order_id !== order.order_id)
+  }
+
+  const next = current.some((entry) => entry.order_id === order.order_id)
+    ? current.map((entry) => (entry.order_id === order.order_id ? order : entry))
+    : [...current, order]
+
+  return next.sort((a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime())
+}
+
+function orderFromRealtimePayload(payload) {
+  return payload?.order ? mapRestaurantOrder(payload.order) : null
+}
+
 export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavigate }) {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -72,13 +90,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
   const [dialogLoading, setDialogLoading] = useState(false)
   const [pendingAlerts, setPendingAlerts] = useState([])
   const [realtimeState, setRealtimeState] = useState('offline')
-  const [readyAnnouncementOrderId, setReadyAnnouncementOrderId] = useState('')
-  const readyAnnouncementOrderIdRef = useRef('')
   const beepRef = useRef(null)
-
-  useEffect(() => {
-    readyAnnouncementOrderIdRef.current = readyAnnouncementOrderId
-  }, [readyAnnouncementOrderId])
 
   const loadOrders = useCallback(async () => {
     try {
@@ -99,15 +111,6 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
     })
   }, [loadOrders])
 
-  // Polling de fallback apenas enquanto o socket não está live. Bind ao boolean
-  // para evitar reset do interval em cada flutuacao (connecting -> error -> live).
-  const isRealtimeLive = realtimeState === 'live'
-  useEffect(() => {
-    if (isRealtimeLive) return undefined
-    const timer = setInterval(loadOrders, 30000)
-    return () => clearInterval(timer)
-  }, [isRealtimeLive, loadOrders])
-
   useEffect(() => {
     if (!session?.restaurantId) return undefined
     let unsubscribe = null
@@ -122,22 +125,17 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
         onEvent: (eventName, payload) => {
           setRealtimeState('live')
           const orderId = payload?.data?.order_id ?? payload?.orderId ?? null
-          if (eventName === 'ORDER_CREATED') {
+          const realtimeOrder = orderFromRealtimePayload(payload)
+          if (realtimeOrder) {
+            setOrders((current) => reconcileActiveOrderList(current, realtimeOrder))
+          }
+          if (eventName === 'ORDER_COURIER_ASSIGNED' || eventName === 'ORDER_CREATED') {
             playKitchenBeep(beepRef)
             setPendingAlerts((current) => {
               if (!orderId || current.includes(orderId)) return current
               return [...current, orderId]
             })
           }
-          if (
-            (eventName === 'ORDER_COURIER_ASSIGNED' || eventName === 'ORDER_OUT_FOR_DELIVERY') &&
-            orderId &&
-            readyAnnouncementOrderIdRef.current === orderId
-          ) {
-            setReadyAnnouncementOrderId('')
-            setInfoText('Estafeta atribuido e a caminho.')
-          }
-          loadOrders()
         },
         onError: () => {
           setRealtimeState('error')
@@ -149,7 +147,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
     return () => {
       if (unsubscribe) unsubscribe()
     }
-  }, [session?.restaurantId, session?.token, session?.devUserId, loadOrders])
+  }, [session?.restaurantId, session?.token, session?.devUserId])
 
   const pendingOrders = useMemo(
     () => orders.filter((order) => order.order_status === 'PENDING'),
@@ -236,8 +234,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
     try {
       setBusyOrderId(order.order_id)
       await markRestaurantOrderReady({ session, orderId: order.order_id })
-      setReadyAnnouncementOrderId(order.order_id)
-      setInfoText('Encomenda marcada como pronta. A procurar estafeta...')
+      setInfoText('Encomenda marcada como pronta. Estafeta ja atribuido; aguarda recolha.')
       await loadOrders()
     } catch (error) {
       setErrorText(error.message)
@@ -291,14 +288,14 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
         </div>
       ) : null}
 
-      {readyAnnouncementOrderId ? (
+      {realtimeState === '__ready_announcement_disabled__' ? (
         <div className="rb-pending-alert" style={{ borderColor: '#3479ed', background: '#eaf2ff' }}>
-          <strong>A procurar estafeta para #{String(readyAnnouncementOrderId).slice(0, 8)}</strong>
+          <strong>Estafeta atribuido</strong>
           <span>Notificação enviada por WebSocket. Aguarde atribuição.</span>
           <button
             type="button"
             className="rb-btn-outline"
-            onClick={() => setReadyAnnouncementOrderId('')}
+            onClick={() => {}}
           >
             Dispensar
           </button>
@@ -524,7 +521,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
             <p>{order.delivery_address ?? 'Morada indisponivel'}</p>
           </div>
 
-          <p className="rb-prep-note">A aguardar estafeta. Ja podes tirar do balcao quando ele chegar.</p>
+          <p className="rb-prep-note">Estafeta ja atribuido. Ja podes tirar do balcao quando ele chegar.</p>
 
           <footer className="rb-prep-actions">
             <button

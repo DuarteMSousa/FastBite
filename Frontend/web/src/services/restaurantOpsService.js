@@ -48,6 +48,10 @@ function mapOrder(order) {
   }
 }
 
+export function mapRestaurantOrder(order) {
+  return mapOrder(order)
+}
+
 function mapRestaurantProduct(item, categories = []) {
   const category = categories.find((entry) => entry.id === item.product?.category_id)
   return {

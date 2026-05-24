@@ -227,6 +227,7 @@ class OrderService implements OrderServiceInterface
                 now(),
                 [],
             ));
+            $this->ensureDeliveryAssignmentRequested($order, (float) $pricing['delivery_fee']);
         } else {
             ExpirePendingPaymentJob::dispatch($payment->id)
                 ->delay($payment->expired_at)
@@ -277,11 +278,8 @@ class OrderService implements OrderServiceInterface
     {
         $order = $this->orders->findByIdOrFail($orderId);
 
+        $this->ensureOrderHasAssignedCourier($order);
         $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
-        $order->loadMissing(['restaurant.address', 'address']);
-        $deliveryFee = app(OrderPricingService::class)->deliveryFee($order->restaurant, $order->address);
-        $delivery = app(DeliveryServiceInterface::class)->createDeliveryForOrder($order->id, $deliveryFee);
-        AssignCourierToDeliveryJob::dispatch($delivery->id)->afterCommit();
 
         return $order;
     }
@@ -303,11 +301,8 @@ class OrderService implements OrderServiceInterface
     {
         $order = $this->orders->findByIdOrFail($orderId);
 
+        $this->ensureOrderHasAssignedCourier($order);
         $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
-        $order->loadMissing(['restaurant.address', 'address']);
-        $deliveryFee = app(OrderPricingService::class)->deliveryFee($order->restaurant, $order->address);
-        $delivery = app(DeliveryServiceInterface::class)->createDeliveryForOrder($order->id, $deliveryFee);
-        AssignCourierToDeliveryJob::dispatch($delivery->id)->afterCommit();
 
         return $order;
     }
@@ -349,6 +344,8 @@ class OrderService implements OrderServiceInterface
     public function markOrderReady(string $orderId): Order
     {
         $order = $this->orders->findByIdOrFail($orderId);
+
+        $this->ensureOrderHasAssignedCourier($order);
 
         return $this->transition($order, OrderStatus::READY, OrderEventType::ORDER_READY);
     }
@@ -394,7 +391,10 @@ class OrderService implements OrderServiceInterface
     {
         $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED);
 
-        return $this->transition($order, OrderStatus::CONFIRMED, OrderEventType::ORDER_CONFIRMED);
+        $order = $this->transition($order, OrderStatus::CONFIRMED, OrderEventType::ORDER_CONFIRMED);
+        $this->ensureDeliveryAssignmentRequested($order);
+
+        return $order;
     }
 
     #[Transactional]
@@ -420,6 +420,38 @@ class OrderService implements OrderServiceInterface
         $this->recordEvent($order, $eventType, $payload);
 
         return $order->refresh()->load($this->with);
+    }
+
+    private function ensureDeliveryAssignmentRequested(Order $order, ?float $deliveryFee = null): void
+    {
+        $order->loadMissing(['restaurant.address', 'address', 'delivery']);
+
+        if ($order->delivery?->courier_id) {
+            return;
+        }
+
+        $resolvedDeliveryFee = $deliveryFee
+            ?? app(OrderPricingService::class)->deliveryFee($order->restaurant, $order->address);
+        $delivery = app(DeliveryServiceInterface::class)->createDeliveryForOrder($order->id, $resolvedDeliveryFee);
+
+        if ($delivery->courier_id) {
+            return;
+        }
+
+        AssignCourierToDeliveryJob::dispatch($delivery->id)->afterCommit();
+    }
+
+    private function ensureOrderHasAssignedCourier(Order $order): void
+    {
+        $order->loadMissing('delivery');
+
+        if ($order->delivery?->courier_id) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'delivery_id' => 'A encomenda so pode ser preparada depois de existir estafeta atribuido.',
+        ]);
     }
 
     private function validatedCheckoutAddress(string $clientUserId, ?string $addressId): UserAddress
@@ -589,6 +621,15 @@ class OrderService implements OrderServiceInterface
     private function recordEvent(Order $order, OrderEventType $eventType, array $payload = []): void
     {
         $occurredAt = now();
+        $channels = [
+            "customer.{$order->user_id}.orders",
+            "order.{$order->id}.tracking",
+        ];
+
+        if ($this->shouldBroadcastToRestaurant($order)) {
+            $channels[] = "restaurant.{$order->restaurant_id}.orders";
+        }
+
         $eventPayload = [
             'eventId' => (string) Str::uuid(),
             'eventName' => $eventType->value,
@@ -600,16 +641,134 @@ class OrderService implements OrderServiceInterface
             'restaurantName' => $order->restaurant_name_snapshot,
             'occurredAt' => $occurredAt->toIso8601String(),
             'data' => $payload,
-            'channels' => [
-                "customer.{$order->user_id}.orders",
-                "restaurant.{$order->restaurant_id}.orders",
-                "order.{$order->id}.tracking",
-            ],
+            'channels' => $channels,
         ];
 
         $this->orders->addEvent($order, $eventType->value, $occurredAt, $eventPayload);
 
-        app(OutboxService::class)->enqueue('order', $order->id, $eventType->value, $eventPayload);
-        NotificationEventRecorded::dispatch($eventType, $eventPayload);
+        $broadcastPayload = [
+            ...$eventPayload,
+            'latestEvent' => [
+                'event_type' => $eventType->value,
+                'timestamp' => $occurredAt->toIso8601String(),
+                'payload' => $eventPayload,
+            ],
+            'order' => $this->orderSnapshot($order->refresh()),
+        ];
+
+        app(OutboxService::class)->enqueue('order', $order->id, $eventType->value, $broadcastPayload);
+        NotificationEventRecorded::dispatch($eventType, $broadcastPayload);
+    }
+
+    private function shouldBroadcastToRestaurant(Order $order): bool
+    {
+        return $order->delivery()
+            ->whereNotNull('courier_id')
+            ->exists();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function orderSnapshot(Order $order): array
+    {
+        $order->loadMissing([
+            'user',
+            'restaurant.address',
+            'address',
+            'items.options',
+            'events',
+            'discounts',
+            'payment',
+            'delivery.courier.user',
+        ]);
+
+        return [
+            'id' => $order->id,
+            'user_id' => $order->user_id,
+            'restaurant_id' => $order->restaurant_id,
+            'status' => $order->status->value,
+            'total' => (float) $order->total,
+            'restaurant_name_snapshot' => $order->restaurant_name_snapshot,
+            'created_at' => $order->created_at?->toIso8601String(),
+            'updated_at' => $order->updated_at?->toIso8601String(),
+            'user' => $order->user ? [
+                'id' => $order->user->id,
+                'name' => $order->user->name,
+                'email' => $order->user->email,
+            ] : null,
+            'restaurant' => $order->restaurant ? [
+                'id' => $order->restaurant->id,
+                'name' => $order->restaurant->name,
+                'address' => $order->restaurant->address ? [
+                    'latitude' => $order->restaurant->address->latitude,
+                    'longitude' => $order->restaurant->address->longitude,
+                    'street' => $order->restaurant->address->street,
+                    'city' => $order->restaurant->address->city,
+                ] : null,
+            ] : null,
+            'address' => $order->address ? [
+                'street' => $order->address->street,
+                'city' => $order->address->city,
+                'postal_code' => $order->address->postal_code,
+                'country' => $order->address->country,
+                'latitude' => $order->address->latitude,
+                'longitude' => $order->address->longitude,
+            ] : null,
+            'payment' => $order->payment ? [
+                'id' => $order->payment->id,
+                'method' => $order->payment->method->value,
+                'status' => $order->payment->status->value,
+                'amount' => (float) $order->payment->amount,
+                'paid_at' => $order->payment->paid_at?->toIso8601String(),
+                'expired_at' => $order->payment->expired_at?->toIso8601String(),
+            ] : null,
+            'delivery' => $order->delivery ? [
+                'id' => $order->delivery->id,
+                'courier_id' => $order->delivery->courier_id,
+                'status' => $order->delivery->status->value,
+                'pickup_time' => $order->delivery->pickup_time?->toIso8601String(),
+                'delivery_time' => $order->delivery->delivery_time?->toIso8601String(),
+                'delivery_fee' => (float) $order->delivery->delivery_fee,
+                'courier' => $order->delivery->courier ? [
+                    'user_id' => $order->delivery->courier->user_id,
+                    'status' => $order->delivery->courier->status->value,
+                    'latitude' => $order->delivery->courier->latitude,
+                    'longitude' => $order->delivery->courier->longitude,
+                    'last_location_update' => $order->delivery->courier->last_location_update?->toIso8601String(),
+                    'user' => $order->delivery->courier->user ? [
+                        'name' => $order->delivery->courier->user->name,
+                    ] : null,
+                ] : null,
+            ] : null,
+            'events' => $order->events
+                ->sortBy('timestamp')
+                ->map(fn ($event): array => [
+                    'event_type' => $event->event_type,
+                    'timestamp' => $event->timestamp?->toIso8601String(),
+                    'payload' => $event->payload,
+                ])
+                ->values()
+                ->all(),
+            'discounts' => $order->discounts->map(fn ($discount): array => [
+                'id' => $discount->id,
+                'name_snapshot' => $discount->name_snapshot,
+                'discount_amount' => (float) $discount->discount_amount,
+                'discount_type' => $discount->discount_type,
+                'discount_target' => $discount->discount_target,
+            ])->values()->all(),
+            'items' => $order->items->map(fn ($item): array => [
+                'id' => $item->id,
+                'status' => $item->status->value,
+                'quantity' => (int) $item->quantity,
+                'product_name_snapshot' => $item->product_name_snapshot,
+                'total_price' => (float) $item->total_price,
+                'options' => $item->options->map(fn ($option): array => [
+                    'id' => $option->id,
+                    'option_name_snapshot' => $option->option_name_snapshot,
+                    'extra_price' => (float) $option->extra_price,
+                ])->values()->all(),
+            ])->values()->all(),
+        ];
     }
 }
