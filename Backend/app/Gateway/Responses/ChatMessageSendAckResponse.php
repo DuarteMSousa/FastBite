@@ -9,8 +9,8 @@ final readonly class ChatMessageSendAckResponse implements SocketResponse
     public function __construct(
         public string $chatId,
         public string $messageId,
-    ) {
-    }
+        public ?string $clientMessageId = null,
+    ) {}
 
     public function type(): SocketServerEventType
     {
@@ -19,9 +19,15 @@ final readonly class ChatMessageSendAckResponse implements SocketResponse
 
     public function payload(): array
     {
-        return [
+        $payload = [
             'chat_id' => $this->chatId,
             'message_id' => $this->messageId,
         ];
+
+        if ($this->clientMessageId !== null) {
+            $payload['client_message_id'] = $this->clientMessageId;
+        }
+
+        return $payload;
     }
 }

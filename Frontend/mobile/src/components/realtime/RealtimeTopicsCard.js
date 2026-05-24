@@ -17,7 +17,7 @@ function prependLimited(items, nextItem) {
 }
 
 function resolveTimestamp(payload) {
-  return payload?.timestamp ?? payload?.sentAt ?? payload?.recordedAt ?? new Date().toISOString()
+  return payload?.timestamp ?? payload?.sent_at ?? payload?.sentAt ?? payload?.recordedAt ?? new Date().toISOString()
 }
 
 export function RealtimeTopicsCard() {
@@ -53,9 +53,9 @@ export function RealtimeTopicsCard() {
           setStatus('live')
           setChatEvents((current) =>
             prependLimited(current, {
-              id: payload?.eventId ?? `${Date.now()}-${Math.random()}`,
+              id: payload?.event_id ?? `${Date.now()}-${Math.random()}`,
               title: payload?.content ?? 'Nova mensagem',
-              meta: `sender ${payload?.senderUserId ?? 'desconhecido'}`,
+              meta: `sender ${payload?.sender_user_id ?? 'desconhecido'}`,
               at: resolveTimestamp(payload),
             }),
           )

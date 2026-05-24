@@ -2,11 +2,10 @@
 
 namespace App\Repositories\DeliveryRepository;
 
-use App\DTOs\Delivery\CreateDeliveryOfferDTO;
 use App\DTOs\Delivery\CreateDeliveryEventDTO;
+use App\DTOs\Delivery\CreateDeliveryOfferDTO;
 use App\DTOs\Delivery\UpdateDeliveryDTO;
 use App\DTOs\Delivery\UpdateDeliveryOfferDTO;
-use App\Enums\DeliveryStatus;
 use App\Models\Delivery;
 use App\Models\DeliveryOffer;
 
@@ -21,6 +20,11 @@ interface DeliveryRepositoryInterface
     public function getByCourierId(string $courierId, ?array $statuses);
 
     public function getAssignmentCandidate(string $id): ?Delivery;
+
+    /**
+     * @return array<int, string>
+     */
+    public function getPendingUnassignedDeliveryIds(int $limit = 25): array;
 
     public function getByIdOrFail(string $id, bool $lock = false): Delivery;
 

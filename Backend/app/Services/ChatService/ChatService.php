@@ -5,10 +5,12 @@ namespace App\Services\ChatService;
 use App\Aspects\Transactional;
 use App\DTOs\Chat\CreateOrderChatDTO;
 use App\DTOs\Chat\SendMessageDTO;
+use App\Enums\ChatType;
 use App\Enums\OrderStatus;
 use App\Enums\OutboxEventName;
 use App\Models\Chat;
 use App\Models\Message;
+use App\Models\Order;
 use App\Models\User;
 use App\Repositories\ChatRepository\ChatRepositoryInterface;
 use App\Repositories\UserRepository\UserRepositoryInterface;
@@ -53,13 +55,25 @@ class ChatService implements ChatServiceInterface
     #[Transactional]
     public function createOrderChat(CreateOrderChatDTO $data): Chat
     {
-        foreach ($data->participant_user_ids as $userId) {
+        $participantUserIds = $this->resolveOrderChatParticipants($data);
+
+        foreach ($participantUserIds as $userId) {
             $this->users->findById($userId) ?? throw ValidationException::withMessages([
                 'participant_user_ids' => 'One or more users do not exist.',
             ]);
         }
 
-        return $this->chats->createOrderChat($data);
+        if (count($participantUserIds) < 2) {
+            throw ValidationException::withMessages([
+                'participant_user_ids' => 'The chat needs at least two participants.',
+            ]);
+        }
+
+        return $this->chats->createOrderChat(new CreateOrderChatDTO(
+            order_id: $data->order_id,
+            type: $data->type,
+            participant_user_ids: $participantUserIds,
+        ));
     }
 
     #[Transactional]
@@ -104,17 +118,49 @@ class ChatService implements ChatServiceInterface
         $message = $this->chats->createMessage($data->chat_id, $participant->id, $data->content);
 
         app(OutboxService::class)->enqueue('chat', $chat->id, OutboxEventName::CHAT_MESSAGE_SENT->value, [
-            'eventId' => (string) Str::uuid(),
-            'eventName' => OutboxEventName::CHAT_MESSAGE_SENT->value,
-            'chatId' => $chat->id,
-            'messageId' => $message->id,
-            'senderUserId' => $senderUserId,
-            'senderParticipantId' => $participant->id,
+            'event_id' => (string) Str::uuid(),
+            'event_name' => OutboxEventName::CHAT_MESSAGE_SENT->value,
+            'chat_id' => $chat->id,
+            'message_id' => $message->id,
+            'sender_user_id' => $senderUserId,
+            'sender_participant_id' => $participant->id,
             'content' => $message->content,
-            'sentAt' => $message->timestamp?->toIso8601String(),
+            'timestamp' => $message->timestamp?->toIso8601String(),
         ]);
 
         return $message;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function resolveOrderChatParticipants(CreateOrderChatDTO $data): array
+    {
+        $order = Order::query()
+            ->with(['restaurant.localManager', 'restaurant.chain.chainManagers', 'delivery'])
+            ->findOrFail($data->order_id);
+
+        $participantUserIds = collect($data->participant_user_ids)
+            ->push($order->user_id);
+
+        if ($data->type === ChatType::CUSTOMER_RESTAURANT) {
+            $participantUserIds->push($order->restaurant?->localManager?->user_id);
+
+            foreach ($order->restaurant?->chain?->chainManagers ?? [] as $manager) {
+                $participantUserIds->push($manager->user_id);
+            }
+        }
+
+        if ($data->type === ChatType::CUSTOMER_COURIER) {
+            $participantUserIds->push($order->delivery?->courier_id);
+        }
+
+        return $participantUserIds
+            ->filter()
+            ->map(static fn ($userId): string => (string) $userId)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     private function isAuthorizedManagerForChat(User $user, Chat $chat): bool

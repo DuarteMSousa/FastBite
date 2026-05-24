@@ -1,5 +1,28 @@
 import { getEchoClient } from './echoClient'
 
+function createClientMessageId() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID()
+  }
+
+  const bytes = new Uint8Array(16)
+  if (globalThis.crypto?.getRandomValues) {
+    globalThis.crypto.getRandomValues(bytes)
+  } else {
+    for (let index = 0; index < bytes.length; index += 1) {
+      bytes[index] = Math.floor(Math.random() * 256)
+    }
+  }
+
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0'))
+  return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex
+    .slice(6, 8)
+    .join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`
+}
+
 function listenMany(channel, events, callback) {
   events.forEach((eventName) => {
     channel.listen(`.${eventName}`, (payload) => {
@@ -27,6 +50,36 @@ export function subscribeToChatTopic({ chatId, authToken, devUserId, onMessage, 
 
   return () => {
     echo.leave(channelName)
+  }
+}
+
+export async function sendChatMessageOverSocket({ chatId, content, authToken, devUserId }) {
+  const trimmed = String(content ?? '').trim()
+  if (!trimmed) {
+    throw new Error('A mensagem nao pode ser vazia.')
+  }
+
+  const echo = getEchoClient({ authToken, devUserId })
+  const clientMessageId = createClientMessageId()
+  const ack = await echo.send(
+    {
+      type: 'chat.message.send',
+      chat_id: chatId,
+      content: trimmed,
+      client_message_id: clientMessageId,
+    },
+    {
+      ackType: 'chat.message.send.ack',
+      matcher: (message) =>
+        message.client_message_id === clientMessageId ||
+        (!message.client_message_id && message.chat_id === chatId),
+    },
+  )
+
+  return {
+    id: ack?.message_id ?? clientMessageId,
+    chat_id: ack?.chat_id ?? chatId,
+    client_message_id: clientMessageId,
   }
 }
 

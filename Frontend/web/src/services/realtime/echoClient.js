@@ -9,7 +9,9 @@ let gatewayClient = null
 let currentUserId = null
 let reconnectTimer = null
 let reconnectAttempts = 0
+let ackSequence = 0
 const pendingMessages = []
+const pendingAcks = new Map()
 const channelStates = new Map()
 
 function normalizeEventName(eventName) {
@@ -39,6 +41,14 @@ function notifyChannelError(channelState, error) {
 
 function notifyAllErrors(error) {
   channelStates.forEach((channelState) => notifyChannelError(channelState, error))
+}
+
+function rejectPendingAcks(error) {
+  pendingAcks.forEach((pendingAck) => {
+    clearTimeout(pendingAck.timer)
+    pendingAck.reject(error)
+  })
+  pendingAcks.clear()
 }
 
 function markAllChannelsUnsubscribed() {
@@ -81,6 +91,54 @@ function unsubscribeChannel(channelName) {
     type: 'unsubscribe',
     channel: channelName,
   })
+}
+
+function sendWithAck(message, { ackType, timeoutMs = 8000, matcher } = {}) {
+  if (!ackType) {
+    sendOrQueue(message)
+    return Promise.resolve(null)
+  }
+
+  ackSequence += 1
+  const ackId = String(ackSequence)
+
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      pendingAcks.delete(ackId)
+      reject(new Error('Gateway acknowledgement timeout.'))
+    }, timeoutMs)
+
+    pendingAcks.set(ackId, {
+      ackType,
+      matcher,
+      resolve,
+      reject,
+      timer,
+    })
+
+    sendOrQueue(message)
+  })
+}
+
+function resolvePendingAck(message) {
+  const type = String(message?.type ?? '')
+
+  for (const [ackId, pendingAck] of pendingAcks) {
+    if (pendingAck.ackType !== type) {
+      continue
+    }
+
+    if (pendingAck.matcher && !pendingAck.matcher(message)) {
+      continue
+    }
+
+    clearTimeout(pendingAck.timer)
+    pendingAcks.delete(ackId)
+    pendingAck.resolve(message)
+    return true
+  }
+
+  return false
 }
 
 function emitGatewayEvent(message) {
@@ -144,6 +202,7 @@ function handleGatewayMessage(rawData) {
     const error = new Error(String(message.message ?? 'Gateway error.'))
     const channelName = typeof message.channel === 'string' ? message.channel : ''
     const channelState = channelStates.get(channelName)
+    rejectPendingAcks(error)
 
     if (channelState) {
       notifyChannelError(channelState, error)
@@ -151,6 +210,10 @@ function handleGatewayMessage(rawData) {
     }
 
     notifyAllErrors(error)
+    return
+  }
+
+  if (resolvePendingAck(message)) {
     return
   }
 
@@ -204,13 +267,17 @@ function connectGatewaySocket() {
   }
 
   gatewaySocket.onerror = () => {
-    notifyAllErrors(new Error('Gateway connection error.'))
+    const error = new Error('Gateway connection error.')
+    rejectPendingAcks(error)
+    notifyAllErrors(error)
   }
 
   gatewaySocket.onclose = () => {
     gatewaySocket = null
     markAllChannelsUnsubscribed()
-    notifyAllErrors(new Error('Gateway connection closed.'))
+    const error = new Error('Gateway connection closed.')
+    rejectPendingAcks(error)
+    notifyAllErrors(error)
     scheduleReconnect()
   }
 }
@@ -295,6 +362,9 @@ export function getEchoClient({ devUserId } = {}) {
           disconnectEchoClient()
         }
       },
+      send(message, options) {
+        return sendWithAck(message, options)
+      },
     }
   }
 
@@ -313,8 +383,10 @@ export function disconnectEchoClient() {
   }
 
   pendingMessages.length = 0
+  rejectPendingAcks(new Error('Gateway connection reset.'))
   channelStates.clear()
   gatewayClient = null
   currentUserId = null
   reconnectAttempts = 0
+  ackSequence = 0
 }

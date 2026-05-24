@@ -2,12 +2,13 @@
 
 namespace App\Repositories\DeliveryRepository;
 
-use App\DTOs\Delivery\CreateDeliveryOfferDTO;
 use App\DTOs\Delivery\CreateDeliveryEventDTO;
+use App\DTOs\Delivery\CreateDeliveryOfferDTO;
 use App\DTOs\Delivery\UpdateDeliveryDTO;
 use App\DTOs\Delivery\UpdateDeliveryOfferDTO;
 use App\Enums\DeliveryOfferStatus;
 use App\Enums\DeliveryStatus;
+use App\Enums\OrderStatus;
 use App\Models\Delivery;
 use App\Models\DeliveryOffer;
 
@@ -50,6 +51,22 @@ class DeliveryRepository implements DeliveryRepositoryInterface
         return Delivery::query()
             ->with(['order.restaurant.address', 'offers'])
             ->find($id);
+    }
+
+    public function getPendingUnassignedDeliveryIds(int $limit = 25): array
+    {
+        return Delivery::query()
+            ->whereNull('courier_id')
+            ->where('status', DeliveryStatus::PENDING->value)
+            ->whereHas('order', fn ($query) => $query->whereIn('status', [
+                OrderStatus::CONFIRMED->value,
+                OrderStatus::PREPARING->value,
+                OrderStatus::READY->value,
+            ]))
+            ->orderBy('created_at')
+            ->limit($limit)
+            ->pluck('id')
+            ->all();
     }
 
     public function getByIdOrFail(string $id, bool $lock = false): Delivery

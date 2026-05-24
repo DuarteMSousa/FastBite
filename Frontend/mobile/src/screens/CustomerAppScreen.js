@@ -39,7 +39,6 @@ import {
   createOrderChat,
   fetchChatMessages,
   fetchOrderChats,
-  sendChatMessage,
   updateClientUser,
   fetchClientAddresses,
   fetchClientNotifications,
@@ -63,11 +62,35 @@ import {
 } from '../services/commerceService'
 import { subscribeToOrderTracking } from '../services/realtime/trackingRealtime'
 import {
+  sendChatMessageOverSocket,
   subscribeToChatTopic,
   subscribeToCustomerOrdersTopic,
   subscribeToUserNotificationsTopic,
 } from '../services/realtime/topicsRealtime'
 import { useAutoToast } from '../components/common/ToastProvider'
+
+function normalizeSocketChatMessage(payload) {
+  const senderUserId = payload?.sender_user_id ?? 'desconhecido'
+
+  return {
+    id: payload?.message_id ?? payload?.event_id ?? `${Date.now()}-${Math.random()}`,
+    content: payload?.content ?? '',
+    sender_participant_id: senderUserId,
+    sender_user_id: senderUserId,
+    sender_participant_record_id: payload?.sender_participant_id ?? null,
+    timestamp: payload?.timestamp ?? new Date().toISOString(),
+    source: 'socket',
+  }
+}
+
+function prependUniqueChatMessage(messages, message, limit = 80) {
+  const messageId = message?.id
+  const withoutDuplicate = messageId
+    ? messages.filter((current) => current.id !== messageId)
+    : messages
+
+  return [message, ...withoutDuplicate].slice(0, limit)
+}
 
 export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
   const navigationRef = useNavigationContainerRef()
@@ -409,16 +432,13 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         onMessage: (payload) => {
           setChatModalState((current) => {
             if (!current.visible) return current
-            const incoming = {
-              id: payload?.eventId ?? `${Date.now()}-${Math.random()}`,
-              content: payload?.content ?? '',
-              sender_participant_id: payload?.senderUserId ?? 'desconhecido',
-              timestamp: payload?.timestamp ?? new Date().toISOString(),
-              source: 'socket',
+            return {
+              ...current,
+              messages: prependUniqueChatMessage(
+                current.messages,
+                normalizeSocketChatMessage(payload),
+              ),
             }
-            const exists = current.messages.some((message) => message.id === incoming.id)
-            if (exists) return current
-            return { ...current, messages: [incoming, ...current.messages].slice(0, 80) }
           })
         },
         onError: () => {
@@ -1030,14 +1050,23 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     setChatDraft('')
     try {
       setChatSending(true)
-      const sent = await sendChatMessage({
-        session,
+      const ack = await sendChatMessageOverSocket({
         chatId: chatModalState.chat.id,
         content: draft,
+        authToken: session?.token,
+        devUserId: session?.devUserId,
       })
       setChatModalState((current) => ({
         ...current,
-        messages: [{ ...sent, source: 'mutation' }, ...current.messages].slice(0, 80),
+        messages: prependUniqueChatMessage(current.messages, {
+          id: ack.id,
+          chat_id: ack.chat_id,
+          content: draft,
+          sender_participant_id: userId,
+          sender_user_id: userId,
+          timestamp: new Date().toISOString(),
+          source: 'socket',
+        }),
       }))
       setErrorText('')
     } catch (error) {

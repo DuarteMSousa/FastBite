@@ -33,6 +33,10 @@ const CHAT_MESSAGES_QUERY = `
       timestamp
       read_at
     }
+    getParticipantsByChatId(chat_id: $chatId) {
+      id
+      user_id
+    }
   }
 `
 
@@ -42,11 +46,16 @@ const CREATE_ORDER_CHAT_MUTATION = `
       id
       order_id
       type
+      closed_at
       messages {
         id
         sender_participant_id
         content
         timestamp
+      }
+      participants {
+        id
+        user_id
       }
     }
   }
@@ -64,6 +73,30 @@ const SEND_MESSAGE_MUTATION = `
   }
 `
 
+function mapChat(chat) {
+  const participantsById = new Map(
+    (chat.participants ?? []).map((participant) => [participant.id, participant]),
+  )
+
+  return {
+    id: chat.id,
+    order_id: chat.order_id,
+    type: chat.type,
+    closed_at: chat.closed_at,
+    messages: (chat.messages ?? []).map((message) => {
+      const senderUserId = participantsById.get(message.sender_participant_id)?.user_id
+
+      return {
+        ...message,
+        sender_participant_record_id: message.sender_participant_id,
+        sender_participant_id: senderUserId ?? message.sender_participant_id,
+        sender_user_id: senderUserId ?? null,
+      }
+    }),
+    participants: chat.participants ?? [],
+  }
+}
+
 export async function fetchOrderChats({ session, orderId }) {
   const data = await graphqlRequest({
     query: ORDER_CHATS_QUERY,
@@ -71,14 +104,7 @@ export async function fetchOrderChats({ session, orderId }) {
     ...requestOptions(session),
   })
 
-  return (data.getChatsByOrderId ?? []).map((chat) => ({
-    id: chat.id,
-    order_id: chat.order_id,
-    type: chat.type,
-    closed_at: chat.closed_at,
-    messages: chat.messages ?? [],
-    participants: chat.participants ?? [],
-  }))
+  return (data.getChatsByOrderId ?? []).map(mapChat)
 }
 
 export async function fetchChatMessages({ session, chatId, limit = 50 }) {
@@ -88,7 +114,20 @@ export async function fetchChatMessages({ session, chatId, limit = 50 }) {
     ...requestOptions(session),
   })
 
-  return data.getMessagesByChatId ?? []
+  const participantsById = new Map(
+    (data.getParticipantsByChatId ?? []).map((participant) => [participant.id, participant]),
+  )
+
+  return (data.getMessagesByChatId ?? []).map((message) => {
+    const senderUserId = participantsById.get(message.sender_participant_id)?.user_id
+
+    return {
+      ...message,
+      sender_participant_record_id: message.sender_participant_id,
+      sender_participant_id: senderUserId ?? message.sender_participant_id,
+      sender_user_id: senderUserId ?? null,
+    }
+  })
 }
 
 export async function createOrderChat({ session, orderId, type, participantUserIds }) {
@@ -104,7 +143,7 @@ export async function createOrderChat({ session, orderId, type, participantUserI
     ...requestOptions(session),
   })
 
-  return data.createOrderChat
+  return mapChat(data.createOrderChat)
 }
 
 export async function sendChatMessage({ session, chatId, content }) {

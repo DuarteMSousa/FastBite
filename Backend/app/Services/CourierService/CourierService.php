@@ -9,6 +9,7 @@ use App\Enums\CourierStatus;
 use App\Models\Courier;
 use App\Repositories\CourierRepository\CourierRepositoryInterface;
 use App\Repositories\UserRepository\UserRepositoryInterface;
+use App\Services\DeliveryService\DeliveryServiceInterface;
 use Illuminate\Validation\ValidationException;
 
 class CourierService implements CourierServiceInterface
@@ -68,6 +69,10 @@ class CourierService implements CourierServiceInterface
         }
 
         $this->couriers->updateCourier($userId, new UpdateCourierDTO(status: $status));
+
+        if ($status === CourierStatus::AVAILABLE->value) {
+            app(DeliveryServiceInterface::class)->dispatchPendingCourierAssignments();
+        }
 
         return $courier->refresh()->load('user');
     }

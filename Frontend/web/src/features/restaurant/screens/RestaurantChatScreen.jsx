@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { createOrderChat, fetchOrderChats, sendChatMessage } from '../../../services/chatService'
+import { createOrderChat, fetchOrderChats } from '../../../services/chatService'
 import {
   fetchRestaurantActiveOrders,
   fetchRestaurantOrdersHistory,
 } from '../../../services/restaurantOpsService'
-import { subscribeToChatTopic } from '../../../services/realtime/topicsRealtime'
+import {
+  sendChatMessageOverSocket,
+  subscribeToChatTopic,
+} from '../../../services/realtime/topicsRealtime'
 
 const MAX_ITEMS = 50
 
 function normalizeEventMessage(payload) {
   return {
-    id: payload?.eventId ?? `${Date.now()}-${Math.random()}`,
+    id: payload?.message_id ?? payload?.event_id ?? `${Date.now()}-${Math.random()}`,
     content: payload?.content ?? 'Mensagem recebida',
-    sender_user_id: payload?.senderUserId ?? 'desconhecido',
+    sender_user_id: payload?.sender_user_id ?? 'desconhecido',
+    sender_participant_id: payload?.sender_participant_id ?? null,
     timestamp: payload?.timestamp ?? new Date().toISOString(),
     source: 'socket',
   }
@@ -37,6 +41,23 @@ function formatDayHeader(timestamp) {
   if (date >= todayStart) return 'Hoje'
   if (date >= yesterdayStart) return 'Ontem'
   return date.toLocaleDateString('pt-PT', { day: '2-digit', month: 'long' })
+}
+
+function sortMessagesAsc(list) {
+  return [...list].sort((a, b) => {
+    const ta = new Date(a?.timestamp ?? 0).getTime()
+    const tb = new Date(b?.timestamp ?? 0).getTime()
+    return ta - tb
+  })
+}
+
+function mergeMessage(list, message) {
+  const messageId = message?.id
+  const withoutDuplicate = messageId
+    ? list.filter((item) => item.id !== messageId)
+    : list
+
+  return sortMessagesAsc([...withoutDuplicate, message]).slice(-MAX_ITEMS)
 }
 
 export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }) {
@@ -64,15 +85,6 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
     () => Boolean(chat?.id && messageText.trim() && !orderIsCancelled),
     [chat?.id, messageText, orderIsCancelled],
   )
-
-  // Ordem cronologica ascendente (mais antiga em cima, mais nova em baixo)
-  function sortMessagesAsc(list) {
-    return [...list].sort((a, b) => {
-      const ta = new Date(a?.timestamp ?? 0).getTime()
-      const tb = new Date(b?.timestamp ?? 0).getTime()
-      return ta - tb
-    })
-  }
 
   const loadOrders = useCallback(async () => {
     const [activeResult, historyResult] = await Promise.allSettled([
@@ -155,36 +167,69 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
     if (!chat?.id || !selectedOrder?.courier_id) return
     const participantIds = new Set((chat.participants ?? []).map((p) => p.user_id))
     if (participantIds.has(selectedOrder.courier_id)) return
-    loadOrderChat(effectiveOrderId)
+
+    let cancelled = false
+    queueMicrotask(() => {
+      if (!cancelled) {
+        loadOrderChat(effectiveOrderId)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [chat?.id, chat?.participants, selectedOrder?.courier_id, effectiveOrderId, loadOrderChat])
 
   // Realtime: subscreve automaticamente quando ha chat ativo
   useEffect(() => {
     if (!chat?.id) {
-      setStatus('offline')
-      return undefined
+      let cancelled = false
+      queueMicrotask(() => {
+        if (!cancelled) {
+          setStatus('offline')
+        }
+      })
+      return () => {
+        cancelled = true
+      }
     }
 
-    setStatus('connecting')
-    const unsubscribe = subscribeToChatTopic({
-      chatId: chat.id,
-      authToken: session.token,
-      devUserId: session.devUserId,
-      onSubscribed: () => setStatus('live'),
-      onMessage: (payload) => {
-        setStatus('live')
-        setErrorText('')
-        setMessages((current) =>
-          sortMessagesAsc([...current, normalizeEventMessage(payload)]).slice(-MAX_ITEMS),
-        )
-      },
-      onError: () => {
-        setStatus('error')
-      },
+    let cancelled = false
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setStatus('connecting')
+      }
     })
 
+    let unsubscribe = null
+    try {
+      unsubscribe = subscribeToChatTopic({
+        chatId: chat.id,
+        authToken: session.token,
+        devUserId: session.devUserId,
+        onSubscribed: () => setStatus('live'),
+        onMessage: (payload) => {
+          setStatus('live')
+          setErrorText('')
+          setMessages((current) => mergeMessage(current, normalizeEventMessage(payload)))
+        },
+        onError: () => {
+          setStatus('error')
+        },
+      })
+    } catch {
+      queueMicrotask(() => {
+        if (!cancelled) {
+          setStatus('error')
+        }
+      })
+    }
+
     return () => {
-      unsubscribe()
+      cancelled = true
+      if (unsubscribe) {
+        unsubscribe()
+      }
     }
   }, [chat?.id, session.devUserId, session.token])
 
@@ -233,15 +278,23 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
     setMessageText('')
 
     try {
-      const response = await sendChatMessage({
-        session,
+      const ack = await sendChatMessageOverSocket({
         chatId: chat.id,
         content,
+        authToken: session.token,
+        devUserId: session.devUserId,
       })
 
       setErrorText('')
       setMessages((current) =>
-        sortMessagesAsc([...current, { ...response, source: 'mutation' }]).slice(-MAX_ITEMS),
+        mergeMessage(current, {
+          id: ack.id,
+          chat_id: ack.chat_id,
+          content,
+          sender_user_id: ownUserId,
+          timestamp: new Date().toISOString(),
+          source: 'socket',
+        }),
       )
     } catch (error) {
       setErrorText(error.message)

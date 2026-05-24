@@ -7,8 +7,8 @@ use App\Gateway\ClientEvents\ClientEventHandler;
 use App\Gateway\ClientEvents\ClientSocketMessage;
 use App\Gateway\ClientEvents\ReadsClientPayload;
 use App\Gateway\Responses\ChatMessageSendAckResponse;
-use App\Gateway\SocketMessage;
 use App\Gateway\SocketClientEventType;
+use App\Gateway\SocketMessage;
 use App\Services\ChatService\ChatServiceInterface;
 use GatewayWorker\Lib\Gateway;
 
@@ -26,6 +26,7 @@ class SendChatMessageClientEventHandler implements ClientEventHandler
     public function handle(string $clientId, ClientSocketMessage $message): void
     {
         $senderUserId = $this->requiredStringFromMessageOrSession($message, $clientId, 'user_id', 'sender_user_id');
+        $clientMessageId = $message->string('client_message_id');
         $data = SendMessageDTO::from([
             'chat_id' => $message->requiredString('chat_id'),
             'content' => $message->requiredString('content'),
@@ -37,7 +38,7 @@ class SendChatMessageClientEventHandler implements ClientEventHandler
         );
 
         Gateway::sendToClient($clientId, SocketMessage::response(
-            new ChatMessageSendAckResponse($data->chat_id, $chatMessage->id)
+            new ChatMessageSendAckResponse($data->chat_id, $chatMessage->id, $clientMessageId)
         ));
     }
 }

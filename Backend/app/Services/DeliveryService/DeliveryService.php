@@ -95,6 +95,10 @@ class DeliveryService implements DeliveryServiceInterface
             return;
         }
 
+        if ($this->hasActivePendingOffer($delivery)) {
+            return;
+        }
+
         $attemptedCourierIds = $delivery->offers->pluck('courier_id')->all();
         $restaurantAddress = $delivery->order?->restaurant?->address;
 
@@ -106,35 +110,50 @@ class DeliveryService implements DeliveryServiceInterface
 
         $maxRadiusKm = (float) config('services.delivery.assignment_radius_km', 10);
 
-        $courier = $this->couriers
+        $candidate = $this->couriers
             ->getAvailableExceptUserIds($attemptedCourierIds)
-            ->filter(function ($courier) use ($restaurantAddress, $maxRadiusKm): bool {
+            ->map(function ($courier) use ($restaurantAddress, $maxRadiusKm): ?array {
                 if (! $restaurantAddress || $courier->latitude === null || $courier->longitude === null) {
-                    return false;
+                    return [
+                        'courier' => $courier,
+                        'distance' => null,
+                    ];
                 }
 
-                return GeoMath::distanceKm(
+                $distanceKm = GeoMath::distanceKm(
                     (float) $courier->latitude,
                     (float) $courier->longitude,
                     (float) $restaurantAddress->latitude,
                     (float) $restaurantAddress->longitude
-                ) <= $maxRadiusKm;
+                );
+
+                if ($distanceKm > $maxRadiusKm) {
+                    return null;
+                }
+
+                return [
+                    'courier' => $courier,
+                    'distance' => $distanceKm,
+                ];
             })
-            ->sortBy(fn ($courier): float => GeoMath::distanceKm(
-                (float) $courier->latitude,
-                (float) $courier->longitude,
-                (float) $restaurantAddress->latitude,
-                (float) $restaurantAddress->longitude
-            ))
+            ->filter()
+            ->sortBy(fn (array $candidate): float => $candidate['distance'] ?? PHP_FLOAT_MAX)
             ->first();
 
-        if (! $courier) {
-            $this->failDeliveryWithoutCourier($delivery);
+        $courier = $candidate['courier'] ?? null;
 
+        if (! $courier) {
             return;
         }
 
         $this->createDeliveryOfferForCourier($delivery->id, $courier->user_id);
+    }
+
+    public function dispatchPendingCourierAssignments(): void
+    {
+        foreach ($this->deliveries->getPendingUnassignedDeliveryIds() as $deliveryId) {
+            AssignCourierToDeliveryJob::dispatch($deliveryId)->afterCommit();
+        }
     }
 
     #[Transactional]
@@ -149,7 +168,7 @@ class DeliveryService implements DeliveryServiceInterface
         $this->deliveries->updateOffer($offer, new UpdateDeliveryOfferDTO(status: DeliveryOfferStatus::EXPIRED));
         $this->broadcastJobEvent(DeliveryOfferEventType::JOB_EXPIRED, $offer);
 
-        AssignCourierToDeliveryJob::dispatch($offer->delivery_id);
+        AssignCourierToDeliveryJob::dispatch($offer->delivery_id)->afterCommit();
     }
 
     #[Transactional]
@@ -329,6 +348,14 @@ class DeliveryService implements DeliveryServiceInterface
             $delivery->id,
             'NO_COURIER_AVAILABLE'
         );
+    }
+
+    private function hasActivePendingOffer(Delivery $delivery): bool
+    {
+        return $delivery->offers->contains(function (DeliveryOffer $offer): bool {
+            return $offer->status === DeliveryOfferStatus::PENDING
+                && $offer->expires_at?->isFuture();
+        });
     }
 
     private function broadcastJobEvent(DeliveryOfferEventType $eventType, DeliveryOffer $offer): void

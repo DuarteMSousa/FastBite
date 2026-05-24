@@ -8,6 +8,7 @@ use App\Gateway\ClientEvents\Handlers\SubscribeClientEventHandler;
 use App\Gateway\ClientEvents\Handlers\UnsubscribeClientEventHandler;
 use App\Gateway\ClientEvents\Handlers\UpdateCourierPositionClientEventHandler;
 use App\Gateway\ClientEvents\Handlers\UpdateCourierStatusClientEventHandler;
+use App\Gateway\SocketClientEventType;
 use Illuminate\Validation\ValidationException;
 
 class ClientEventDispatcher

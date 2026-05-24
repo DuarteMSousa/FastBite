@@ -19,7 +19,7 @@ class ChatMessageSentSocketHandler implements SocketEventHandler
     public function handle(object $event): void
     {
         /** @var ChatMessageSent $event */
-        $chatId = $event->payload['chatId'] ?? $event->payload['chat_id'] ?? null;
+        $chatId = $event->payload['chat_id'] ?? null;
 
         if (! $chatId) {
             return;

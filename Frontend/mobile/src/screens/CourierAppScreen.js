@@ -13,12 +13,12 @@ import {
   fetchOrderTracking,
   markDeliveryFailed,
   rejectDeliveryJob,
-  sendChatMessage,
   toggleCourierAvailability,
   updateCourierLocation,
   updateDeliveryStatus,
 } from '../services/commerceService'
 import {
+  sendChatMessageOverSocket,
   subscribeToChatTopic,
   subscribeToCourierJobsTopic,
   subscribeToOrderTrackingTopic,
@@ -31,6 +31,29 @@ import { openGoogleMaps, openWaze } from '../services/navigationLinks'
 import { eventTypeLabel } from './customer/utils'
 import { distanceMeters, OFFER_EXPIRY_FALLBACK_SECONDS, statusText } from './courier/utils'
 import { useAutoToast } from '../components/common/ToastProvider'
+
+function normalizeSocketChatMessage(payload) {
+  const senderUserId = payload?.sender_user_id ?? 'desconhecido'
+
+  return {
+    id: payload?.message_id ?? payload?.event_id ?? `${Date.now()}-${Math.random()}`,
+    content: payload?.content ?? '',
+    sender_participant_id: senderUserId,
+    sender_user_id: senderUserId,
+    sender_participant_record_id: payload?.sender_participant_id ?? null,
+    timestamp: payload?.timestamp ?? new Date().toISOString(),
+    source: 'socket',
+  }
+}
+
+function prependUniqueChatMessage(messages, message, limit = 80) {
+  const messageId = message?.id
+  const withoutDuplicate = messageId
+    ? messages.filter((current) => current.id !== messageId)
+    : messages
+
+  return [message, ...withoutDuplicate].slice(0, limit)
+}
 
 export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
   const [courierStatus, setCourierStatus] = useState('OFFLINE')
@@ -251,15 +274,13 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         onMessage: (payload) => {
           setChatModalState((current) => {
             if (!current.visible) return current
-            const incoming = {
-              id: payload?.eventId ?? `${Date.now()}-${Math.random()}`,
-              content: payload?.content ?? '',
-              sender_participant_id: payload?.senderUserId ?? 'desconhecido',
-              timestamp: payload?.timestamp ?? new Date().toISOString(),
-              source: 'socket',
+            return {
+              ...current,
+              messages: prependUniqueChatMessage(
+                current.messages,
+                normalizeSocketChatMessage(payload),
+              ),
             }
-            if (current.messages.some((message) => message.id === incoming.id)) return current
-            return { ...current, messages: [incoming, ...current.messages].slice(0, 80) }
           })
         },
         onError: () => {},
@@ -895,14 +916,23 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     setChatDraft('')
     try {
       setChatSending(true)
-      const sent = await sendChatMessage({
-        session,
+      const ack = await sendChatMessageOverSocket({
         chatId: chatModalState.chat.id,
         content: draft,
+        authToken: session?.token,
+        devUserId: session?.devUserId,
       })
       setChatModalState((current) => ({
         ...current,
-        messages: [{ ...sent, source: 'mutation' }, ...current.messages].slice(0, 80),
+        messages: prependUniqueChatMessage(current.messages, {
+          id: ack.id,
+          chat_id: ack.chat_id,
+          content: draft,
+          sender_participant_id: courierId,
+          sender_user_id: courierId,
+          timestamp: new Date().toISOString(),
+          source: 'socket',
+        }),
       }))
     } catch (error) {
       setErrorText(error.message)
