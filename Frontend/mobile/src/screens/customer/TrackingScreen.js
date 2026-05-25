@@ -1,5 +1,4 @@
 ﻿import { Pressable, ScrollView, Text, View } from 'react-native'
-import { RealtimeTopicsCard } from '../../components/realtime/RealtimeTopicsCard'
 import { NativeDeliveryMapCard } from '../../components/maps/NativeDeliveryMapCard'
 import { styles } from './styles'
 import { ICON, eventTypeLabel, formatCurrency, orderItemStatusChipStyle, orderItemStatusLabel, statusLabel } from './utils'
@@ -94,7 +93,7 @@ export function TrackingScreen({
         <View style={styles.trackCard}>
           <Text style={styles.trackSummaryTitle}>Estado atual</Text>
           <Text style={styles.trackSummarySub}>{statusLabel(tracking?.order_status)}</Text>
-          <Text style={styles.trackSummarySub}>Entrega: {tracking?.delivery_status ?? '-'}</Text>
+          <Text style={styles.trackSummarySub}>Entrega: {statusLabel(tracking?.delivery_status)}</Text>
           <Text style={styles.trackSummarySub}>Realtime: {realtimeLabel}</Text>
           <Text style={styles.trackSummarySub}>
             Posição do estafeta: {hasCourierPosition ? `atualizada ${lastUpdateLabel}` : courierAssigned ? 'aguardando primeira posição...' : 'sem estafeta atribuído'}
@@ -180,7 +179,6 @@ export function TrackingScreen({
           ))}
         </View>
 
-        <RealtimeTopicsCard />
       </ScrollView>
     </View>
   )

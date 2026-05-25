@@ -315,6 +315,9 @@ class DeliveryService implements DeliveryServiceInterface
     {
         $delivery->loadMissing('order');
         $occurredAt = now();
+        $deliveryStatus = $delivery->status instanceof \BackedEnum
+            ? $delivery->status->value
+            : (string) $delivery->status;
         $eventPayload = [
             'eventId' => (string) Str::uuid(),
             'eventName' => $eventType->value,
@@ -324,6 +327,8 @@ class DeliveryService implements DeliveryServiceInterface
             'orderId' => $delivery->order_id,
             'customerId' => $delivery->order?->user_id,
             'courierId' => $delivery->courier_id,
+            'status' => $deliveryStatus,
+            'deliveryStatus' => $deliveryStatus,
             'occurredAt' => $occurredAt->toIso8601String(),
             'data' => $payload,
             'channels' => array_values(array_filter([
@@ -360,21 +365,156 @@ class DeliveryService implements DeliveryServiceInterface
 
     private function broadcastJobEvent(DeliveryOfferEventType $eventType, DeliveryOffer $offer): void
     {
+        $offer->loadMissing([
+            'delivery.order.user',
+            'delivery.order.address',
+            'delivery.order.items.options',
+            'delivery.order.restaurant.address',
+            'courier.user',
+        ]);
+
+        $offerSnapshot = $this->offerSnapshot($offer);
+
         $payload = [
             'eventId' => (string) Str::uuid(),
             'eventName' => $eventType->value,
             'aggregateType' => 'delivery_offer',
             'aggregateId' => $offer->id,
             'offerId' => $offer->id,
+            'offer_id' => $offer->id,
             'deliveryId' => $offer->delivery_id,
+            'delivery_id' => $offer->delivery_id,
+            'orderId' => $offerSnapshot['order_id'] ?? null,
+            'order_id' => $offerSnapshot['order_id'] ?? null,
             'courierId' => $offer->courier_id,
+            'courier_id' => $offer->courier_id,
             'expiresAt' => $offer->expires_at?->toIso8601String(),
+            'expires_at' => $offer->expires_at?->toIso8601String(),
             'status' => $offer->status->value,
+            'offer' => $offerSnapshot,
+            'delivery' => $offerSnapshot['delivery'] ?? null,
+            'order' => $offerSnapshot['order'] ?? null,
+            'customerName' => $offerSnapshot['customer_name'] ?? null,
+            'restaurantName' => $offerSnapshot['restaurant_name'] ?? null,
+            'pickupAddress' => $offerSnapshot['pickup_address'] ?? null,
+            'dropoffAddress' => $offerSnapshot['dropoff_address'] ?? null,
+            'items' => $offerSnapshot['items'] ?? [],
             'occurredAt' => now()->toIso8601String(),
+            'data' => [
+                'offer_id' => $offer->id,
+                'delivery_id' => $offer->delivery_id,
+                'order_id' => $offerSnapshot['order_id'] ?? null,
+            ],
             'channels' => ["courier.{$offer->courier_id}.jobs"],
         ];
 
         app(OutboxService::class)->enqueue('delivery_offer', $offer->id, $eventType->value, $payload);
         NotificationEventRecorded::dispatch($eventType, $payload);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function offerSnapshot(DeliveryOffer $offer): array
+    {
+        $delivery = $offer->delivery;
+        $order = $delivery?->order;
+        $pickupAddress = $order?->restaurant?->address;
+        $dropoffAddress = $order?->address;
+
+        $items = $order?->items
+            ? $order->items->map(fn ($item): array => [
+                'id' => $item->id,
+                'status' => $this->enumValue($item->status),
+                'quantity' => (int) $item->quantity,
+                'product_name' => $item->product_name_snapshot,
+                'product_name_snapshot' => $item->product_name_snapshot,
+                'options' => $item->options->map(fn ($option): array => [
+                    'id' => $option->id,
+                    'option_name' => $option->option_name_snapshot,
+                    'option_name_snapshot' => $option->option_name_snapshot,
+                    'extra_price' => (float) $option->extra_price,
+                ])->values()->all(),
+            ])->values()->all()
+            : [];
+
+        return [
+            'id' => $offer->id,
+            'offer_token' => $offer->id,
+            'delivery_id' => $offer->delivery_id,
+            'order_id' => $delivery?->order_id,
+            'courier_id' => $offer->courier_id,
+            'status' => $this->enumValue($offer->status),
+            'expires_at' => $offer->expires_at?->toIso8601String(),
+            'restaurant_name' => $order?->restaurant_name_snapshot,
+            'customer_name' => $order?->user?->name,
+            'customer_id' => $order?->user_id,
+            'order_total' => $order?->total !== null ? (float) $order->total : null,
+            'pickup_address' => $this->addressLine($pickupAddress),
+            'dropoff_address' => $this->addressLine($dropoffAddress),
+            'items' => $items,
+            'delivery' => $delivery ? [
+                'id' => $delivery->id,
+                'order_id' => $delivery->order_id,
+                'courier_id' => $delivery->courier_id,
+                'status' => $this->enumValue($delivery->status),
+                'delivery_fee' => (float) $delivery->delivery_fee,
+            ] : null,
+            'order' => $order ? [
+                'id' => $order->id,
+                'user_id' => $order->user_id,
+                'status' => $this->enumValue($order->status),
+                'total' => (float) $order->total,
+                'restaurant_name_snapshot' => $order->restaurant_name_snapshot,
+                'user' => $order->user ? [
+                    'id' => $order->user->id,
+                    'name' => $order->user->name,
+                    'email' => $order->user->email,
+                ] : null,
+                'address' => $this->addressSnapshot($dropoffAddress),
+                'restaurant' => [
+                    'name' => $order->restaurant_name_snapshot,
+                    'address' => $this->addressSnapshot($pickupAddress),
+                ],
+                'items' => $items,
+            ] : null,
+        ];
+    }
+
+    private function enumValue(mixed $value): mixed
+    {
+        return $value instanceof \BackedEnum ? $value->value : $value;
+    }
+
+    private function addressLine(?object $address): ?string
+    {
+        if (! $address) {
+            return null;
+        }
+
+        return collect([
+            $address->street ?? null,
+            $address->city ?? null,
+            $address->postal_code ?? null,
+        ])->filter()->implode(', ') ?: null;
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function addressSnapshot(?object $address): ?array
+    {
+        if (! $address) {
+            return null;
+        }
+
+        return [
+            'street' => $address->street ?? null,
+            'city' => $address->city ?? null,
+            'postal_code' => $address->postal_code ?? null,
+            'country' => $address->country ?? null,
+            'latitude' => $address->latitude ?? null,
+            'longitude' => $address->longitude ?? null,
+        ];
     }
 }

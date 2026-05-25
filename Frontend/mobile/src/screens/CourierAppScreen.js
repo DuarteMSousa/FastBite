@@ -21,8 +21,10 @@ import {
   createOrderChat,
   fetchCourierAvailableDeliveries,
   fetchCourierDeliveriesHistory,
+  fetchDeliveryTracking,
   fetchOrderChats,
   fetchOrderTracking,
+  mapCourierOfferPayload,
   markDeliveryFailed,
   rejectDeliveryJob,
   toggleCourierAvailability,
@@ -40,7 +42,7 @@ import {
   stopBackgroundLocation,
 } from '../services/backgroundLocationTask'
 import { openGoogleMaps, openWaze } from '../services/navigationLinks'
-import { eventTypeLabel } from './customer/utils'
+import { eventTypeLabel, statusLabel } from './customer/utils'
 import {
   distanceMeters,
   OFFER_EXPIRY_FALLBACK_SECONDS,
@@ -76,6 +78,29 @@ function mergeChatMessage(messages, message, limit = 80) {
     : messages
 
   return sortChatMessagesAsc([...withoutDuplicate, message]).slice(-limit)
+}
+
+function formatDeliveryItems(items) {
+  const mappedItems = (items ?? [])
+    .map((item) => {
+      const options = (item.options ?? [])
+        .map((option) => option.name ?? option.option_name ?? option.option_name_snapshot)
+        .filter(Boolean)
+        .join(', ')
+      const label = `${item.quantity ?? 0}x ${item.product_name ?? item.product_name_snapshot ?? 'Produto'}`
+      return options ? `${label} (${options})` : label
+    })
+    .filter(Boolean)
+
+  return mappedItems.length > 0 ? mappedItems.join(', ') : '-'
+}
+
+function socketDeliveryId(payload) {
+  return payload?.deliveryId ?? payload?.delivery_id ?? payload?.data?.delivery_id ?? null
+}
+
+function socketOfferId(payload) {
+  return payload?.offerId ?? payload?.offer_id ?? payload?.data?.offer_id ?? null
 }
 
 export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
@@ -121,6 +146,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   const lastSentRef = useRef({ lat: null, lng: null, timestamp: 0 })
   const courierStatusRef = useRef(courierStatus)
   const phaseRef = useRef(phase)
+  const activeDeliveryRef = useRef(activeDelivery)
   const courierId = session?.userId || session?.devUserId
   const courierInitial = String(session?.operatorName ?? 'E')
     .trim()
@@ -156,6 +182,10 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     phaseRef.current = phase
   }, [phase])
 
+  useEffect(() => {
+    activeDeliveryRef.current = activeDelivery
+  }, [activeDelivery])
+
   function ensureOnline(actionLabel) {
     if (isOnline) {
       return true
@@ -163,6 +193,31 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
 
     setErrorText(`Sem internet. Nao foi possivel ${actionLabel}.`)
     return false
+  }
+
+  function upsertAvailableOffer(nextOffer) {
+    if (!nextOffer?.offer_token) return
+
+    setAvailableOffers((current) => {
+      const withoutDuplicate = current.filter((offer) => offer.offer_token !== nextOffer.offer_token)
+      return [nextOffer, ...withoutDuplicate]
+    })
+    setDismissedOfferIds((current) => {
+      const updated = new Set(current)
+      updated.delete(nextOffer.offer_token)
+      return updated
+    })
+  }
+
+  function removeAvailableOffer(offerId) {
+    if (!offerId) return
+
+    setAvailableOffers((current) => current.filter((offer) => offer.offer_token !== offerId))
+    setDismissedOfferIds((current) => {
+      const updated = new Set(current)
+      updated.add(String(offerId))
+      return updated
+    })
   }
 
   useEffect(() => {
@@ -214,30 +269,68 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           devUserId: session?.devUserId,
           onEvent: (eventName, payload) => {
             setJobsRealtimeState('live')
-            setToast(`Evento realtime: ${eventName}`)
+            setToast(`Realtime: ${eventTypeLabel(eventName)}`)
 
             if (
               eventName === 'JOB_OFFERED' &&
               courierStatusRef.current === 'AVAILABLE' &&
               phaseRef.current === 'offer'
             ) {
+              const nextOffer = mapCourierOfferPayload(payload)
+              upsertAvailableOffer(nextOffer)
               loadAvailableOffers()
             }
 
-            if (eventName === 'JOB_EXPIRED' || eventName === 'JOB_REJECTED') {
-              const expiredOfferId = payload?.data?.offer_id ?? payload?.offerId ?? null
-              if (expiredOfferId) {
-                setDismissedOfferIds((current) => {
-                  const updated = new Set(current)
-                  updated.add(String(expiredOfferId))
-                  return updated
-                })
-              }
+            if (eventName === 'JOB_EXPIRED' || eventName === 'JOB_REJECTED' || eventName === 'JOB_ACCEPTED') {
+              removeAvailableOffer(socketOfferId(payload))
               loadAvailableOffers()
+            }
+
+            const eventDeliveryId = socketDeliveryId(payload)
+            const currentDelivery = activeDeliveryRef.current
+
+            if (
+              eventDeliveryId &&
+              currentDelivery?.delivery_id === eventDeliveryId &&
+              payload?.deliveryStatus
+            ) {
+              setActiveDelivery((current) =>
+                current
+                  ? {
+                      ...current,
+                      delivery_status: payload.deliveryStatus,
+                    }
+                  : current,
+              )
+            }
+
+            if (eventName === 'DELIVERY_PICKED_UP' && currentDelivery?.delivery_id === eventDeliveryId) {
+              setPhase('collected')
+              loadTracking(currentDelivery.order_id, currentDelivery.delivery_id)
+            }
+
+            if (eventName === 'DELIVERY_IN_TRANSIT' && currentDelivery?.delivery_id === eventDeliveryId) {
+              setPhase('in_transit')
+              loadTracking(currentDelivery.order_id, currentDelivery.delivery_id)
+            }
+
+            if (eventName === 'DELIVERY_DELIVERED' && currentDelivery?.delivery_id === eventDeliveryId) {
+              setPhase('completed')
+              setCourierStatus('AVAILABLE')
+              stopBackgroundLocation().catch(() => {})
+              loadTracking(currentDelivery.order_id, currentDelivery.delivery_id)
             }
 
             if (eventName === 'DELIVERY_FAILED') {
               setErrorText(payload?.data?.reason ?? 'Entrega marcada como falhada.')
+              if (currentDelivery?.delivery_id === eventDeliveryId) {
+                setPhase('offer')
+                setActiveDelivery(null)
+                setTracking(null)
+                setLivePosition(null)
+                setCourierStatus('AVAILABLE')
+                stopBackgroundLocation().catch(() => {})
+              }
             }
           },
           onError: () => {
@@ -609,7 +702,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
       setRejectReason('')
       setToast('Entrega aceite com sucesso.')
       setErrorText('')
-      await loadTracking(payload.order_id)
+      await loadTracking(payload.order_id, payload.delivery_id)
     } catch (error) {
       setErrorText(error.message)
     } finally {
@@ -703,8 +796,17 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         status: nextStatus,
       })
 
+      setActiveDelivery((current) =>
+        current
+          ? {
+              ...current,
+              delivery_status: payload.delivery_status ?? current.delivery_status,
+              order_status: payload.order_status ?? current.order_status,
+            }
+          : current,
+      )
       setPhase(nextPhase)
-      setToast(`Estado atualizado para ${payload.delivery_status}.`)
+      setToast(`Estado atualizado para ${statusLabel(payload.delivery_status)}.`)
       if (nextStatus === 'PICKED_UP') {
         setReadyBanner(false)
       }
@@ -734,13 +836,15 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     setShowDeliverConfirm(false)
   }
 
-  async function loadTracking(orderId) {
+  async function loadTracking(orderId, deliveryId = activeDeliveryRef.current?.delivery_id) {
     if (!isOnline) {
       return
     }
 
     try {
-      const payload = await fetchOrderTracking({ session, orderId })
+      const payload = deliveryId
+        ? await fetchDeliveryTracking({ session, deliveryId })
+        : await fetchOrderTracking({ session, orderId })
       setTracking(payload)
       if (payload?.latest_position) {
         setLivePosition({
@@ -1053,7 +1157,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                     courierStatus === option ? styles.statusToggleTextActive : null,
                   ]}
                 >
-                  {option}
+                  {statusText(option)}
                 </Text>
               </Pressable>
             ))}
@@ -1108,7 +1212,9 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                     availableOffers.map((offer) => (
                       <View key={offer.delivery_id} style={styles.card}>
                         <SummaryRow label="Restaurante" value={offer.restaurant_name} />
+                        <SummaryRow label="Cliente" value={offer.customer_name ?? '-'} />
                         <SummaryRow label="Total" value={`EUR ${Number(offer.order_total ?? 0).toFixed(2)}`} />
+                        <SummaryRow label="Vai buscar" value={formatDeliveryItems(offer.items)} />
                         <SummaryRow
                           label="Distancia pickup"
                           value={
@@ -1164,12 +1270,15 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           {activeDelivery ? (
             <View style={styles.card}>
               <Text style={styles.summaryTitle}>Entrega ativa</Text>
-              <SummaryRow label="delivery_id" value={activeDelivery.delivery_id} />
-              <SummaryRow label="order_id" value={activeDelivery.order_id} />
-              <SummaryRow label="delivery_status" value={tracking?.delivery_status ?? activeDelivery.delivery_status} />
-              <SummaryRow label="order_status" value={tracking?.order_status ?? '-'} />
+              <SummaryRow label="Restaurante" value={tracking?.restaurant_name ?? activeDelivery.restaurant_name ?? '-'} />
+              <SummaryRow label="Cliente" value={tracking?.customer_name ?? activeDelivery.customer_name ?? '-'} />
+              <SummaryRow label="Recolher" value={tracking?.pickup_address ?? activeDelivery.pickup_address ?? '-'} />
+              <SummaryRow label="Entregar" value={tracking?.dropoff_address ?? activeDelivery.dropoff_address ?? '-'} />
+              <SummaryRow label="Itens" value={formatDeliveryItems(tracking?.items ?? activeDelivery.items)} />
+              <SummaryRow label="Estado entrega" value={statusLabel(tracking?.delivery_status ?? activeDelivery.delivery_status)} />
+              <SummaryRow label="Estado pedido" value={statusLabel(tracking?.order_status ?? activeDelivery.order_status)} />
               <SummaryRow
-                label="distancia restante"
+                label="Distância restante"
                 value={
                   tracking?.distance_km_remaining !== null && tracking?.distance_km_remaining !== undefined
                     ? `${tracking.distance_km_remaining} km`
@@ -1177,7 +1286,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                 }
               />
               <SummaryRow
-                label="eta"
+                label="ETA"
                 value={tracking?.eta_seconds ? `${Math.ceil(tracking.eta_seconds / 60)} min` : '-'}
               />
             </View>
@@ -1415,10 +1524,12 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             {activeOffer ? (
               <View style={styles.offerModalBody}>
                 <SummaryRow label="Restaurante" value={activeOffer.restaurant_name ?? '-'} />
+                <SummaryRow label="Cliente" value={activeOffer.customer_name ?? '-'} />
                 <SummaryRow
                   label="Total"
                   value={`EUR ${Number(activeOffer.order_total ?? 0).toFixed(2)}`}
                 />
+                <SummaryRow label="Vai buscar" value={formatDeliveryItems(activeOffer.items)} />
                 <SummaryRow label="Pickup" value={activeOffer.pickup_address ?? '-'} />
                 <SummaryRow label="Entrega" value={activeOffer.dropoff_address ?? '-'} />
                 {activeOffer.estimated_pickup_distance_km !== null &&
@@ -1548,13 +1659,25 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           <View style={styles.failModalCard}>
             <Text style={styles.offerModalTitle}>Confirmar entrega</Text>
             <Text style={styles.failModalSubtitle}>
-              Apos confirmar, a encomenda fica marcada como DELIVERED e o turno volta a estado AVAILABLE.
+              Após confirmar, a encomenda fica entregue e o turno volta a online.
             </Text>
 
             <View style={styles.confirmSummary}>
               <SummaryRow
                 label="Restaurante"
                 value={tracking?.restaurant_name ?? activeDelivery?.restaurant_name ?? '-'}
+              />
+              <SummaryRow
+                label="Cliente"
+                value={tracking?.customer_name ?? activeDelivery?.customer_name ?? '-'}
+              />
+              <SummaryRow
+                label="Entrega"
+                value={tracking?.dropoff_address ?? activeDelivery?.dropoff_address ?? '-'}
+              />
+              <SummaryRow
+                label="Itens"
+                value={formatDeliveryItems(tracking?.items ?? activeDelivery?.items)}
               />
               <SummaryRow
                 label="Encomenda"
@@ -1683,7 +1806,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                           : styles.statusChipWarn,
                       ]}
                     >
-                      {delivery.delivery_status}
+                      {statusLabel(delivery.delivery_status)}
                     </Text>
                   </View>
                   <Text style={styles.historyItemAddress}>{delivery.dropoff_address}</Text>

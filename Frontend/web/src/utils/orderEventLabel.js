@@ -21,6 +21,13 @@ const ORDER_EVENT_LABELS_PT = {
   PAYMENT_EXPIRED: 'Pagamento expirado',
   PAYMENT_CANCELLED: 'Pagamento cancelado',
   PAYMENT_REFUNDED: 'Pagamento reembolsado',
+  JOB_OFFERED: 'Oferta de entrega',
+  JOB_ACCEPTED: 'Oferta aceite',
+  JOB_REJECTED: 'Oferta recusada',
+  JOB_EXPIRED: 'Oferta expirada',
+  COURIER_POSITION_UPDATED: 'Posição do estafeta atualizada',
+  CHAT_MESSAGE_SENT: 'Nova mensagem',
+  USER_NOTIFICATION_CREATED: 'Nova notificação',
 }
 
 export function formatEventType(eventType) {

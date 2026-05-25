@@ -100,6 +100,27 @@ function mergeChatMessage(messages, message, limit = 80) {
   return sortChatMessagesAsc([...withoutDuplicate, message]).slice(-limit)
 }
 
+function socketOrderId(payload) {
+  return (
+    payload?.orderId ??
+    payload?.order_id ??
+    payload?.data?.order_id ??
+    payload?.latestEvent?.payload?.orderId ??
+    payload?.order?.id ??
+    null
+  )
+}
+
+function isTerminalOrderEvent(eventName) {
+  return eventName === 'ORDER_DELIVERED' || eventName === 'ORDER_CANCELLED'
+}
+
+function statusForTerminalEvent(eventName) {
+  if (eventName === 'ORDER_DELIVERED') return 'DELIVERED'
+  if (eventName === 'ORDER_CANCELLED') return 'CANCELLED'
+  return null
+}
+
 export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
   const navigationRef = useNavigationContainerRef()
   const [currentRoute, setCurrentRoute] = useState(CUSTOMER_ROUTES.HOME)
@@ -348,7 +369,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         onEvent: (eventName, payload) => {
           if (cancelled) return
 
-          const eventOrderId = payload?.data?.order_id ?? payload?.orderId ?? null
+          const eventOrderId = socketOrderId(payload)
           const currentActiveOrderId = activeOrderIdRef.current
           const currentPendingPayment = pendingPaymentRef.current
 
@@ -356,18 +377,19 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             loadTracking(eventOrderId)
           }
 
-          if (eventName === 'ORDER_DELIVERED' || eventName === 'ORDER_CANCELLED') {
+          if (isTerminalOrderEvent(eventName)) {
+            const terminalStatus = statusForTerminalEvent(eventName)
             setOrdersHistory((current) =>
               current.map((order) =>
                 order.id === eventOrderId
                   ? {
                       ...order,
-                      status: eventName === 'ORDER_DELIVERED' ? 'DELIVERED' : 'CANCELLED',
+                      status: terminalStatus,
                     }
                   : order,
               ),
             )
-            if (currentActiveOrderId === eventOrderId && eventName === 'ORDER_CANCELLED') {
+            if (currentActiveOrderId === eventOrderId) {
               setActiveOrderId('')
             }
             // Pos-entrega: abrir prompt de avaliação do restaurante automaticamente.
@@ -582,6 +604,22 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         orderId: activeOrderId,
         authToken: session?.token,
         devUserId: session?.devUserId,
+        onEvent: (eventName, payload) => {
+          if (cancelled || eventName === 'COURIER_POSITION_UPDATED') return
+
+          setRealtimeState('live')
+          setTrackingUpdateCount((value) => value + 1)
+          setTrackingLastUpdateMs(Date.now())
+
+          const eventOrderId = socketOrderId(payload) ?? activeOrderId
+          if (eventOrderId) {
+            loadTracking(eventOrderId)
+          }
+
+          if (isTerminalOrderEvent(eventName) && eventOrderId === activeOrderId) {
+            setActiveOrderId('')
+          }
+        },
         onPositionUpdated: (payload) => {
           setRealtimeState('live')
           setTrackingUpdateCount((value) => value + 1)
@@ -671,6 +709,8 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
       if (activeOrders.length > 0) {
         setActiveOrderId(activeOrders[0].id)
+      } else {
+        setActiveOrderId('')
       }
 
       setInboxItems(notifications)

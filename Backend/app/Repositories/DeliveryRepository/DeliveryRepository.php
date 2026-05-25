@@ -14,7 +14,16 @@ use App\Models\DeliveryOffer;
 
 class DeliveryRepository implements DeliveryRepositoryInterface
 {
-    private array $deliveryDetails = ['order', 'courier.user', 'positionHistory', 'events', 'offers'];
+    private array $deliveryDetails = [
+        'order.user',
+        'order.address',
+        'order.items.options',
+        'order.restaurant.address',
+        'courier.user',
+        'positionHistory',
+        'events',
+        'offers',
+    ];
 
     public function getById(string $id): ?Delivery
     {
@@ -143,7 +152,14 @@ class DeliveryRepository implements DeliveryRepositoryInterface
     public function getPendingOffersByCourierId(string $courierId)
     {
         return DeliveryOffer::query()
-            ->with(['delivery.order', 'delivery.positionHistory', 'courier.user'])
+            ->with([
+                'delivery.order.user',
+                'delivery.order.address',
+                'delivery.order.items.options',
+                'delivery.order.restaurant.address',
+                'delivery.positionHistory',
+                'courier.user',
+            ])
             ->where('courier_id', $courierId)
             ->where('status', DeliveryOfferStatus::PENDING->value)
             ->where('expires_at', '>', now())

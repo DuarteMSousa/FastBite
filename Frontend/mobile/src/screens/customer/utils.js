@@ -33,6 +33,10 @@ export function statusLabel(status) {
   if (status === 'OUT_FOR_DELIVERY') return 'Em entrega'
   if (status === 'DELIVERED') return 'Entregue'
   if (status === 'CANCELLED') return 'Cancelado'
+  if (status === 'PICKED_UP') return 'Recolhida'
+  if (status === 'IN_TRANSIT') return 'A caminho'
+  if (status === 'FAILED') return 'Falhada'
+  if (status === 'COMPLETED') return 'Concluído'
   return status ?? '-'
 }
 
@@ -93,6 +97,9 @@ const EVENT_LABELS_PT = {
   JOB_ACCEPTED: 'Oferta aceite',
   JOB_REJECTED: 'Oferta recusada',
   JOB_EXPIRED: 'Oferta expirada',
+  COURIER_POSITION_UPDATED: 'Posição do estafeta atualizada',
+  CHAT_MESSAGE_SENT: 'Nova mensagem',
+  USER_NOTIFICATION_CREATED: 'Nova notificação',
 }
 
 export function eventTypeLabel(eventType) {

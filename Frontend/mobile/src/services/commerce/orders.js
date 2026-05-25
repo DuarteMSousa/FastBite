@@ -234,7 +234,12 @@ export async function fetchMyOrders(session, { activeOnly = false, limit = 10 } 
     ...requestOptions(session),
   })
 
-  return (data.getClientOrders ?? []).map(mapOrderSummary)
+  const orders = (data.getClientOrders ?? []).map(mapOrderSummary)
+  if (!activeOnly) return orders
+
+  return orders.filter(
+    (order) => order.status !== 'DELIVERED' && order.delivery_status !== 'DELIVERED',
+  )
 }
 
 export async function fetchClientOrdersHistory({

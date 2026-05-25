@@ -85,21 +85,47 @@ function mapRoutePoint(point) {
   return { lat, lng }
 }
 
+function addressLine(address) {
+  if (!address) return null
+  return [address.street, address.city, address.postal_code].filter(Boolean).join(', ') || null
+}
+
+function mapTrackingEvent(event) {
+  if (!event) return null
+
+  return {
+    event_type: event.event_type,
+    timestamp: event.timestamp ?? event.created_at ?? null,
+    payload: event.payload ?? null,
+  }
+}
+
 export function mapTracking(payload) {
-  const order = payload?.order
+  const order = payload?.order ?? payload?.delivery?.order
   const delivery = payload?.delivery
+  const courier = payload?.courier ?? delivery?.courier
   const positions = (delivery?.positionHistory ?? []).map(mapPosition).filter(Boolean).reverse()
   const lastPosition = mapPosition(payload?.last_position) ?? positions[0] ?? null
   const routePoints = (payload?.route_points ?? []).map(mapRoutePoint).filter(Boolean)
+  const orderEvents = (order?.events ?? []).map(mapTrackingEvent).filter(Boolean)
+  const deliveryEvents = (delivery?.events ?? []).map(mapTrackingEvent).filter(Boolean)
+  const events = [...orderEvents, ...deliveryEvents].sort((left, right) => {
+    const leftTime = left.timestamp ? new Date(left.timestamp).getTime() : 0
+    const rightTime = right.timestamp ? new Date(right.timestamp).getTime() : 0
+    return leftTime - rightTime
+  })
 
   return {
     order_id: order?.id ?? null,
     order_status: order?.status ?? null,
+    total: order?.total !== null && order?.total !== undefined ? Number(order.total) : null,
     delivery_id: delivery?.id ?? null,
     delivery_status: delivery?.status ?? null,
-    courier_id: delivery?.courier_id ?? payload?.courier?.user_id ?? null,
+    courier_id: delivery?.courier_id ?? courier?.user_id ?? null,
     restaurant_name: order?.restaurant_name_snapshot ?? '',
     customer_name: order?.user?.name ?? '',
+    pickup_address: addressLine(order?.restaurant?.address),
+    dropoff_address: addressLine(order?.address),
     pickup_latitude: order?.restaurant?.address?.latitude ?? null,
     pickup_longitude: order?.restaurant?.address?.longitude ?? null,
     dropoff_latitude: order?.address?.latitude ?? null,
@@ -112,12 +138,17 @@ export function mapTracking(payload) {
     eta_seconds: payload?.eta_seconds ?? null,
     latest_position: lastPosition,
     positions,
-    events: order?.events ?? [],
+    events,
     items: (order?.items ?? []).map((item) => ({
       id: item.id,
       status: item.status,
       quantity: item.quantity,
       product_name: item.product_name_snapshot,
+      options: (item.options ?? []).map((option) => ({
+        id: option.id,
+        name: option.option_name_snapshot,
+        extra_price: Number(option.extra_price ?? 0),
+      })),
     })),
   }
 }
