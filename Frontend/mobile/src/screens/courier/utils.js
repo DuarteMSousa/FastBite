@@ -1,5 +1,17 @@
 export const OFFER_EXPIRY_FALLBACK_SECONDS = 30
 
+export function parseServerDateMs(value) {
+  if (!value) return null
+
+  const normalized = String(value).trim().replace(' ', 'T')
+  if (!normalized) return null
+
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized)
+  const timestamp = Date.parse(hasTimezone ? normalized : `${normalized}Z`)
+
+  return Number.isNaN(timestamp) ? null : timestamp
+}
+
 export function statusText(status) {
   if (status === 'AVAILABLE') return 'Online'
   if (status === 'BUSY') return 'Ocupado'

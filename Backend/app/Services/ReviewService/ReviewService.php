@@ -7,6 +7,7 @@ use App\DTOs\Review\CreateReviewDTO;
 use App\DTOs\Review\UpdateReviewDTO;
 use App\Models\Review;
 use App\Repositories\ReviewRepository\ReviewRepositoryInterface;
+use BackedEnum;
 use Illuminate\Validation\ValidationException;
 
 class ReviewService implements ReviewServiceInterface
@@ -80,12 +81,13 @@ class ReviewService implements ReviewServiceInterface
     {
         $errors = [];
         $rating = (int) ($input['rating'] ?? 0);
+        $targetType = $this->enumValue($input['target_type'] ?? null);
 
         if ($rating < 1 || $rating > 5) {
             $errors['rating'][] = 'Rating must be between 1 and 5.';
         }
 
-        if (empty($input['target_type']) || ! in_array($input['target_type'], ['RESTAURANT', 'COURIER'], true)) {
+        if (empty($targetType) || ! in_array($targetType, ['RESTAURANT', 'COURIER'], true)) {
             $errors['target_type'][] = 'Invalid review target type.';
         }
 
@@ -96,5 +98,14 @@ class ReviewService implements ReviewServiceInterface
         if ($errors !== []) {
             throw ValidationException::withMessages($errors);
         }
+    }
+
+    private function enumValue(mixed $value): ?string
+    {
+        if ($value instanceof BackedEnum) {
+            return (string) $value->value;
+        }
+
+        return is_string($value) ? $value : null;
     }
 }

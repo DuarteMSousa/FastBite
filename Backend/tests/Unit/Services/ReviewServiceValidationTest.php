@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services;
 
+use App\Enums\ReviewTargetType;
 use App\Services\ReviewService\ReviewService;
 use Illuminate\Validation\ValidationException;
 use ReflectionClass;
@@ -14,6 +15,17 @@ class ReviewServiceValidationTest extends TestCase
         $this->invoke(new ReviewService(), 'validateInput', [
             'rating' => 5,
             'target_type' => 'RESTAURANT',
+            'target_id' => 'restaurant-1',
+        ]);
+
+        $this->assertTrue(true);
+    }
+
+    public function test_accepts_enum_review_target_type(): void
+    {
+        $this->invoke(new ReviewService(), 'validateInput', [
+            'rating' => 5,
+            'target_type' => ReviewTargetType::RESTAURANT,
             'target_id' => 'restaurant-1',
         ]);
 

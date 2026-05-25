@@ -1,7 +1,9 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -1878,6 +1880,12 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         }}
       >
         <View style={styles.inboxBackdrop}>
+          <Pressable style={styles.modalDismissLayer} onPress={Keyboard.dismiss} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+            style={styles.modalKeyboardAvoid}
+          >
           <View style={styles.failModalCardClient}>
             <Text style={styles.inboxTitle}>
               Avaliar {reviewTarget?.targetType === 'COURIER' ? 'estafeta' : 'restaurante'}
@@ -1945,6 +1953,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               </Pressable>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -1973,7 +1982,11 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               </Pressable>
             </View>
 
-            <ScrollView style={styles.inboxList} contentContainerStyle={styles.inboxListContent}>
+            <ScrollView
+              style={styles.inboxList}
+              contentContainerStyle={styles.inboxListContent}
+              keyboardShouldPersistTaps="handled"
+            >
               {orderDetailModal.loading ? (
                 <Text style={styles.mutedText}>A carregar...</Text>
               ) : null}
@@ -2112,11 +2125,9 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             </View>
 
             <ScrollView
-              ref={chatScrollRef}
               style={styles.inboxList}
               contentContainerStyle={styles.inboxListContent}
               keyboardShouldPersistTaps="handled"
-              onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
             >
               {clientReviews.length === 0 ? (
                 <Text style={styles.inboxEmpty}>Sem avaliações ainda.</Text>
@@ -2229,6 +2240,12 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         onRequestClose={closeChatModal}
       >
         <View style={styles.inboxBackdrop}>
+          <Pressable style={styles.modalDismissLayer} onPress={Keyboard.dismiss} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+            style={styles.modalKeyboardAvoid}
+          >
           <View style={styles.inboxCard}>
             <View style={styles.inboxHeader}>
               <View style={{ flex: 1 }}>
@@ -2244,7 +2261,14 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               </Pressable>
             </View>
 
-            <ScrollView style={styles.inboxList} contentContainerStyle={styles.inboxListContent}>
+            <ScrollView
+              ref={chatScrollRef}
+              style={styles.inboxList}
+              contentContainerStyle={styles.inboxListContent}
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps="handled"
+              onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
+            >
               {chatModalState.messages.length === 0 ? (
                 <Text style={styles.inboxEmpty}>Sem mensagens ainda.</Text>
               ) : null}
@@ -2303,6 +2327,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               </Pressable>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 

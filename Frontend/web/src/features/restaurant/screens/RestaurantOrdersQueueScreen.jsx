@@ -38,7 +38,8 @@ function reconcileActiveOrderList(current, order) {
 }
 
 function orderFromRealtimePayload(payload) {
-  return payload?.order ? mapRestaurantOrder(payload.order) : null
+  const socketOrder = payload?.order ?? payload?.data?.order ?? null
+  return socketOrder ? mapRestaurantOrder(socketOrder) : null
 }
 
 export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate }) {
@@ -52,7 +53,7 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
   const [dialogLoading, setDialogLoading] = useState(false)
   const [realtimeState, setRealtimeState] = useState('offline')
 
-  const loadOrders = useCallback(async () => {
+  const loadInitialOrders = useCallback(async () => {
     try {
       setLoading(true)
       const nextOrders = await fetchRestaurantActiveOrders(session)
@@ -67,9 +68,9 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
 
   useEffect(() => {
     queueMicrotask(() => {
-      loadOrders()
+      loadInitialOrders()
     })
-  }, [loadOrders])
+  }, [loadInitialOrders])
 
   useEffect(() => {
     if (!session?.restaurantId) {
@@ -123,7 +124,6 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
       setBusyOrderId(orderId)
       await acceptRestaurantOrder({ session, orderId })
       setInfoText('Encomenda aceite com sucesso.')
-      await loadOrders()
     } catch (error) {
       setErrorText(error.message)
     } finally {
@@ -149,7 +149,6 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
       setInfoText('Encomenda rejeitada.')
       setRejectTarget(null)
       setRejectReason('')
-      await loadOrders()
     } catch (error) {
       setErrorText(error.message)
     } finally {

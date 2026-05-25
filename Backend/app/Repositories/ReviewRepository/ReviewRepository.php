@@ -60,7 +60,13 @@ class ReviewRepository implements ReviewRepositoryInterface
 
     public function createReview(CreateReviewDTO $data)
     {
-        return Review::create($data->toArray());
+        return Review::create([
+            'user_id' => $data->user_id,
+            'rating' => $data->rating,
+            'comment' => $data->comment,
+            'target_type' => $data->target_type->value,
+            'target_id' => $data->target_id,
+        ]);
     }
 
     public function updateReview(string $id, UpdateReviewDTO $data)

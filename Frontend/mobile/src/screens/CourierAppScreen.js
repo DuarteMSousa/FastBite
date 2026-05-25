@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Keyboard, Modal, Pressable, SafeAreaView, ScrollView, Text, TextInput, Vibration, View } from 'react-native'
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TextInput,
+  Vibration,
+  View,
+} from 'react-native'
 import { styles } from './courier/styles'
 import * as Location from 'expo-location'
 import NetInfo from '@react-native-community/netinfo'
@@ -29,7 +41,12 @@ import {
 } from '../services/backgroundLocationTask'
 import { openGoogleMaps, openWaze } from '../services/navigationLinks'
 import { eventTypeLabel } from './customer/utils'
-import { distanceMeters, OFFER_EXPIRY_FALLBACK_SECONDS, statusText } from './courier/utils'
+import {
+  distanceMeters,
+  OFFER_EXPIRY_FALLBACK_SECONDS,
+  parseServerDateMs,
+  statusText,
+} from './courier/utils'
 import { useAutoToast } from '../components/common/ToastProvider'
 
 function normalizeSocketChatMessage(payload) {
@@ -97,6 +114,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     type: null,
   })
   const chatScrollRef = useRef(null)
+  const offerCountdownRef = useRef({ offerId: null, startedAt: 0 })
   const [chatDraft, setChatDraft] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
   const [chatSending, setChatSending] = useState(false)
@@ -489,19 +507,26 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   useEffect(() => {
     if (!activeOffer) {
       setOfferRemainingSeconds(null)
+      offerCountdownRef.current = { offerId: null, startedAt: 0 }
       return undefined
     }
 
+    if (offerCountdownRef.current.offerId !== activeOffer.offer_token) {
+      offerCountdownRef.current = {
+        offerId: activeOffer.offer_token,
+        startedAt: Date.now(),
+      }
+    }
+
     function computeRemaining() {
-      if (!activeOffer.offer_expires_at) {
-        return OFFER_EXPIRY_FALLBACK_SECONDS
+      const expiresAtMs = parseServerDateMs(activeOffer.offer_expires_at)
+      if (expiresAtMs !== null) {
+        const diffSec = Math.ceil((expiresAtMs - Date.now()) / 1000)
+        return diffSec > 0 ? diffSec : 0
       }
-      const expiresAtMs = Date.parse(activeOffer.offer_expires_at)
-      if (Number.isNaN(expiresAtMs)) {
-        return OFFER_EXPIRY_FALLBACK_SECONDS
-      }
-      const diffSec = Math.ceil((expiresAtMs - Date.now()) / 1000)
-      return diffSec > 0 ? diffSec : 0
+
+      const elapsedSec = Math.floor((Date.now() - offerCountdownRef.current.startedAt) / 1000)
+      return Math.max(0, OFFER_EXPIRY_FALLBACK_SECONDS - elapsedSec)
     }
 
     setOfferRemainingSeconds(computeRemaining())
@@ -1316,6 +1341,12 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         onRequestClose={dismissActiveOfferModal}
       >
         <View style={styles.offerModalBackdrop}>
+          <Pressable style={styles.modalDismissLayer} onPress={Keyboard.dismiss} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+            style={styles.modalKeyboardAvoid}
+          >
           <View style={styles.offerModalCard}>
             <View style={styles.offerModalHeader}>
               <Text style={styles.offerModalTitle}>Nova oferta de entrega</Text>
@@ -1438,6 +1469,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               </View>
             ) : null}
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -1452,6 +1484,12 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         }}
       >
         <View style={styles.offerModalBackdrop}>
+          <Pressable style={styles.modalDismissLayer} onPress={Keyboard.dismiss} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+            style={styles.modalKeyboardAvoid}
+          >
           <View style={styles.failModalCard}>
             <Text style={styles.offerModalTitle}>Marcar entrega como falhada</Text>
             <Text style={styles.failModalSubtitle}>
@@ -1492,6 +1530,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               </Pressable>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -1559,6 +1598,12 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         onRequestClose={() => setShowHistoryModal(false)}
       >
         <View style={styles.offerModalBackdrop}>
+          <Pressable style={styles.modalDismissLayer} onPress={Keyboard.dismiss} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+            style={styles.modalKeyboardAvoid}
+          >
           <View style={styles.historyModalCard}>
             <View style={styles.offerModalHeader}>
               <Text style={styles.offerModalTitle}>Historico & ganhos</Text>
@@ -1659,6 +1704,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               ))}
             </ScrollView>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -1669,6 +1715,12 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         onRequestClose={closeChatModal}
       >
         <View style={styles.offerModalBackdrop}>
+          <Pressable style={styles.modalDismissLayer} onPress={Keyboard.dismiss} />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+            style={styles.modalKeyboardAvoid}
+          >
           <View style={styles.historyModalCard}>
             <View style={styles.offerModalHeader}>
               <View style={{ flex: 1 }}>
@@ -1688,6 +1740,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               ref={chatScrollRef}
               style={styles.courierChatList}
               contentContainerStyle={{ paddingBottom: 8 }}
+              keyboardDismissMode="on-drag"
               keyboardShouldPersistTaps="handled"
               onContentSizeChange={() => chatScrollRef.current?.scrollToEnd({ animated: true })}
             >
@@ -1738,6 +1791,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               </Pressable>
             </View>
           </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </SafeAreaView>

@@ -599,6 +599,13 @@ export const styles = StyleSheet.create({
     backgroundColor: 'rgba(15, 23, 42, 0.55)',
     justifyContent: 'flex-end',
   },
+  modalDismissLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  modalKeyboardAvoid: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
   inboxCard: {
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 22,
