@@ -39,6 +39,8 @@ class GatewayClientSocketPusher
             $callback();
         } catch (Throwable $exception) {
             report($exception);
+
+            throw $exception;
         }
     }
 }

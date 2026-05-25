@@ -37,8 +37,8 @@ import {
   deleteClientReview,
   fetchClientReviewsHistory,
   updateClientReview,
-  deleteClientAddress,
-  updateClientAddress,
+  deleteUserAddress as deleteClientAddress,
+  updateUserAddress as updateClientAddress,
   createOrderChat,
   fetchChatMessages,
   fetchOrderChats,
@@ -59,7 +59,7 @@ import {
   markClientNotificationRead,
   removeCartItem,
   repeatClientOrderToCart,
-  setDefaultClientAddress,
+  setDefaultUserAddress as setDefaultClientAddress,
   updateCartItem,
 } from '../services/commerceService'
 import { subscribeToOrderTracking } from '../services/realtime/trackingRealtime'
@@ -121,6 +121,19 @@ function statusForTerminalEvent(eventName) {
   return null
 }
 
+function createEmptyAddressDraft() {
+  return {
+    label: '',
+    street: '',
+    city: '',
+    postal_code: '',
+    country: 'Portugal',
+    latitude: '',
+    longitude: '',
+    is_default: false,
+  }
+}
+
 export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
   const navigationRef = useNavigationContainerRef()
   const [currentRoute, setCurrentRoute] = useState(CUSTOMER_ROUTES.HOME)
@@ -168,16 +181,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   const [couponCode, setCouponCode] = useState('')
   const [showAddressModal, setShowAddressModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [addressDraft, setAddressDraft] = useState({
-    label: '',
-    street: '',
-    city: '',
-    postal_code: '',
-    country: 'Portugal',
-    latitude: '',
-    longitude: '',
-    is_default: false,
-  })
+  const [addressDraft, setAddressDraft] = useState(createEmptyAddressDraft)
   const [showAddressForm, setShowAddressForm] = useState(false)
   const [isSavingAddress, setIsSavingAddress] = useState(false)
   const [editingAddressId, setEditingAddressId] = useState(null)
@@ -788,16 +792,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       if (savedId) setSelectedAddressId(savedId)
       setShowAddressForm(false)
       setEditingAddressId(null)
-      setAddressDraft({
-        label: '',
-        street: '',
-        city: '',
-        postal_code: '',
-        country: 'Portugal',
-        latitude: '',
-        longitude: '',
-        is_default: false,
-      })
+      setAddressDraft(createEmptyAddressDraft())
       setErrorText('')
     } catch (error) {
       setErrorText(error.message)
@@ -819,6 +814,23 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       is_default: Boolean(address.is_default),
     })
     setShowAddressForm(true)
+  }
+
+  function resetAddressForm() {
+    setShowAddressForm(false)
+    setEditingAddressId(null)
+    setAddressDraft(createEmptyAddressDraft())
+  }
+
+  function startCreateAddress() {
+    setEditingAddressId(null)
+    setAddressDraft(createEmptyAddressDraft())
+    setShowAddressForm(true)
+  }
+
+  function closeAddressModal() {
+    setShowAddressModal(false)
+    resetAddressForm()
   }
 
   async function confirmDeleteAddress() {
@@ -2568,7 +2580,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         visible={showAddressModal}
         animationType="slide"
         transparent
-        onRequestClose={() => setShowAddressModal(false)}
+        onRequestClose={closeAddressModal}
       >
         <View style={styles.inboxBackdrop}>
           <View style={styles.inboxCard}>
@@ -2579,7 +2591,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                   Escolhe ou cria uma morada para receber a encomenda
                 </Text>
               </View>
-              <Pressable style={styles.inboxClose} onPress={() => setShowAddressModal(false)}>
+              <Pressable style={styles.inboxClose} onPress={closeAddressModal}>
                 <Text style={styles.inboxCloseText}>{ICON.close}</Text>
               </Pressable>
             </View>
@@ -2644,7 +2656,9 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
               {showAddressForm ? (
                 <View style={styles.addressForm}>
-                  <Text style={styles.checkoutSectionTitle}>Nova morada</Text>
+                  <Text style={styles.checkoutSectionTitle}>
+                    {editingAddressId ? 'Editar morada' : 'Nova morada'}
+                  </Text>
 
                   <AddressMapPicker
                     latitude={Number(addressDraft.latitude)}
@@ -2697,7 +2711,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                   <View style={styles.cancelActionsRow}>
                     <Pressable
                       style={styles.cancelSecondary}
-                      onPress={() => setShowAddressForm(false)}
+                      onPress={resetAddressForm}
                       disabled={isSavingAddress}
                     >
                       <Text style={styles.cancelSecondaryText}>Voltar</Text>
@@ -2708,7 +2722,11 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                       disabled={isSavingAddress}
                     >
                       <Text style={styles.cancelDangerText}>
-                        {isSavingAddress ? 'A guardar...' : 'Criar morada'}
+                        {isSavingAddress
+                          ? 'A guardar...'
+                          : editingAddressId
+                            ? 'Guardar morada'
+                            : 'Criar morada'}
                       </Text>
                     </Pressable>
                   </View>
@@ -2716,7 +2734,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               ) : (
                 <Pressable
                   style={styles.addressAddBtn}
-                  onPress={() => setShowAddressForm(true)}
+                  onPress={startCreateAddress}
                 >
                   <Text style={styles.addressAddBtnText}>+ Adicionar nova morada</Text>
                 </Pressable>
