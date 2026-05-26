@@ -1,0 +1,439 @@
+@startuml FastBite_ER_Atual
+title FastBite - Diagrama Entidade-Relacao Atual
+
+hide methods
+hide stereotypes
+skinparam shadowing false
+skinparam linetype ortho
+
+entity users {
+  *id : uuid <<PK>>
+  --
+  name : string
+  email : string <<UK>>
+  password : string
+  created_at : timestamp
+  updated_at : timestamp
+}
+
+entity couriers {
+  *user_id : uuid <<PK, FK users.id>>
+  --
+  status : enum(AVAILABLE, BUSY, OFFLINE)
+  latitude : decimal?
+  longitude : decimal?
+  last_location_update : timestamp?
+  rating_sum : float
+  rating_count : int
+}
+
+entity chain_managers {
+  *user_id : uuid <<PK, FK users.id>>
+  --
+  chain_id : uuid? <<FK restaurant_chains.id>>
+}
+
+entity local_managers {
+  *user_id : uuid <<PK, FK users.id>>
+  --
+  restaurant_id : uuid? <<FK restaurants.id>>
+}
+
+entity restaurant_chains {
+  *id : uuid <<PK>>
+  --
+  name : string
+}
+
+entity restaurants {
+  *id : uuid <<PK>>
+  --
+  chain_id : uuid <<FK restaurant_chains.id>>
+  name : string
+  opening_hours : string
+  closing_hours : string
+  delivery_radius : float
+  rating_sum : float
+  rating_count : int
+}
+
+entity restaurant_addresses {
+  *id : uuid <<PK>>
+  --
+  restaurant_id : uuid <<FK restaurants.id>>
+  street : string
+  city : string
+  postal_code : string
+  country : string
+  latitude : decimal
+  longitude : decimal
+}
+
+entity user_addresses {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK users.id>>
+  street : string
+  city : string
+  postal_code : string
+  country : string
+  latitude : decimal
+  longitude : decimal
+  is_default : boolean
+  label : string?
+}
+
+entity categories {
+  *id : uuid <<PK>>
+  --
+  chain_id : uuid <<FK restaurant_chains.id>>
+  name : string
+}
+
+entity products {
+  *id : uuid <<PK>>
+  --
+  category_id : uuid <<FK categories.id>>
+  name : string
+  price : float
+  description : string?
+}
+
+entity restaurant_products {
+  *id : uuid <<PK>>
+  --
+  restaurant_id : uuid <<FK restaurants.id>>
+  product_id : uuid <<FK products.id>>
+  local_price : float?
+  is_available : boolean
+  estimated_preparation_time_min : int?
+}
+
+entity product_option_groups {
+  *id : uuid <<PK>>
+  --
+  product_id : uuid <<FK products.id>>
+  name : string
+  max_options : int
+  min_options : int
+}
+
+entity product_options {
+  *id : uuid <<PK>>
+  --
+  option_group_id : uuid <<FK product_option_groups.id>>
+  name : string
+  extra_price : float
+  default_option : boolean
+}
+
+entity carts {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK users.id>>
+  total : float
+}
+
+entity cart_items {
+  *id : uuid <<PK>>
+  --
+  cart_id : uuid <<FK carts.id>>
+  restaurant_product_id : uuid <<FK restaurant_products.id>>
+  quantity : int
+  unit_price : float
+  total_price : float
+}
+
+entity cart_item_options {
+  *id : uuid <<PK>>
+  --
+  cart_item_id : uuid <<FK cart_items.id>>
+  product_option_id : uuid <<FK product_options.id>>
+  extra_price : float
+}
+
+entity orders {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK users.id>>
+  restaurant_id : uuid <<FK restaurants.id>>
+  status : enum
+  total : float
+  restaurant_name_snapshot : string
+}
+
+entity order_items {
+  *id : uuid <<PK>>
+  --
+  order_id : uuid <<FK orders.id>>
+  restaurant_product_id : uuid <<FK restaurant_products.id>>
+  status : enum
+  quantity : int
+  unit_price : float
+  product_name_snapshot : string
+  total_price : float
+}
+
+entity order_item_options {
+  *id : uuid <<PK>>
+  --
+  order_item_id : uuid <<FK order_items.id>>
+  product_option_id : uuid <<FK product_options.id>>
+  option_name_snapshot : string
+  extra_price : float
+}
+
+entity order_addresses {
+  *id : uuid <<PK>>
+  --
+  order_id : uuid <<FK orders.id>>
+  street : string
+  city : string
+  postal_code : string
+  country : string
+  latitude : decimal
+  longitude : decimal
+}
+
+entity order_discounts {
+  *id : uuid <<PK>>
+  --
+  order_id : uuid <<FK orders.id>>
+  order_item_id : uuid? <<FK order_items.id>>
+  name_snapshot : string
+  discount_amount : float
+  discount_type : enum
+  discount_target : enum
+  origin_type : enum(PROMOTION, COUPON)
+  origin_id : uuid
+}
+
+entity payments {
+  *id : uuid <<PK>>
+  --
+  order_id : uuid <<FK orders.id>>
+  method : enum(CASH, CARD, MBWAY, PAYPAL)
+  status : enum(PENDING, COMPLETED, FAILED, CANCELLED, REFUNDED)
+  transaction_id : string?
+  paid_at : timestamp?
+  expired_at : timestamp?
+  amount : float
+}
+
+entity deliveries {
+  *id : uuid <<PK>>
+  --
+  order_id : uuid <<FK orders.id>>
+  courier_id : uuid? <<FK couriers.user_id>>
+  status : enum(PENDING, PICKED_UP, IN_TRANSIT, DELIVERED, FAILED)
+  pickup_time : timestamp?
+  delivery_time : timestamp?
+  delivery_fee : float
+}
+
+entity delivery_offers {
+  *id : uuid <<PK>>
+  --
+  delivery_id : uuid <<FK deliveries.id>>
+  courier_id : uuid <<FK couriers.user_id>>
+  status : enum(PENDING, ACCEPTED, REJECTED, EXPIRED)
+  expires_at : timestamp
+  accepted_at : timestamp?
+  rejected_at : timestamp?
+}
+
+entity courier_position_history {
+  *id : uuid <<PK>>
+  --
+  delivery_id : uuid <<FK deliveries.id>>
+  latitude : decimal
+  longitude : decimal
+  timestamp : timestamp
+}
+
+entity promotions {
+  *id : uuid <<PK>>
+  --
+  chain_id : uuid <<FK restaurant_chains.id>>
+  name : string
+  type : enum
+  target : enum
+  discount : float
+  start_date : timestamp?
+  end_date : timestamp?
+}
+
+entity coupons {
+  *id : uuid <<PK>>
+  --
+  chain_id : uuid <<FK restaurant_chains.id>>
+  code : string <<UK>>
+  type : enum
+  target : enum
+  discount : float
+  expiry_date : timestamp?
+}
+
+entity promotion_items {
+  *id : uuid <<PK>>
+  --
+  parent_type : enum(PROMOTION, COUPON)
+  parent_id : uuid
+  item_id : uuid
+}
+
+entity reviews {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK users.id>>
+  rating : int
+  comment : text?
+  target_type : enum(RESTAURANT, COURIER)
+  target_id : uuid
+}
+
+entity chats {
+  *id : uuid <<PK>>
+  --
+  order_id : uuid <<FK orders.id>>
+  type : enum(CUSTOMER_RESTAURANT, CUSTOMER_COURIER)
+  closed_at : timestamp?
+}
+
+entity chat_participants {
+  *id : uuid <<PK>>
+  --
+  chat_id : uuid <<FK chats.id>>
+  user_id : uuid <<FK users.id>>
+  joined_at : timestamp?
+  last_read_at : timestamp?
+}
+
+entity messages {
+  *id : uuid <<PK>>
+  --
+  chat_id : uuid <<FK chats.id>>
+  sender_participant_id : uuid <<FK chat_participants.id>>
+  content : text
+  timestamp : timestamp
+  read_at : timestamp?
+}
+
+entity notifications {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK users.id>>
+  type : enum
+  title : string
+  message : text
+  sent_at : timestamp
+  read_at : timestamp?
+}
+
+entity user_push_tokens {
+  *id : uuid <<PK>>
+  --
+  user_id : uuid <<FK users.id>>
+  provider : enum(expo)
+  token : string <<UK>>
+  platform : string?
+  is_active : boolean
+  last_used_at : timestamp?
+}
+
+entity order_events {
+  *id : uuid <<PK>>
+  --
+  order_id : uuid <<FK orders.id>>
+  event_type : enum
+  timestamp : timestamp
+  payload : jsonb?
+}
+
+entity payment_events {
+  *id : uuid <<PK>>
+  --
+  payment_id : uuid <<FK payments.id>>
+  event_type : enum
+  timestamp : timestamp
+  payload : jsonb?
+}
+
+entity delivery_events {
+  *id : uuid <<PK>>
+  --
+  delivery_id : uuid <<FK deliveries.id>>
+  event_type : enum
+  payload : jsonb?
+  created_at : timestamp
+}
+
+entity outbox_events {
+  *id : uuid <<PK>>
+  --
+  aggregate_type : string
+  aggregate_id : uuid?
+  event_name : string
+  payload : json
+  status : enum(PENDING, PROCESSING, PUBLISHED, FAILED)
+  retry_count : int
+  next_attempt_at : timestamp?
+  published_at : timestamp?
+  last_error : text?
+}
+
+users ||--o| couriers
+users ||--o| chain_managers
+users ||--o| local_managers
+users ||--o{ user_addresses
+users ||--o{ carts
+users ||--o{ orders
+users ||--o{ reviews
+users ||--o{ notifications
+users ||--o{ user_push_tokens
+users ||--o{ chat_participants
+
+restaurant_chains ||--o{ restaurants
+restaurant_chains ||--o{ categories
+restaurant_chains ||--o{ promotions
+restaurant_chains ||--o{ coupons
+restaurant_chains ||--o{ chain_managers
+restaurants ||--o{ local_managers
+restaurants ||--|| restaurant_addresses
+restaurants ||--o{ restaurant_products
+restaurants ||--o{ orders
+
+categories ||--o{ products
+products ||--o{ restaurant_products
+products ||--o{ product_option_groups
+product_option_groups ||--o{ product_options
+
+carts ||--o{ cart_items
+restaurant_products ||--o{ cart_items
+cart_items ||--o{ cart_item_options
+product_options ||--o{ cart_item_options
+
+orders ||--o{ order_items
+orders ||--|| order_addresses
+orders ||--o{ order_discounts
+orders ||--|| payments
+orders ||--|| deliveries
+orders ||--o{ order_events
+orders ||--o{ chats
+restaurant_products ||--o{ order_items
+order_items ||--o{ order_item_options
+order_items ||--o{ order_discounts
+product_options ||--o{ order_item_options
+
+payments ||--o{ payment_events
+deliveries ||--o{ delivery_offers
+deliveries ||--o{ delivery_events
+deliveries ||--o{ courier_position_history
+couriers ||--o{ deliveries
+couriers ||--o{ delivery_offers
+
+chats ||--o{ chat_participants
+chats ||--o{ messages
+chat_participants ||--o{ messages
+
+@enduml

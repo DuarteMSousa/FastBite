@@ -1,0 +1,25 @@
+@startuml FastBite_State_Delivery
+title FastBite - Estados de Entrega (DeliveryStatus)
+
+skinparam shadowing false
+
+[*] --> PENDING : createDeliveryForOrder
+
+PENDING --> PICKED_UP : markDeliveryPickedUp\nDELIVERY_PICKED_UP
+PENDING --> FAILED : markDeliveryFailed/System\nDELIVERY_FAILED
+
+PICKED_UP --> IN_TRANSIT : markDeliveryInTransit\nDELIVERY_IN_TRANSIT
+PICKED_UP --> FAILED : markDeliveryFailed/System\nDELIVERY_FAILED
+
+IN_TRANSIT --> DELIVERED : markDeliveryDelivered\nDELIVERY_DELIVERED
+IN_TRANSIT --> FAILED : markDeliveryFailed/System\nDELIVERY_FAILED
+
+DELIVERED --> [*]
+FAILED --> [*]
+
+note right of PENDING
+  A atribuicao do estafeta e feita por delivery_offers.
+  Aceitar oferta preenche courier_id e marca o estafeta BUSY.
+end note
+
+@enduml

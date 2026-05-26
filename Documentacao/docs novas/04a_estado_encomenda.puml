@@ -1,0 +1,32 @@
+@startuml FastBite_State_Order
+title FastBite - Estados de Encomenda (OrderStatus)
+
+skinparam shadowing false
+
+[*] --> PENDING : checkout CARD/MBWAY/PAYPAL\nou pagamento pendente
+[*] --> CONFIRMED : checkout CASH\nou payment COMPLETED
+
+PENDING --> CONFIRMED : confirmOrderAfterPayment\nORDER_CONFIRMED
+PENDING --> CANCELLED : cancelOrderByClient/System\nORDER_CANCELLED
+
+CONFIRMED --> PREPARING : startPreparingOrder\nORDER_PREPARING
+CONFIRMED --> CANCELLED : reject/cancel\nORDER_CANCELLED
+
+PREPARING --> READY : markOrderReady\nORDER_READY
+PREPARING --> CANCELLED : cancel/falha\nORDER_CANCELLED
+
+READY --> OUT_FOR_DELIVERY : markOrderOutForDelivery\nORDER_OUT_FOR_DELIVERY
+READY --> CANCELLED : cancel/falha\nORDER_CANCELLED
+
+OUT_FOR_DELIVERY --> DELIVERED : markOrderDelivered\nORDER_DELIVERED
+OUT_FOR_DELIVERY --> CANCELLED : cancel/falha\nORDER_CANCELLED
+
+DELIVERED --> [*]
+CANCELLED --> [*]
+
+note right of CONFIRMED
+  O restaurante so deve iniciar preparacao
+  quando existe estafeta atribuido.
+end note
+
+@enduml

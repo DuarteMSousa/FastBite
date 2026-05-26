@@ -1,0 +1,24 @@
+@startuml FastBite_State_Payment
+title FastBite - Estados de Pagamento (PaymentStatus)
+
+skinparam shadowing false
+
+[*] --> PENDING : createPayment/checkout\nmetodos simulados pendentes
+[*] --> COMPLETED : checkout CASH\nno fluxo atual
+
+PENDING --> COMPLETED : confirmPayment\nPAYMENT_COMPLETED
+PENDING --> FAILED : failPayment/expirePayment\nPAYMENT_FAILED/PAYMENT_EXPIRED
+PENDING --> CANCELLED : cancelPayment\nPAYMENT_CANCELLED
+
+COMPLETED --> REFUNDED : refundPayment\nPAYMENT_REFUNDED
+
+FAILED --> [*]
+CANCELLED --> [*]
+REFUNDED --> [*]
+
+note right of FAILED
+  Quando cascadeToOrder=true,
+  FAILED/CANCELLED/REFUNDED cancela a encomenda.
+end note
+
+@enduml

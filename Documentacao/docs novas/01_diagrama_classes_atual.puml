@@ -1,0 +1,567 @@
+@startuml FastBite_Dominio_ClassDiagram
+title FastBite - Diagrama de Classes do Dominio
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam roundCorner 6
+skinparam linetype ortho
+left to right direction
+skinparam packageStyle rectangle
+skinparam nodesep 55
+skinparam ranksep 45
+
+' =========================================================
+' USERS E PERFIS
+' =========================================================
+
+package "Utilizadores e Perfis" {
+
+class User {
+  +id: uuid
+  +name: string
+  +email: string
+  +password: string
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class Courier {
+  +user_id: uuid
+  +status: CourierStatus
+  +latitude: decimal?
+  +longitude: decimal?
+  +last_location_update: timestamp?
+  +rating_sum: float
+  +rating_count: int
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class ChainManager {
+  +user_id: uuid
+  +chain_id: uuid?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class LocalManager {
+  +user_id: uuid
+  +restaurant_id: uuid?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class UserAddress {
+  +id: uuid
+  +user_id: uuid
+  +street: string
+  +city: string
+  +postal_code: string
+  +country: string
+  +latitude: decimal
+  +longitude: decimal
+  +is_default: boolean
+  +label: string?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class UserPushToken {
+  +id: uuid
+  +user_id: uuid
+  +provider: PushTokenProvider
+  +token: string
+  +platform: string?
+  +is_active: boolean
+  +last_used_at: timestamp?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+}
+
+' =========================================================
+' RESTAURANTES E CATALOGO
+' =========================================================
+
+package "Restaurantes e Catalogo" {
+
+class RestaurantChain {
+  +id: uuid
+  +name: string
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class Restaurant {
+  +id: uuid
+  +chain_id: uuid
+  +name: string
+  +opening_hours: string
+  +closing_hours: string
+  +delivery_radius: float
+  +rating_sum: float
+  +rating_count: int
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class RestaurantAddress {
+  +id: uuid
+  +restaurant_id: uuid
+  +street: string
+  +city: string
+  +postal_code: string
+  +country: string
+  +latitude: decimal
+  +longitude: decimal
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class Category {
+  +id: uuid
+  +chain_id: uuid
+  +name: string
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class Product {
+  +id: uuid
+  +category_id: uuid
+  +name: string
+  +price: float
+  +description: string?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class RestaurantProduct {
+  +id: uuid
+  +restaurant_id: uuid
+  +product_id: uuid
+  +local_price: float?
+  +is_available: boolean
+  +estimated_preparation_time_min: int?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class ProductOptionGroup {
+  +id: uuid
+  +product_id: uuid
+  +name: string
+  +max_options: int
+  +min_options: int
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class ProductOption {
+  +id: uuid
+  +option_group_id: uuid
+  +name: string
+  +extra_price: float
+  +default_option: boolean
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+}
+
+' =========================================================
+' CARRINHO
+' =========================================================
+
+package "Carrinho" {
+
+class Cart {
+  +id: uuid
+  +user_id: uuid
+  +total: float
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class CartItem {
+  +id: uuid
+  +cart_id: uuid
+  +restaurant_product_id: uuid
+  +quantity: int
+  +unit_price: float
+  +total_price: float
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class CartItemOption {
+  +id: uuid
+  +cart_item_id: uuid
+  +product_option_id: uuid
+  +extra_price: float
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+}
+
+' =========================================================
+' ENCOMENDAS
+' =========================================================
+
+package "Encomendas" {
+
+class Order {
+  +id: uuid
+  +user_id: uuid
+  +restaurant_id: uuid
+  +status: OrderStatus
+  +total: float
+  +restaurant_name_snapshot: string
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class OrderItem {
+  +id: uuid
+  +order_id: uuid
+  +restaurant_product_id: uuid
+  +status: OrderItemStatus
+  +quantity: int
+  +unit_price: float
+  +product_name_snapshot: string
+  +total_price: float
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class OrderItemOption {
+  +id: uuid
+  +order_item_id: uuid
+  +product_option_id: uuid
+  +option_name_snapshot: string
+  +extra_price: float
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class OrderAddress {
+  +id: uuid
+  +order_id: uuid
+  +street: string
+  +city: string
+  +postal_code: string
+  +country: string
+  +latitude: decimal
+  +longitude: decimal
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class OrderDiscount {
+  +id: uuid
+  +order_id: uuid
+  +order_item_id: uuid?
+  +name_snapshot: string
+  +description_snapshot: string?
+  +discount_amount: float
+  +discount_type: DiscountType
+  +discount_target: DiscountTarget
+  +origin_type: CampaignMorphType
+  +origin_id: uuid
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class OrderEvent {
+  +id: uuid
+  +order_id: uuid
+  +event_type: string
+  +timestamp: timestamp
+  +payload: jsonb?
+}
+
+}
+
+' =========================================================
+' PAGAMENTOS E ENTREGAS
+' =========================================================
+
+package "Pagamentos e Entregas" {
+
+class Payment {
+  +id: uuid
+  +order_id: uuid
+  +method: PaymentMethod
+  +status: PaymentStatus
+  +transaction_id: string?
+  +paid_at: timestamp?
+  +expired_at: timestamp?
+  +amount: float
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class PaymentEvent {
+  +id: uuid
+  +payment_id: uuid
+  +event_type: string
+  +timestamp: timestamp
+  +payload: jsonb?
+}
+
+class Delivery {
+  +id: uuid
+  +order_id: uuid
+  +courier_id: uuid?
+  +status: DeliveryStatus
+  +pickup_time: timestamp?
+  +delivery_time: timestamp?
+  +delivery_fee: float
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class DeliveryOffer {
+  +id: uuid
+  +delivery_id: uuid
+  +courier_id: uuid
+  +status: DeliveryOfferStatus
+  +expires_at: timestamp
+  +accepted_at: timestamp?
+  +rejected_at: timestamp?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class DeliveryEvent {
+  +id: uuid
+  +delivery_id: uuid
+  +event_type: string
+  +payload: jsonb?
+  +created_at: timestamp
+}
+
+class CourierPositionHistory {
+  +id: uuid
+  +delivery_id: uuid
+  +latitude: decimal
+  +longitude: decimal
+  +timestamp: timestamp
+}
+
+}
+
+' =========================================================
+' CAMPANHAS, REVIEWS, NOTIFICACOES E CHAT
+' =========================================================
+
+package "Campanhas, Comunicacao e Auditoria" {
+
+class Promotion {
+  +id: uuid
+  +chain_id: uuid
+  +name: string
+  +description: string?
+  +type: DiscountType
+  +target: DiscountTarget
+  +discount: float
+  +start_date: timestamp?
+  +end_date: timestamp?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class Coupon {
+  +id: uuid
+  +chain_id: uuid
+  +code: string
+  +description: string?
+  +type: DiscountType
+  +target: DiscountTarget
+  +discount: float
+  +expiry_date: timestamp?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class PromotionItem {
+  +id: uuid
+  +parent_type: CampaignMorphType
+  +parent_id: uuid
+  +item_id: uuid
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class Review {
+  +id: uuid
+  +user_id: uuid
+  +rating: int
+  +comment: text?
+  +target_type: ReviewTargetType
+  +target_id: uuid
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class Notification {
+  +id: uuid
+  +user_id: uuid
+  +type: NotificationType
+  +title: string
+  +message: text
+  +sent_at: timestamp
+  +read_at: timestamp?
+}
+
+class Chat {
+  +id: uuid
+  +order_id: uuid
+  +type: ChatType
+  +closed_at: timestamp?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class ChatParticipant {
+  +id: uuid
+  +chat_id: uuid
+  +user_id: uuid
+  +joined_at: timestamp?
+  +last_read_at: timestamp?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+class Message {
+  +id: uuid
+  +chat_id: uuid
+  +sender_participant_id: uuid
+  +content: text
+  +timestamp: timestamp
+  +read_at: timestamp?
+}
+
+class OutboxEvent {
+  +id: uuid
+  +aggregate_type: string
+  +aggregate_id: uuid?
+  +event_name: string
+  +payload: json
+  +status: OutboxStatus
+  +retry_count: int
+  +next_attempt_at: timestamp?
+  +published_at: timestamp?
+  +last_error: text?
+  +created_at: timestamp
+  +updated_at: timestamp
+}
+
+}
+
+' =========================================================
+' RELACOES
+' =========================================================
+
+User "1" -- "0..1" Courier : perfil
+User "1" -- "0..1" ChainManager : perfil
+User "1" -- "0..1" LocalManager : perfil
+User "1" -- "0..*" UserAddress : moradas
+User "1" -- "0..*" UserPushToken : push tokens
+User "1" -- "0..*" Cart : carrinhos
+User "1" -- "0..*" Order : encomendas
+User "1" -- "0..*" Review : avaliacoes
+User "1" -- "0..*" Notification : notificacoes
+User "1" -- "0..*" ChatParticipant : participa
+
+RestaurantChain "1" -- "0..*" Restaurant : restaurantes
+RestaurantChain "1" -- "0..*" Category : categorias
+RestaurantChain "1" -- "0..*" ChainManager : gestores cadeia
+RestaurantChain "1" -- "0..*" Promotion : promocoes
+RestaurantChain "1" -- "0..*" Coupon : cupoes
+
+Restaurant "1" -- "0..*" LocalManager : gestores locais
+Restaurant "1" -- "1" RestaurantAddress : morada
+Restaurant "1" -- "0..*" RestaurantProduct : menu local
+Restaurant "1" -- "0..*" Order : recebe
+
+Category "1" -- "0..*" Product : produtos
+Product "1" -- "0..*" RestaurantProduct : disponibilizado em
+Product "1" -- "0..*" ProductOptionGroup : grupos opcoes
+ProductOptionGroup "1" -- "0..*" ProductOption : opcoes
+
+Cart "1" -- "0..*" CartItem : itens
+CartItem "1" -- "0..*" CartItemOption : opcoes escolhidas
+RestaurantProduct "1" -- "0..*" CartItem : item de carrinho
+ProductOption "1" -- "0..*" CartItemOption : opcao
+
+Order "1" -- "1..*" OrderItem : itens
+Order "1" -- "1" OrderAddress : snapshot morada
+Order "1" -- "0..*" OrderDiscount : descontos
+Order "1" -- "0..*" OrderEvent : auditoria
+Order "1" -- "1" Payment : pagamento
+Order "1" -- "1" Delivery : entrega
+Order "1" -- "0..*" Chat : conversas
+
+RestaurantProduct "1" -- "0..*" OrderItem : produto comprado
+OrderItem "1" -- "0..*" OrderItemOption : opcoes snapshot
+ProductOption "1" -- "0..*" OrderItemOption : opcao original
+OrderItem "1" -- "0..*" OrderDiscount : desconto por item
+
+Payment "1" -- "0..*" PaymentEvent : auditoria
+
+Delivery "1" -- "0..*" DeliveryOffer : ofertas
+Delivery "1" -- "0..*" DeliveryEvent : auditoria
+Delivery "1" -- "0..*" CourierPositionHistory : tracking
+Courier "1" -- "0..*" Delivery : entregas
+Courier "1" -- "0..*" DeliveryOffer : recebe
+
+Promotion "1" -- "0..*" PromotionItem : alvos
+Coupon "1" -- "0..*" PromotionItem : alvos
+
+Chat "1" -- "2..*" ChatParticipant : participantes
+Chat "1" -- "0..*" Message : mensagens
+ChatParticipant "1" -- "0..*" Message : envia
+
+' Relacoes polimorficas / por tipo
+Review ..> Restaurant : target_type=RESTAURANT
+Review ..> Courier : target_type=COURIER
+PromotionItem ..> Product : item_id quando target=PRODUCT
+PromotionItem ..> Category : item_id quando target=CATEGORY
+OrderDiscount ..> Promotion : origin_type=PROMOTION
+OrderDiscount ..> Coupon : origin_type=COUPON
+OutboxEvent ..> Order : aggregate_type=order
+OutboxEvent ..> Payment : aggregate_type=payment
+OutboxEvent ..> Delivery : aggregate_type=delivery
+OutboxEvent ..> Notification : aggregate_type=notification
+OutboxEvent ..> Chat : aggregate_type=chat
+
+' Ajuda de layout invisivel: organiza os blocos principais da esquerda para a direita.
+User -[hidden]right- RestaurantChain
+RestaurantChain -[hidden]right- Cart
+Cart -[hidden]right- Order
+Order -[hidden]right- Payment
+Payment -[hidden]right- Promotion
+
+legend right
+  <b>Tipos enumerados</b>
+  CourierStatus: AVAILABLE, BUSY, OFFLINE
+  OrderStatus: PENDING, CONFIRMED, PREPARING, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
+  OrderItemStatus: PENDING, PREPARING, READY, CANCELLED
+  PaymentMethod: CASH, CARD, MBWAY, PAYPAL
+  PaymentStatus: PENDING, COMPLETED, FAILED, CANCELLED, REFUNDED
+  DeliveryStatus: PENDING, PICKED_UP, IN_TRANSIT, DELIVERED, FAILED
+  DeliveryOfferStatus: PENDING, ACCEPTED, REJECTED, EXPIRED
+  DiscountType: PERCENTAGE, FIXED_AMOUNT
+  DiscountTarget: ORDER, PRODUCT, DELIVERY, CATEGORY
+  CampaignMorphType: PROMOTION, COUPON
+  ReviewTargetType: RESTAURANT, COURIER
+  ChatType: CUSTOMER_RESTAURANT, CUSTOMER_COURIER
+  NotificationType: ORDER_UPDATE, PROMOTION, SYSTEM
+  PushTokenProvider: expo
+  OutboxStatus: PENDING, PROCESSING, PUBLISHED, FAILED
+endlegend
+
+@enduml

@@ -1,0 +1,20 @@
+@startuml FastBite_State_Courier
+title FastBite - Estados Operacionais do Estafeta (CourierStatus)
+
+skinparam shadowing false
+
+[*] --> OFFLINE
+
+OFFLINE --> AVAILABLE : updateCourierStatus\nfica disponivel
+AVAILABLE --> BUSY : acceptDeliveryOffer\nentrega atribuida
+BUSY --> AVAILABLE : markDeliveryDelivered\nentrega concluida
+AVAILABLE --> OFFLINE : logout/desligar ultimo socket
+BUSY --> OFFLINE : CourierLastSocketDisconnected\nou indisponibilidade forçada
+OFFLINE --> BUSY : atribuicao manual/recuperacao excepcional
+
+note right of OFFLINE
+  CourierConnectionStatusListener coloca OFFLINE
+  quando o ultimo socket do estafeta se desliga.
+end note
+
+@enduml

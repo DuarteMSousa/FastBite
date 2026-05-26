@@ -1,0 +1,22 @@
+@startuml FastBite_State_OrderItem
+title FastBite - Estados de Item de Encomenda (OrderItemStatus)
+
+skinparam shadowing false
+
+[*] --> PENDING : item criado no checkout
+
+PENDING --> PREPARING : updateOrderItemStatus\ncozinha inicia item
+PENDING --> CANCELLED : updateOrderItemStatus\nitem indisponivel
+
+PREPARING --> READY : updateOrderItemStatus\nitem pronto
+PREPARING --> CANCELLED : updateOrderItemStatus\nfalha/indisponibilidade
+
+READY --> [*]
+CANCELLED --> [*]
+
+note right of READY
+  O estado dos itens suporta a cozinha virtual.
+  A encomenda global tem a sua propria maquina de estados.
+end note
+
+@enduml

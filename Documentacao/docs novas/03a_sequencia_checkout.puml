@@ -1,0 +1,56 @@
+@startuml FastBite_Seq_Checkout
+title FastBite - Sequencia: Checkout e criacao de encomenda
+
+skinparam shadowing false
+actor Cliente
+participant "Mobile\nCustomerAppScreen" as Mobile
+participant "GraphQL\nOrderMutations" as GQL
+participant "CartService" as CartSvc
+participant "OrderService\n#[Transactional]" as OrderSvc
+participant "OrderPricingService" as Pricing
+participant "PaymentRepository" as PayRepo
+participant "OutboxService" as Outbox
+participant "Queue" as Queue
+database "PostgreSQL" as DB
+participant "GatewayWorker\nvia PublishOutboxEventJob" as GW
+participant "Web Restaurante" as Web
+
+Cliente -> Mobile: finaliza carrinho
+Mobile -> GQL: mutation previewCheckout(...)
+GQL -> OrderSvc: previewCheckout(userId, cartId, addressId, coupon)
+OrderSvc -> DB: carrega carrinho, restaurante e morada
+OrderSvc -> Pricing: calcula subtotal, entrega, descontos, total
+Pricing --> GQL: CheckoutPreview
+GQL --> Mobile: totais e descontos
+
+Cliente -> Mobile: confirma pagamento
+Mobile -> GQL: mutation checkout(input)
+GQL -> OrderSvc: checkoutOrder(userId, CheckoutDTO)
+OrderSvc -> DB: begin transaction
+OrderSvc -> DB: cria orders, order_items, order_address
+OrderSvc -> DB: cria order_discounts quando aplicavel
+
+alt metodo CASH
+  OrderSvc -> PayRepo: cria payment COMPLETED
+  OrderSvc -> DB: order status = CONFIRMED
+  OrderSvc -> DB: order_events ORDER_CREATED, ORDER_PAYMENT_COMPLETED, ORDER_CONFIRMED
+  OrderSvc -> DB: payment_events PAYMENT_CREATED, PAYMENT_COMPLETED
+  OrderSvc -> Outbox: enqueue order/payment events
+  OrderSvc -> Queue: AssignCourierToDeliveryJob
+else CARD/MBWAY/PAYPAL simulado pendente
+  OrderSvc -> PayRepo: cria payment PENDING
+  OrderSvc -> DB: order status = PENDING
+  OrderSvc -> DB: order_events ORDER_CREATED
+  OrderSvc -> DB: payment_events PAYMENT_CREATED
+  OrderSvc -> Queue: ExpirePendingPaymentJob(delay expired_at)
+end
+
+OrderSvc -> DB: limpa carrinho
+OrderSvc -> DB: commit
+GQL --> Mobile: order + payment
+
+Queue -> GW: PublishOutboxEventJob publica eventos pendentes
+GW -> Mobile: customer.{userId}.orders
+GW -> Web: restaurant.{restaurantId}.orders quando visivel
+
+@enduml

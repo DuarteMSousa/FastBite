@@ -1,0 +1,21 @@
+@startuml FastBite_State_DeliveryOffer
+title FastBite - Estados de Oferta de Entrega (DeliveryOfferStatus)
+
+skinparam shadowing false
+
+[*] --> PENDING : createDeliveryOfferForCourier\nJOB_OFFERED
+
+PENDING --> ACCEPTED : acceptDeliveryOffer\nJOB_ACCEPTED
+PENDING --> REJECTED : rejectDeliveryOffer\nJOB_REJECTED
+PENDING --> EXPIRED : ExpireDeliveryOfferJob\nJOB_EXPIRED
+
+ACCEPTED --> [*]
+REJECTED --> [*]
+EXPIRED --> [*]
+
+note right of REJECTED
+  Depois de rejeitada ou expirada,
+  AssignCourierToDeliveryJob tenta outro estafeta.
+end note
+
+@enduml

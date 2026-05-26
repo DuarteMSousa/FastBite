@@ -1,0 +1,67 @@
+@startuml FastBite_Seq_Estafeta_Tracking
+title FastBite - Sequencia: Estafeta, entrega e tracking
+
+skinparam shadowing false
+actor Estafeta
+participant "Mobile\nCourierAppScreen" as CourierApp
+participant "GraphQL\nDelivery/Tracking Mutations" as GQL
+participant "DeliveryService\n#[Transactional]" as DeliverySvc
+participant "CourierService" as CourierSvc
+participant "TrackingService" as TrackingSvc
+participant "OrderService" as OrderSvc
+participant "OutboxService" as Outbox
+database "PostgreSQL" as DB
+participant "GatewayWorker" as GW
+participant "Mobile Cliente" as CustomerApp
+participant "Web Restaurante" as RestaurantWeb
+
+Estafeta -> CourierApp: aceita oferta
+CourierApp -> GQL: mutation acceptDeliveryOffer(offerId)
+GQL -> DeliverySvc: acceptDeliveryOffer(offerId)
+DeliverySvc -> DB: bloqueia offer e delivery
+DeliverySvc -> DB: offer PENDING -> ACCEPTED
+DeliverySvc -> DB: delivery.courier_id = courierId
+DeliverySvc -> DB: expira outras ofertas pendentes
+DeliverySvc -> CourierSvc: status AVAILABLE -> BUSY
+DeliverySvc -> DB: delivery_events DELIVERY_ACCEPTED
+DeliverySvc -> OrderSvc: recordCourierAssignedToOrder(order)
+OrderSvc -> DB: order_events ORDER_COURIER_ASSIGNED
+DeliverySvc -> Outbox: enqueue JOB_ACCEPTED + DELIVERY_ACCEPTED
+GW -> CustomerApp: customer.{userId}.orders
+GW -> RestaurantWeb: restaurant.{restaurantId}.orders
+
+Estafeta -> CourierApp: recolhe pedido
+CourierApp -> GQL: mutation markDeliveryPickedUp(deliveryId)
+GQL -> DeliverySvc: markDeliveryPickedUp(deliveryId, courierId)
+DeliverySvc -> DB: delivery PENDING -> PICKED_UP
+DeliverySvc -> OrderSvc: recordOrderPickedUp(order)
+OrderSvc -> DB: ORDER_PICKED_UP
+GW -> CustomerApp: order.{orderId}.tracking
+
+Estafeta -> CourierApp: inicia caminho para cliente
+CourierApp -> GQL: mutation markDeliveryInTransit(deliveryId)
+GQL -> DeliverySvc: markDeliveryInTransit(...)
+DeliverySvc -> DB: delivery PICKED_UP -> IN_TRANSIT
+DeliverySvc -> OrderSvc: markOrderOutForDelivery(order)
+OrderSvc -> DB: order READY -> OUT_FOR_DELIVERY
+GW -> CustomerApp: tracking + order update
+
+loop localizacao periodica
+  CourierApp -> GQL: mutation updateCourierLocation(input)
+  GQL -> TrackingSvc: updateCourierLocation(courierId, lat, lng, deliveryId)
+  TrackingSvc -> DB: atualiza couriers + courier_position_history
+  TrackingSvc -> Outbox: enqueue COURIER_POSITION_UPDATED
+  GW -> CustomerApp: order.{orderId}.tracking
+end
+
+Estafeta -> CourierApp: entrega concluida
+CourierApp -> GQL: mutation markDeliveryDelivered(deliveryId)
+GQL -> DeliverySvc: markDeliveryDelivered(...)
+DeliverySvc -> DB: delivery IN_TRANSIT -> DELIVERED
+DeliverySvc -> OrderSvc: markOrderDelivered(order)
+OrderSvc -> DB: order OUT_FOR_DELIVERY -> DELIVERED
+DeliverySvc -> CourierSvc: status BUSY -> AVAILABLE
+GW -> CustomerApp: ORDER_DELIVERED
+GW -> RestaurantWeb: restaurant.{restaurantId}.orders
+
+@enduml

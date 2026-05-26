@@ -1,0 +1,21 @@
+@startuml FastBite_State_Outbox
+title FastBite - Estados da Outbox (OutboxStatus)
+
+skinparam shadowing false
+
+[*] --> PENDING : OutboxService.enqueue(...)
+
+PENDING --> PROCESSING : PublishOutboxEventJob\nmarkProcessing
+FAILED --> PROCESSING : retry quando next_attempt_at permite
+
+PROCESSING --> PUBLISHED : evento publicado com sucesso
+PROCESSING --> FAILED : exception ao publicar\nmarkRetryAfterFailure
+
+PUBLISHED --> [*]
+
+note right of FAILED
+  Guarda retry_count, next_attempt_at e last_error.
+  O job pode relancar a excecao para a queue voltar a tentar.
+end note
+
+@enduml
