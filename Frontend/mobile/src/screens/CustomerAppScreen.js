@@ -608,6 +608,11 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         orderId: activeOrderId,
         authToken: session?.token,
         devUserId: session?.devUserId,
+        onSubscribed: () => {
+          if (!cancelled) {
+            setRealtimeState('live')
+          }
+        },
         onEvent: (eventName, payload) => {
           if (cancelled || eventName === 'COURIER_POSITION_UPDATED') return
 

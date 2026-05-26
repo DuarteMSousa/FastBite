@@ -118,10 +118,15 @@ export function subscribeToOrderTrackingTopic({
   onEvent,
   onPositionUpdated,
   onError,
+  onSubscribed,
 }) {
   const echo = getEchoClient({ authToken, devUserId })
   const channelName = `order.${orderId}.tracking`
   const channel = echo.private(channelName)
+
+  if (onSubscribed && typeof channel.subscribed === 'function') {
+    channel.subscribed(() => onSubscribed())
+  }
 
   listenMany(
     channel,
@@ -213,10 +218,15 @@ export function subscribeToCourierJobsTopic({
   devUserId,
   onEvent,
   onError,
+  onSubscribed,
 }) {
   const echo = getEchoClient({ authToken, devUserId, courierId })
   const channelName = `courier.${courierId}.jobs`
   const channel = echo.private(channelName)
+
+  if (onSubscribed && typeof channel.subscribed === 'function') {
+    channel.subscribed(() => onSubscribed())
+  }
 
   listenMany(
     channel,

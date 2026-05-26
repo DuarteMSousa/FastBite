@@ -7,6 +7,7 @@ export function subscribeToOrderTracking({
   onEvent,
   onPositionUpdated,
   onError,
+  onSubscribed,
 }) {
   return subscribeToOrderTrackingTopic({
     orderId,
@@ -15,5 +16,6 @@ export function subscribeToOrderTracking({
     onEvent,
     onPositionUpdated,
     onError,
+    onSubscribed,
   })
 }

@@ -267,6 +267,9 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           courierId,
           authToken: session?.token,
           devUserId: session?.devUserId,
+          onSubscribed: () => {
+            setJobsRealtimeState('live')
+          },
           onEvent: (eventName, payload) => {
             setJobsRealtimeState('live')
             setToast(`Realtime: ${eventTypeLabel(eventName)}`)
