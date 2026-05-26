@@ -6,6 +6,29 @@ use App\Aspects\ErrorHandlingInterceptor;
 use App\Aspects\LoggingInterceptor;
 use App\Aspects\Transactional;
 use App\Aspects\TransactionInterceptor;
+use App\Gateway\ClientEvents\Handlers\HelloClientEventHandler;
+use App\Gateway\ClientEvents\Handlers\SendChatMessageClientEventHandler;
+use App\Gateway\ClientEvents\Handlers\SubscribeClientEventHandler;
+use App\Gateway\ClientEvents\Handlers\UnsubscribeClientEventHandler;
+use App\Gateway\ClientEvents\Handlers\UpdateCourierPositionClientEventHandler;
+use App\Gateway\ClientEvents\Handlers\UpdateCourierStatusClientEventHandler;
+use App\Gateway\ServerEvents\Handlers\ChatMessageSentSocketHandler;
+use App\Gateway\ServerEvents\Handlers\CourierAssignedSocketHandler;
+use App\Gateway\ServerEvents\Handlers\CourierPositionUpdatedSocketHandler;
+use App\Gateway\ServerEvents\Handlers\DeliveryOfferedSocketHandler;
+use App\Gateway\ServerEvents\Handlers\OrderStatusUpdatedSocketHandler;
+use App\Gateway\ServerEvents\Handlers\UserNotificationCreatedSocketHandler;
+use App\Listeners\CourierConnectionStatusListener;
+use App\Listeners\DispatchLaravelEventFromOutbox;
+use App\Listeners\DispatchNotificationChannelsFromUserNotificationCreated;
+use App\Listeners\DispatchSocketMessage;
+use App\Outbox\EventHandlers\ChatMessageSentOutboxEventHandler;
+use App\Outbox\EventHandlers\CourierAssignedOutboxEventHandler;
+use App\Outbox\EventHandlers\CourierPositionUpdatedOutboxEventHandler;
+use App\Outbox\EventHandlers\DeliveryOfferedOutboxEventHandler;
+use App\Outbox\EventHandlers\OrderStatusUpdatedOutboxEventHandler;
+use App\Outbox\EventHandlers\UserNotificationCreatedOutboxEventHandler;
+use App\Outbox\Handlers\CreateNotificationFromOutboxEventHandler;
 use App\Services\CartService\CartService;
 use App\Services\CartService\CartServiceInterface;
 use App\Services\CategoryService\CategoryService;
@@ -79,6 +102,38 @@ class RayAopServiceProvider extends ServiceProvider
         UserServiceInterface::class => UserService::class,
     ];
 
+    /**
+     * @var array<int, class-string>
+     */
+    private array $listeners = [
+        ChatMessageSentOutboxEventHandler::class,
+        ChatMessageSentSocketHandler::class,
+        CourierConnectionStatusListener::class,
+        CourierAssignedOutboxEventHandler::class,
+        CourierAssignedSocketHandler::class,
+        CourierPositionUpdatedOutboxEventHandler::class,
+        CourierPositionUpdatedSocketHandler::class,
+        CreateNotificationFromOutboxEventHandler::class,
+        DeliveryOfferedOutboxEventHandler::class,
+        DeliveryOfferedSocketHandler::class,
+        DispatchLaravelEventFromOutbox::class,
+        DispatchNotificationChannelsFromUserNotificationCreated::class,
+        DispatchSocketMessage::class,
+        OrderStatusUpdatedOutboxEventHandler::class,
+        OrderStatusUpdatedSocketHandler::class,
+        UserNotificationCreatedOutboxEventHandler::class,
+        UserNotificationCreatedSocketHandler::class,
+    ];
+
+      private array $socketHandlers = [
+        HelloClientEventHandler::class,
+        SendChatMessageClientEventHandler::class,
+        SubscribeClientEventHandler::class,
+        UnsubscribeClientEventHandler::class,
+        UpdateCourierPositionClientEventHandler::class,
+        UpdateCourierStatusClientEventHandler::class,
+    ];
+
     public function register(): void
     {
         if (! config('ray_aop.enabled') || ! class_exists(Aspect::class)) {
@@ -114,6 +169,14 @@ class RayAopServiceProvider extends ServiceProvider
         foreach ($this->services as $interface => $concrete) {
             $this->bindProxied($interface, $concrete);
             $this->bindProxied($concrete, $concrete);
+        }
+
+        foreach ($this->listeners as $listener) {
+            $this->bindProxied($listener, $listener);
+        }
+
+           foreach ($this->socketHandlers as $handler) {
+            $this->bindProxied($handler, $handler);
         }
     }
 
