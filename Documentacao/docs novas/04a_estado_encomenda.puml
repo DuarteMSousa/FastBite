@@ -3,13 +3,15 @@ title FastBite - Estados de Encomenda (OrderStatus)
 
 skinparam shadowing false
 
-[*] --> PENDING : cliente conclui checkout\nmas o pagamento ainda aguarda confirmação
-[*] --> CONFIRMED : pagamento fica concluído\ne a encomenda entra na fila do restaurante
+[*] --> PENDING : cliente conclui checkout\ne a encomenda aguarda pagamento/estafeta
 
-PENDING --> CONFIRMED : pagamento pendente foi confirmado\ne o restaurante pode receber o pedido
+PENDING --> COURIER_ASSIGNED : estafeta aceita a entrega\ne fica associado à encomenda
 PENDING --> CANCELLED : cliente cancela ou o sistema anula\nantes da confirmação
 
-CONFIRMED --> PREPARING : restaurante aceita trabalhar o pedido\ne inicia a preparação
+COURIER_ASSIGNED --> CONFIRMED : restaurante aceita o pedido\ncom estafeta já atribuído
+COURIER_ASSIGNED --> CANCELLED : restaurante rejeita ou pedido é cancelado\nantes de iniciar preparação
+
+CONFIRMED --> PREPARING : restaurante inicia a preparação\napós aceitar o pedido
 CONFIRMED --> CANCELLED : restaurante rejeita ou o pedido é cancelado\npor indisponibilidade/falha
 
 PREPARING --> READY : cozinha termina a preparação\ne o pedido fica pronto para recolha
@@ -25,8 +27,9 @@ DELIVERED --> [*]
 CANCELLED --> [*]
 
 note right of CONFIRMED
-  O restaurante só deve iniciar preparação
-  quando existe estafeta atribuído.
+  CONFIRMED significa que o restaurante já aceitou.
+  A atribuição do estafeta é registada antes,
+  no estado COURIER_ASSIGNED.
 end note
 
 @enduml

@@ -10,6 +10,7 @@ import { subscribeToRestaurantOrdersTopic } from '../../../services/realtime/top
 
 function statusLabel(status) {
   if (status === 'PENDING') return 'Pendente'
+  if (status === 'COURIER_ASSIGNED') return 'Estafeta atribuído'
   if (status === 'CONFIRMED') return 'Confirmado'
   if (status === 'PREPARING') return 'A preparar'
   if (status === 'READY') return 'Pronto'
@@ -18,7 +19,7 @@ function statusLabel(status) {
 }
 
 function statusTone(status) {
-  if (status === 'PENDING') return 'pending'
+  if (status === 'PENDING' || status === 'COURIER_ASSIGNED') return 'pending'
   if (status === 'CONFIRMED' || status === 'PREPARING') return 'prep'
   if (status === 'READY' || status === 'OUT_FOR_DELIVERY') return 'done'
   return 'off'
@@ -98,7 +99,7 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
             setOrders((current) => reconcileActiveOrderList(current, realtimeOrder))
           }
           if (eventName === 'ORDER_COURIER_ASSIGNED') {
-            setInfoText('Novo pedido com estafeta atribuido.')
+            setInfoText('Novo pedido com estafeta atribuído.')
           } else if (eventName === 'ORDER_CREATED') {
             setInfoText('Novo pedido recebido.')
           }
@@ -169,13 +170,13 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
   }
 
   const stats = useMemo(() => {
-    const pending = orders.filter((order) => order.order_status === 'PENDING').length
+    const pending = orders.filter((order) => order.order_status === 'COURIER_ASSIGNED').length
     const preparing = orders.filter((order) => order.order_status === 'PREPARING').length
     const outForDelivery = orders.filter((order) => order.order_status === 'OUT_FOR_DELIVERY').length
     const totalValue = orders.reduce((sum, order) => sum + Number(order.total ?? 0), 0)
 
     return [
-      { icon: 'PD', label: 'Pendentes', value: String(pending) },
+      { icon: 'PD', label: 'Por aceitar', value: String(pending) },
       { icon: 'PR', label: 'A preparar', value: String(preparing) },
       { icon: 'ED', label: 'Em entrega', value: String(outForDelivery) },
       { icon: 'EU', label: 'Valor ativo', value: `${totalValue.toFixed(2)} EUR` },
@@ -265,7 +266,7 @@ export function RestaurantOrdersQueueScreen({ session, onSelectOrder, onNavigate
                   </td>
                   <td>{order.created_at ? new Date(order.created_at).toLocaleTimeString() : '-'}</td>
                   <td>
-                    {order.order_status === 'PENDING' ? (
+                    {order.order_status === 'COURIER_ASSIGNED' ? (
                       <div className="rb-kitchen-actions">
                         <button
                           type="button"

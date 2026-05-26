@@ -68,6 +68,8 @@ class DeliveryRepository implements DeliveryRepositoryInterface
             ->whereNull('courier_id')
             ->where('status', DeliveryStatus::PENDING->value)
             ->whereHas('order', fn ($query) => $query->whereIn('status', [
+                OrderStatus::PENDING->value,
+                OrderStatus::COURIER_ASSIGNED->value,
                 OrderStatus::CONFIRMED->value,
             ]))
             ->orderBy('created_at')

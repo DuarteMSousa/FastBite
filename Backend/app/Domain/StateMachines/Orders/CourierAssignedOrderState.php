@@ -4,15 +4,15 @@ namespace App\Domain\StateMachines\Orders;
 
 use App\Enums\OrderStatus;
 
-class PendingOrderState extends AbstractOrderState
+class CourierAssignedOrderState extends AbstractOrderState
 {
     public function status(): OrderStatus
     {
-        return OrderStatus::PENDING;
+        return OrderStatus::COURIER_ASSIGNED;
     }
 
     protected function allowedTransitions(): array
     {
-        return [OrderStatus::COURIER_ASSIGNED, OrderStatus::CANCELLED];
+        return [OrderStatus::CONFIRMED, OrderStatus::CANCELLED];
     }
 }

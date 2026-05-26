@@ -1,6 +1,6 @@
 import { buildAuthHeaders } from '../apiClient'
 
-export const ACTIVE_ORDER_STATUSES = ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY']
+export const ACTIVE_ORDER_STATUSES = ['PENDING', 'COURIER_ASSIGNED', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY']
 
 export function sessionUserId(session) {
   return session?.userId || session?.devUserId

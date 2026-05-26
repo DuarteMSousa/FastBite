@@ -24,4 +24,5 @@ Esta pasta contém uma nova versão dos diagramas baseada no estado atual da imp
 - O realtime está representado com GatewayWorker/Workerman, através de eventos Laravel, outbox e `SocketMessageDispatcher`.
 - A autenticação/autorização está representada como identificação simplificada por utilizador/sessão, de acordo com as decisões de âmbito.
 - Os pagamentos são simulados. O domínio modela estados e eventos, mas não integra gateways externos.
+- O estado `COURIER_ASSIGNED` indica que o estafeta já aceitou a entrega; só depois o restaurante confirma o pedido em `CONFIRMED`.
 - A base de dados considerada é PostgreSQL, coerente com o `README` e com o uso de `jsonb` nas migrations.

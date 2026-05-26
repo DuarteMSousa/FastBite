@@ -25,6 +25,7 @@ DeliverySvc -> DB: expira outras ofertas pendentes
 DeliverySvc -> CourierSvc: status AVAILABLE -> BUSY
 DeliverySvc -> DB: delivery_events DELIVERY_ACCEPTED
 DeliverySvc -> OrderSvc: recordCourierAssignedToOrder(order)
+OrderSvc -> DB: order PENDING -> COURIER_ASSIGNED
 OrderSvc -> DB: order_events ORDER_COURIER_ASSIGNED
 DeliverySvc -> Outbox: enqueue JOB_ACCEPTED + DELIVERY_ACCEPTED
 GW -> CustomerApp: customer.{userId}.orders

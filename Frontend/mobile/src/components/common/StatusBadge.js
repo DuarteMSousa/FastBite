@@ -2,6 +2,7 @@ import { StyleSheet, Text } from 'react-native'
 
 const ORDER_LABELS = {
   PENDING: 'Pendente',
+  COURIER_ASSIGNED: 'Estafeta atribuído',
   CONFIRMED: 'Confirmado',
   PREPARING: 'A preparar',
   READY: 'Pronto',
@@ -31,6 +32,7 @@ function toneStyle(status) {
   }
   if (status === 'CANCELLED' || status === 'FAILED') return styles.off
   if (status === 'PENDING') return styles.pending
+  if (status === 'COURIER_ASSIGNED') return styles.pending
   return styles.prep
 }
 
@@ -40,6 +42,7 @@ function toneTextStyle(status) {
   }
   if (status === 'CANCELLED' || status === 'FAILED') return styles.offText
   if (status === 'PENDING') return styles.pendingText
+  if (status === 'COURIER_ASSIGNED') return styles.pendingText
   return styles.prepText
 }
 

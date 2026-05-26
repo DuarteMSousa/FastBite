@@ -87,7 +87,7 @@ GRAPHQL;
         $order = Order::query()->create([
             'user_id' => $customer->id,
             'restaurant_id' => $restaurant->id,
-            'status' => 'CONFIRMED',
+            'status' => 'PENDING',
             'total' => 18.5,
             'restaurant_name_snapshot' => 'Urban Grill',
         ]);
@@ -145,6 +145,11 @@ GRAPHQL;
         $this->assertDatabaseHas('order_events', [
             'order_id' => $order->id,
             'event_type' => 'ORDER_COURIER_ASSIGNED',
+        ]);
+
+        $this->assertDatabaseHas('orders', [
+            'id' => $order->id,
+            'status' => 'COURIER_ASSIGNED',
         ]);
     }
 }

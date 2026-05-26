@@ -7,7 +7,7 @@ const STATUS_FILTERS = [
   { value: null, label: 'Todas' },
   { value: ['DELIVERED'], label: 'Entregues' },
   { value: ['CANCELLED'], label: 'Canceladas' },
-  { value: ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'], label: 'Ativas' },
+  { value: ['PENDING', 'COURIER_ASSIGNED', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'], label: 'Ativas' },
 ]
 
 const PAGE_SIZE = 20

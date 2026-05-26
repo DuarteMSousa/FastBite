@@ -13,6 +13,7 @@ import { formatEventType } from '../../../utils/orderEventLabel'
 
 function statusLabel(status) {
   if (status === 'PENDING') return 'Pendente'
+  if (status === 'COURIER_ASSIGNED') return 'Estafeta atribuído'
   if (status === 'CONFIRMED') return 'Confirmado'
   if (status === 'PREPARING') return 'A preparar'
   if (status === 'READY') return 'Pronto'
@@ -23,7 +24,7 @@ function statusLabel(status) {
 }
 
 function statusTone(status) {
-  if (status === 'PENDING') return 'pending'
+  if (status === 'PENDING' || status === 'COURIER_ASSIGNED') return 'pending'
   if (status === 'CONFIRMED' || status === 'PREPARING') return 'prep'
   if (status === 'READY' || status === 'OUT_FOR_DELIVERY' || status === 'DELIVERED') return 'done'
   return 'off'
@@ -398,7 +399,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
       </article>
 
       <div className="rb-detail-actions">
-        {order.status === 'PENDING' ? (
+        {order.status === 'COURIER_ASSIGNED' ? (
           <>
             <button
               type="button"

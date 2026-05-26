@@ -1,5 +1,6 @@
 const ORDER_LABELS = {
   PENDING: 'Pendente',
+  COURIER_ASSIGNED: 'Estafeta atribuído',
   CONFIRMED: 'Confirmado',
   PREPARING: 'A preparar',
   READY: 'Pronto',
@@ -36,6 +37,7 @@ function toneFor(kind, status) {
   }
   if (status === 'CANCELLED' || status === 'FAILED') return 'off'
   if (status === 'PENDING') return 'pending'
+  if (status === 'COURIER_ASSIGNED') return 'warn'
   return 'prep'
 }
 

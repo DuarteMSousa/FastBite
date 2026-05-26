@@ -12,6 +12,7 @@ class OrderStateFactory
 
         return match ($status) {
             OrderStatus::PENDING => new PendingOrderState(),
+            OrderStatus::COURIER_ASSIGNED => new CourierAssignedOrderState(),
             OrderStatus::CONFIRMED => new ConfirmedOrderState(),
             OrderStatus::PREPARING => new PreparingOrderState(),
             OrderStatus::READY => new ReadyOrderState(),

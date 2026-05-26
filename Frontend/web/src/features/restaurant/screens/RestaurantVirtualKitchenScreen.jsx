@@ -13,7 +13,7 @@ import { subscribeToRestaurantOrdersTopic } from '../../../services/realtime/top
 import { formatEventType } from '../../../utils/orderEventLabel'
 
 function mapOrderTone(status) {
-  if (status === 'PENDING') return 'pending'
+  if (status === 'PENDING' || status === 'COURIER_ASSIGNED') return 'pending'
   if (status === 'CONFIRMED' || status === 'PREPARING') return 'prep'
   if (status === 'READY') return 'done'
   return 'off'
@@ -28,6 +28,7 @@ function mapItemTone(status) {
 
 function mapStatusLabel(status) {
   if (status === 'PENDING') return 'Pendente'
+  if (status === 'COURIER_ASSIGNED') return 'Estafeta atribuído'
   if (status === 'CONFIRMED') return 'Confirmado'
   if (status === 'PREPARING') return 'A preparar'
   if (status === 'READY') return 'Pronto'
@@ -150,7 +151,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
   }, [session?.restaurantId, session?.token, session?.devUserId])
 
   const pendingOrders = useMemo(
-    () => orders.filter((order) => order.order_status === 'PENDING'),
+    () => orders.filter((order) => order.order_status === 'COURIER_ASSIGNED'),
     [orders],
   )
 
@@ -303,12 +304,12 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
       ) : null}
 
       <h3 className="rb-section-title">
-        Encomendas pendentes <span>{pendingOrders.length}</span>
+        Encomendas por aceitar <span>{pendingOrders.length}</span>
       </h3>
 
       <div className="rb-kitchen-grid">
         {loading && pendingOrders.length === 0 ? <p>A carregar...</p> : null}
-        {!loading && pendingOrders.length === 0 ? <p>Sem encomendas pendentes.</p> : null}
+        {!loading && pendingOrders.length === 0 ? <p>Sem encomendas por aceitar.</p> : null}
 
         {pendingOrders.map((order) => (
           <article className="rb-kitchen-card" key={order.order_id}>
@@ -319,7 +320,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
               </div>
               <div className="rb-kitchen-price">
                 <strong>{Number(order.total).toFixed(2)} EUR</strong>
-                <span className="rb-chip pending">Pendente</span>
+                <span className="rb-chip pending">Estafeta atribuído</span>
               </div>
             </header>
 

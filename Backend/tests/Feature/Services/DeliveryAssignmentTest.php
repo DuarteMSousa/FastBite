@@ -53,7 +53,7 @@ class DeliveryAssignmentTest extends TestCase
 
     public function test_restaurant_active_orders_only_include_orders_with_assigned_courier(): void
     {
-        [$delivery, $courierUser] = $this->createPendingDeliveryAndCourier(orderStatus: 'CONFIRMED');
+        [$delivery, $courierUser] = $this->createPendingDeliveryAndCourier(orderStatus: 'COURIER_ASSIGNED');
         $restaurantId = Order::query()->findOrFail($delivery->order_id)->restaurant_id;
 
         $this->assertCount(
@@ -71,7 +71,7 @@ class DeliveryAssignmentTest extends TestCase
 
     public function test_restaurant_cannot_start_preparing_before_courier_is_assigned(): void
     {
-        [$delivery] = $this->createPendingDeliveryAndCourier(createCourier: false, orderStatus: 'CONFIRMED');
+        [$delivery] = $this->createPendingDeliveryAndCourier(createCourier: false, orderStatus: 'PENDING');
 
         $this->expectException(ValidationException::class);
 
@@ -80,12 +80,16 @@ class DeliveryAssignmentTest extends TestCase
 
     public function test_restaurant_can_start_preparing_after_courier_accepts_offer(): void
     {
-        [$delivery] = $this->createPendingDeliveryAndCourier(orderStatus: 'CONFIRMED');
+        [$delivery] = $this->createPendingDeliveryAndCourier(orderStatus: 'PENDING');
 
         app(DeliveryServiceInterface::class)->assignCourierToDelivery($delivery->id);
         $offer = DeliveryOffer::query()->where('delivery_id', $delivery->id)->firstOrFail();
         app(DeliveryServiceInterface::class)->acceptDeliveryOffer($offer->id);
 
+        $assignedOrder = Order::query()->findOrFail($delivery->order_id);
+        $this->assertSame('COURIER_ASSIGNED', $assignedOrder->status->value);
+
+        app(OrderServiceInterface::class)->acceptOrderByRestaurant($delivery->order_id);
         $order = app(OrderServiceInterface::class)->startPreparingOrder($delivery->order_id);
 
         $this->assertSame('PREPARING', $order->status->value);
@@ -94,7 +98,7 @@ class DeliveryAssignmentTest extends TestCase
     /**
      * @return array{0: Delivery, 1?: User}
      */
-    private function createPendingDeliveryAndCourier(bool $createCourier = true, string $orderStatus = 'PREPARING'): array
+    private function createPendingDeliveryAndCourier(bool $createCourier = true, string $orderStatus = 'PENDING'): array
     {
         $customer = User::query()->create([
             'name' => 'Cliente Assignment',

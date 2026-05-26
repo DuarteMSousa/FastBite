@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\GraphQL;
 
+use App\Models\Courier;
+use App\Models\Delivery;
 use App\Models\LocalManager;
 use App\Models\Order;
 use App\Models\OrderAddress;
@@ -58,9 +60,27 @@ class RestaurantOperationsGraphQLTest extends TestCase
         $activeOrder = Order::query()->create([
             'user_id' => $customer->id,
             'restaurant_id' => $restaurant->id,
-            'status' => 'PENDING',
+            'status' => 'COURIER_ASSIGNED',
             'total' => 15,
             'restaurant_name_snapshot' => 'Urban Grill',
+        ]);
+
+        $courierUser = User::query()->create([
+            'name' => 'Estafeta Query',
+            'email' => 'courier_query_active@example.com',
+            'password' => 'password123',
+        ]);
+
+        Courier::query()->create([
+            'user_id' => $courierUser->id,
+            'status' => 'BUSY',
+        ]);
+
+        Delivery::query()->create([
+            'order_id' => $activeOrder->id,
+            'courier_id' => $courierUser->id,
+            'status' => 'PENDING',
+            'delivery_fee' => 2.5,
         ]);
 
         Order::query()->create([
@@ -90,7 +110,7 @@ GRAPHQL;
             ->assertOk()
             ->assertJsonCount(1, 'data.getActiveRestaurantOrders')
             ->assertJsonPath('data.getActiveRestaurantOrders.0.id', $activeOrder->id)
-            ->assertJsonPath('data.getActiveRestaurantOrders.0.status', 'PENDING');
+            ->assertJsonPath('data.getActiveRestaurantOrders.0.status', 'COURIER_ASSIGNED');
     }
 
     public function test_local_manager_can_accept_and_reject_pending_orders(): void
@@ -136,9 +156,27 @@ GRAPHQL;
         $orderToAccept = Order::query()->create([
             'user_id' => $customer->id,
             'restaurant_id' => $restaurant->id,
-            'status' => 'CONFIRMED',
+            'status' => 'COURIER_ASSIGNED',
             'total' => 15,
             'restaurant_name_snapshot' => 'Urban Grill',
+        ]);
+
+        $courierUser = User::query()->create([
+            'name' => 'Estafeta Manage',
+            'email' => 'courier_manage_orders@example.com',
+            'password' => 'password123',
+        ]);
+
+        Courier::query()->create([
+            'user_id' => $courierUser->id,
+            'status' => 'BUSY',
+        ]);
+
+        Delivery::query()->create([
+            'order_id' => $orderToAccept->id,
+            'courier_id' => $courierUser->id,
+            'status' => 'PENDING',
+            'delivery_fee' => 2.5,
         ]);
 
         OrderAddress::query()->create([
@@ -187,7 +225,7 @@ GRAPHQL;
         $acceptResponse
             ->assertOk()
             ->assertJsonPath('data.acceptOrderByRestaurant.id', $orderToAccept->id)
-            ->assertJsonPath('data.acceptOrderByRestaurant.status', 'PREPARING');
+            ->assertJsonPath('data.acceptOrderByRestaurant.status', 'CONFIRMED');
 
         $rejectResponse = $this
             ->actingAs($manager)
@@ -203,7 +241,7 @@ GRAPHQL;
 
         $this->assertDatabaseHas('orders', [
             'id' => $orderToAccept->id,
-            'status' => 'PREPARING',
+            'status' => 'CONFIRMED',
         ]);
 
         $this->assertDatabaseHas('orders', [
@@ -213,7 +251,7 @@ GRAPHQL;
 
         $this->assertDatabaseHas('order_events', [
             'order_id' => $orderToAccept->id,
-            'event_type' => 'ORDER_PREPARING',
+            'event_type' => 'ORDER_CONFIRMED',
         ]);
 
         $this->assertDatabaseHas('order_events', [

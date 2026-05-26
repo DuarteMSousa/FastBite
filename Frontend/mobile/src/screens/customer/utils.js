@@ -18,8 +18,8 @@ export const ICON = {
   prep: '\u{1F551}',
 }
 
-export const CANCELLABLE_STATUSES = ['PENDING', 'CONFIRMED']
-export const TRACKABLE_STATUSES = ['CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY']
+export const CANCELLABLE_STATUSES = ['PENDING', 'COURIER_ASSIGNED', 'CONFIRMED']
+export const TRACKABLE_STATUSES = ['COURIER_ASSIGNED', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY']
 
 export function formatCurrency(value) {
   return `EUR ${Number(value ?? 0).toFixed(2)}`
@@ -27,6 +27,7 @@ export function formatCurrency(value) {
 
 export function statusLabel(status) {
   if (status === 'PENDING') return 'Pendente'
+  if (status === 'COURIER_ASSIGNED') return 'Estafeta atribuído'
   if (status === 'CONFIRMED') return 'Confirmado'
   if (status === 'PREPARING') return 'A preparar'
   if (status === 'READY') return 'Pronto'
@@ -67,6 +68,7 @@ export function orderStatusChipStyle(status) {
   if (status === 'DELIVERED') return styles.orderStatusOk
   if (status === 'CANCELLED') return styles.orderStatusOff
   if (status === 'OUT_FOR_DELIVERY' || status === 'READY') return styles.orderStatusGo
+  if (status === 'COURIER_ASSIGNED') return styles.orderStatusPending
   return styles.orderStatusPending
 }
 

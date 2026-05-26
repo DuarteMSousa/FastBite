@@ -8,6 +8,7 @@ enum CourierStatus {
 
 enum OrderStatus {
   PENDING
+  COURIER_ASSIGNED
   CONFIRMED
   PREPARING
   READY

@@ -142,7 +142,7 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignUuid('restaurant_id')->constrained('restaurants')->cascadeOnDelete();
-            $table->enum('status', ['PENDING', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED']);
+            $table->enum('status', ['PENDING', 'COURIER_ASSIGNED', 'CONFIRMED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED']);
             $table->float('total');
             $table->string('restaurant_name_snapshot');
             $table->timestamps();

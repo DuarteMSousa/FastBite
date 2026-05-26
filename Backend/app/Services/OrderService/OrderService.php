@@ -176,7 +176,7 @@ class OrderService implements OrderServiceInterface
         $pricing = app(OrderPricingService::class)->price($cart, $restaurant, $address, $data->coupon_code);
         $method = $data->payment_method;
         $paymentStatus = $method === PaymentMethod::CASH ? PaymentStatus::COMPLETED : PaymentStatus::PENDING;
-        $orderStatus = $paymentStatus === PaymentStatus::COMPLETED ? OrderStatus::CONFIRMED : OrderStatus::PENDING;
+        $orderStatus = OrderStatus::PENDING;
 
         $order = $this->orders->createOrder(
             $this->checkoutCreateOrderDTO($clientUserId, $restaurant, $address, $cart, $pricing, $orderStatus)
@@ -210,9 +210,8 @@ class OrderService implements OrderServiceInterface
         $this->recordEvent($order, OrderEventType::ORDER_CREATED, [
             'paymentStatus' => $paymentStatus->value,
         ]);
-        if ($orderStatus === OrderStatus::CONFIRMED) {
+        if ($paymentStatus === PaymentStatus::COMPLETED) {
             $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED);
-            $this->recordEvent($order, OrderEventType::ORDER_CONFIRMED);
         }
 
         $this->payments->createEvent($payment, new \App\DTOs\Payment\CreatePaymentEventDTO(
@@ -279,7 +278,7 @@ class OrderService implements OrderServiceInterface
         $order = $this->orders->findByIdOrFail($orderId);
 
         $this->ensureOrderHasAssignedCourier($order);
-        $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
+        $order = $this->transition($order, OrderStatus::CONFIRMED, OrderEventType::ORDER_CONFIRMED);
 
         return $order;
     }
@@ -391,15 +390,24 @@ class OrderService implements OrderServiceInterface
     {
         $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED);
 
-        $order = $this->transition($order, OrderStatus::CONFIRMED, OrderEventType::ORDER_CONFIRMED);
         $this->ensureDeliveryAssignmentRequested($order);
 
-        return $order;
+        return $order->refresh()->load($this->with);
     }
 
     #[Transactional]
     public function recordCourierAssignedToOrder(Order $order): Order
     {
+        $order->refresh();
+
+        if ($order->status === OrderStatus::PENDING) {
+            return $this->transition($order, OrderStatus::COURIER_ASSIGNED, OrderEventType::ORDER_COURIER_ASSIGNED);
+        }
+
+        if ($order->status === OrderStatus::COURIER_ASSIGNED) {
+            return $order->load($this->with);
+        }
+
         $this->recordEvent($order, OrderEventType::ORDER_COURIER_ASSIGNED);
 
         return $order->refresh()->load($this->with);
