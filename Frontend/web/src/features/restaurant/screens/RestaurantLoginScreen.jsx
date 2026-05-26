@@ -85,12 +85,12 @@ export function RestaurantLoginScreen({ onLogin }) {
   const setupDescription = useMemo(() => {
     if (!pendingUser) return ''
     if (pendingUser.isChainManager) {
-      return 'Este gestor já está associado a uma cadeia. Cria o primeiro restaurante para entrar no painel.'
+      return 'Este gestor já está associado a uma cadeia. Crie o primeiro restaurante para entrar no painel.'
     }
 
     return setupMode === 'new-chain'
-      ? 'Ao criares uma nova cadeia, este utilizador passa a ser gestor de cadeia.'
-      : 'Ao criares um restaurante numa cadeia existente, este utilizador passa a ser gestor local.'
+      ? 'Ao criar uma nova cadeia, este utilizador passa a ser gestor de cadeia.'
+      : 'Ao criar um restaurante numa cadeia existente, este utilizador passa a ser gestor local.'
   }, [pendingUser, setupMode])
 
   useEffect(() => {
@@ -236,7 +236,7 @@ export function RestaurantLoginScreen({ onLogin }) {
         {activeMode === 'login' ? (
           <>
             <h2>Entrar no painel do restaurante</h2>
-            <p>Utiliza email e palavra-passe. O restaurante é resolvido automaticamente.</p>
+            <p>Utilize email e palavra-passe. O restaurante é identificado automaticamente.</p>
 
             <form className="rb-login-form" onSubmit={handleSubmit}>
               <label>
@@ -267,7 +267,7 @@ export function RestaurantLoginScreen({ onLogin }) {
         ) : (
           <>
             <h2>Criar utilizador de restaurante</h2>
-            <p>Depois de criar a conta, configuras logo a cadeia e o restaurante numa modal.</p>
+            <p>Depois de criar a conta, configure a cadeia e o restaurante numa janela.</p>
 
             <form className="rb-login-form" onSubmit={handleRegister}>
               <label>
@@ -368,7 +368,7 @@ export function RestaurantLoginScreen({ onLogin }) {
                       value={chainName}
                       onChange={(event) => setChainName(event.target.value)}
                       type="text"
-                      placeholder="FastBite Norte"
+                      placeholder="Ex.: Fastbite Norte"
                       required
                     />
                   </label>
@@ -381,7 +381,7 @@ export function RestaurantLoginScreen({ onLogin }) {
                       value={restaurantForm.name}
                       onChange={(event) => updateRestaurantField('name', event.target.value)}
                       type="text"
-                      placeholder="FastBite Baixa"
+                      placeholder="Ex.: Fastbite Baixa"
                       required
                     />
                   </label>
@@ -426,7 +426,7 @@ export function RestaurantLoginScreen({ onLogin }) {
                       value={restaurantForm.street}
                       onChange={(event) => updateRestaurantField('street', event.target.value)}
                       type="text"
-                      placeholder="Rua das Flores 12"
+                      placeholder="Ex.: Rua das Flores 12"
                       required
                     />
                   </label>
@@ -436,7 +436,7 @@ export function RestaurantLoginScreen({ onLogin }) {
                       value={restaurantForm.city}
                       onChange={(event) => updateRestaurantField('city', event.target.value)}
                       type="text"
-                      placeholder="Porto"
+                      placeholder="Ex.: Porto"
                       required
                     />
                   </label>
@@ -449,7 +449,7 @@ export function RestaurantLoginScreen({ onLogin }) {
                       value={restaurantForm.postal_code}
                       onChange={(event) => updateRestaurantField('postal_code', event.target.value)}
                       type="text"
-                      placeholder="4000-000"
+                      placeholder="Ex.: 4000-000"
                       required
                     />
                   </label>

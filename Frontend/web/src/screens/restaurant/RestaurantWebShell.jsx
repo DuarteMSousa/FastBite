@@ -124,7 +124,7 @@ export function RestaurantWebShell() {
 
   if (!session) {
     return (
-      <PageContainer restaurantUnit="Acesso de staff">
+      <PageContainer restaurantUnit="Acesso de equipa">
         <Routes>
           <Route path="login" element={<RestaurantLoginScreen onLogin={handleLogin} />} />
           <Route path="*" element={<Navigate to="/restaurant/login" replace />} />
@@ -194,7 +194,7 @@ export function RestaurantWebShell() {
       <ConfirmDialog
         open={logoutConfirmOpen}
         title="Terminar sessão?"
-        description="Vais sair da conta. Terás de iniciar sessão outra vez."
+        description="Irá sair da conta. Terá de iniciar sessão novamente."
         confirmLabel="Sair"
         destructive
         onCancel={() => setLogoutConfirmOpen(false)}

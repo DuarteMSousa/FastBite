@@ -62,7 +62,7 @@ export async function apiFetch(endpoint, options = {}) {
         serverMessage = Array.isArray(firstList) ? firstList[0] ?? '' : String(firstList ?? '')
       }
     } catch {
-      // body nao era JSON; mantemos status apenas
+      // body não era JSON; mantemos status apenas
     }
     throw new Error(serverMessage || `Request failed with status ${response.status}`)
   }

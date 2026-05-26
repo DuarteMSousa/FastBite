@@ -715,7 +715,7 @@ export async function bootstrapRestaurantSession({
   const trimmedToken = token.trim()
 
   if (!trimmedEmail || !trimmedPassword) {
-    throw new Error('Preenche email e password.')
+    throw new Error('Preencha o email e a palavra-passe.')
   }
 
   const userData = await graphqlRequest({
@@ -758,7 +758,7 @@ export async function bootstrapRestaurantSession({
   const isChainManager = Boolean(managerChain?.id)
 
   if (trimmedRestaurantId && !resolvedRestaurant) {
-    throw new Error('Não tens acesso a esse restaurante.')
+    throw new Error('Não tem acesso a esse restaurante.')
   }
 
   if (!resolvedRestaurant?.id) {
@@ -822,7 +822,7 @@ export async function refreshRestaurantSessionAccess(session) {
     : managedRestaurants[0]
 
   if (!resolvedRestaurant?.id) {
-    throw new Error('Não tens nenhum restaurante associado.')
+    throw new Error('Não tem nenhum restaurante associado.')
   }
 
   return {
@@ -840,11 +840,11 @@ function assertRestaurantAccess(session, restaurantId) {
   const requestedRestaurantId = String(restaurantId ?? session?.restaurantId ?? '').trim()
 
   if (!requestedRestaurantId) {
-    throw new Error('Sem restaurantId na sessão.')
+    throw new Error('Não foi encontrada uma unidade associada à sessão.')
   }
 
   if (!session?.isChainManager && requestedRestaurantId !== session?.restaurantId) {
-    throw new Error('Gestores locais so podem aceder ao seu restaurante.')
+    throw new Error('Gestores locais só podem aceder ao seu restaurante.')
   }
 
   return requestedRestaurantId
@@ -860,7 +860,7 @@ export async function registerRestaurantUser({
   const trimmedPassword = String(password ?? '').trim()
 
   if (!trimmedName || !trimmedEmail || !trimmedPassword) {
-    throw new Error('Preenche nome, email e password.')
+    throw new Error('Preencha o nome, o email e a palavra-passe.')
   }
 
   const data = await graphqlRequest({
@@ -895,7 +895,7 @@ export async function completeRestaurantOnboarding({
 }) {
   const userId = user?.id
   if (!userId) {
-    throw new Error('Utilizador invalido para onboarding.')
+    throw new Error('Utilizador inválido para configuração.')
   }
 
   const selectedMode = mode === 'new-chain' ? 'new-chain' : 'existing-chain'
@@ -904,7 +904,7 @@ export async function completeRestaurantOnboarding({
   if (selectedMode === 'new-chain') {
     const trimmedChainName = String(chainName ?? '').trim()
     if (!trimmedChainName) {
-      throw new Error('Indica o nome da chain.')
+      throw new Error('Indique o nome da cadeia.')
     }
 
     const chainData = await graphqlRequest({
@@ -917,7 +917,7 @@ export async function completeRestaurantOnboarding({
   } else {
     const trimmedChainId = String(chainId ?? '').trim()
     if (!trimmedChainId) {
-      throw new Error('Escolhe uma chain existente.')
+      throw new Error('Escolha uma cadeia existente.')
     }
     resolvedChain = { id: trimmedChainId, name: '' }
   }
@@ -937,7 +937,7 @@ export async function completeRestaurantOnboarding({
   }
 
   if (!payload.name || !payload.opening_hours || !payload.closing_hours) {
-    throw new Error('Preenche nome e horario do restaurante.')
+    throw new Error('Preencha o nome e o horário do restaurante.')
   }
 
   const restaurantData = await graphqlRequest({
@@ -1196,7 +1196,7 @@ export async function updateRestaurantMenuProduct({ session, input }) {
 export async function fetchChainCatalog({ session, chainId }) {
   const resolvedChainId = chainId ?? session?.chainId
   if (!resolvedChainId) {
-    throw new Error('Sem chain_id na sessão.')
+    throw new Error('Não foi encontrada uma cadeia associada à sessão.')
   }
 
   const data = await graphqlRequest({
@@ -1225,7 +1225,7 @@ export async function fetchChainCatalog({ session, chainId }) {
 
 export async function createChainProduct({ session, input }) {
   if (!session?.chainId) {
-    throw new Error('Sem chain_id na sessão.')
+    throw new Error('Não foi encontrada uma cadeia associada à sessão.')
   }
 
   const categoryId = await resolveCategoryId({
@@ -1310,7 +1310,7 @@ export async function addChainProductToRestaurantMenu({
   isAvailable = true,
 }) {
   if (!session?.restaurantId) {
-    throw new Error('Sem restaurantId na sessão.')
+    throw new Error('Não foi encontrada uma unidade associada à sessão.')
   }
 
   const data = await graphqlRequest({

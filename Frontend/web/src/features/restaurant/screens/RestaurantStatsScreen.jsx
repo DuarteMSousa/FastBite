@@ -8,6 +8,7 @@ export function RestaurantStatsScreen({ session }) {
   const [loading, setLoading] = useState(false)
   const [errorText, setErrorText] = useState('')
   const [days, setDays] = useState(7)
+  const [nowMs, setNowMs] = useState(() => Date.now())
 
   const load = useCallback(async () => {
     try {
@@ -19,6 +20,7 @@ export function RestaurantStatsScreen({ session }) {
         perPage: 200,
       })
       setOrders(data)
+      setNowMs(Date.now())
       setErrorText('')
     } catch (error) {
       setErrorText(error.message)
@@ -32,13 +34,13 @@ export function RestaurantStatsScreen({ session }) {
   }, [load])
 
   const stats = useMemo(() => {
-    const cutoffMs = Date.now() - days * 24 * 60 * 60 * 1000
+    const cutoffMs = nowMs - days * 24 * 60 * 60 * 1000
     const inRange = orders.filter((order) => {
       const ts = Date.parse(order.created_at)
       return !Number.isNaN(ts) && ts >= cutoffMs
     })
 
-    const todayStart = new Date()
+    const todayStart = new Date(nowMs)
     todayStart.setHours(0, 0, 0, 0)
     const todayOrders = inRange.filter((order) => {
       return Date.parse(order.created_at) >= todayStart.getTime()
@@ -48,7 +50,7 @@ export function RestaurantStatsScreen({ session }) {
     const revenueToday = todayOrders.reduce((sum, order) => sum + Number(order.total ?? 0), 0)
     const averageOrderValue = inRange.length > 0 ? revenueRange / inRange.length : 0
 
-    // Pedidos por hora (todas as horas no range)
+    // Pedidos por hora (todas as horas no período)
     const ordersByHour = Array.from({ length: 24 }, () => 0)
     inRange.forEach((order) => {
       const date = new Date(order.created_at)
@@ -71,7 +73,7 @@ export function RestaurantStatsScreen({ session }) {
       ordersByHour,
       peakHour,
     }
-  }, [orders, days])
+  }, [orders, days, nowMs])
 
   const maxHourCount = Math.max(1, ...stats.ordersByHour)
 
@@ -79,8 +81,7 @@ export function RestaurantStatsScreen({ session }) {
     <section className="rb-page">
       <header className="rb-page-head rb-page-head-row">
         <div>
-          <h2>Dashboard de estatisticas</h2>
-          <p>Vista global de pedidos concluidos</p>
+          <h2>Dashboard de estatísticas</h2>
         </div>
         <div className="rb-filter-row">
           {[1, 7, 30].map((option) => (
@@ -109,11 +110,11 @@ export function RestaurantStatsScreen({ session }) {
           <p className="rb-stat-value">{stats.revenueToday.toFixed(2)} EUR</p>
         </article>
         <article className="rb-stat-card">
-          <p className="rb-stat-label">Pedidos no periodo</p>
+          <p className="rb-stat-label">Pedidos no período</p>
           <p className="rb-stat-value">{stats.totalInRange}</p>
         </article>
         <article className="rb-stat-card">
-          <p className="rb-stat-label">Ticket medio</p>
+          <p className="rb-stat-label">Ticket médio</p>
           <p className="rb-stat-value">{stats.averageOrderValue.toFixed(2)} EUR</p>
         </article>
       </div>

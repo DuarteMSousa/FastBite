@@ -2,7 +2,7 @@ import { FastBiteLogo } from '../common/FastBiteLogo'
 
 export function PageContainer({
   children,
-  restaurantName = 'FastBite Restaurant',
+  restaurantName = 'Fastbite',
   restaurantUnit,
   topbarActions = null,
 }) {

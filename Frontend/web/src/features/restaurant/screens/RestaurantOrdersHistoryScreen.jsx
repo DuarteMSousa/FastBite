@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fetchRestaurantOrdersHistory } from '../../../services/restaurantOpsService'
 import { StatusBadge } from '../../../components/common/StatusBadge'
 import { MoneyText } from '../../../components/common/MoneyText'
+import { paymentMethodLabel } from '../../../utils/statusLabels'
 
 const STATUS_FILTERS = [
   { value: null, label: 'Todas' },
@@ -46,9 +47,11 @@ export function RestaurantOrdersHistoryScreen({ session, onSelectOrder, onNaviga
   )
 
   useEffect(() => {
-    setPage(1)
-    setHasMore(true)
-    queueMicrotask(() => load({ append: false, page: 1 }))
+    queueMicrotask(() => {
+      setPage(1)
+      setHasMore(true)
+      load({ append: false, page: 1 })
+    })
   }, [session, activeFilter, load])
 
   function handleOpenDetail(orderId) {
@@ -67,8 +70,7 @@ export function RestaurantOrdersHistoryScreen({ session, onSelectOrder, onNaviga
     <section className="rb-page">
       <header className="rb-page-head rb-page-head-row">
         <div>
-          <h2>Historico de pedidos</h2>
-          <p>Inclui pedidos entregues e cancelados</p>
+          <h2>Histórico de pedidos</h2>
         </div>
         <button type="button" className="rb-btn-outline" onClick={() => load({ append: false, page: 1 })}>
           {loading ? 'A carregar...' : 'Atualizar'}
@@ -77,7 +79,7 @@ export function RestaurantOrdersHistoryScreen({ session, onSelectOrder, onNaviga
 
       <div className="rb-stat-grid">
         <article className="rb-stat-card">
-          <p className="rb-stat-label">Pedidos carregados</p>
+          <p className="rb-stat-label">Pedidos</p>
           <p className="rb-stat-value">{orders.length}</p>
         </article>
         <article className="rb-stat-card">
@@ -119,7 +121,7 @@ export function RestaurantOrdersHistoryScreen({ session, onSelectOrder, onNaviga
               <th>Estado</th>
               <th>Pagamento</th>
               <th>Data</th>
-              <th>Acoes</th>
+              <th>Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -127,7 +129,7 @@ export function RestaurantOrdersHistoryScreen({ session, onSelectOrder, onNaviga
               <tr>
                 <td colSpan={7}>
                   <div className="rb-empty-state">
-                    <strong>Sem pedidos no historico.</strong>
+                    <strong>Sem pedidos no histórico.</strong>
                   </div>
                 </td>
               </tr>
@@ -142,7 +144,7 @@ export function RestaurantOrdersHistoryScreen({ session, onSelectOrder, onNaviga
                 <td>
                   <StatusBadge kind="order" status={order.order_status} />
                 </td>
-                <td>{order.payment_method ?? '-'}</td>
+                <td>{paymentMethodLabel(order.payment_method)}</td>
                 <td>{order.created_at ? new Date(order.created_at).toLocaleString() : '-'}</td>
                 <td>
                   <button

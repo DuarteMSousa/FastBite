@@ -77,7 +77,7 @@ export function RestaurantChainCatalogScreen({ session }) {
 
   const loadCatalog = useCallback(async () => {
     if (!session?.chainId) {
-      setErrorText('Sem chain_id na sessão.')
+      setErrorText('Não foi encontrada uma cadeia associada à sessão.')
       setLoading(false)
       return
     }
@@ -383,7 +383,7 @@ export function RestaurantChainCatalogScreen({ session }) {
           <strong>Grupos de opções</strong>
           <button
             type="button"
-            className="rb-btn-outline"
+            className="rb-btn-outline rb-option-add-btn"
             onClick={() => addOptionGroup(setter)}
           >
             + Adicionar grupo
@@ -483,18 +483,19 @@ export function RestaurantChainCatalogScreen({ session }) {
                 </label>
                 <button
                   type="button"
-                  className="rb-icon-mini danger"
+                  className="rb-icon-mini danger rb-option-remove"
                   onClick={() => removeOption(setter, groupIndex, optionIndex)}
                   aria-label="Remover opção"
+                  title="Remover opção"
                 >
-                  x
+                  ×
                 </button>
               </div>
             ))}
 
             <button
               type="button"
-              className="rb-btn-outline"
+              className="rb-btn-outline rb-option-add-btn"
               onClick={() => addOption(setter, groupIndex)}
             >
               + Adicionar opção
@@ -521,7 +522,6 @@ export function RestaurantChainCatalogScreen({ session }) {
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Catálogo da cadeia</h2>
-          <p>Produtos base da cadeia: nome, descrição, preço base e grupos de opções</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="rb-btn-outline" onClick={openCategoriesModal}>
@@ -535,7 +535,7 @@ export function RestaurantChainCatalogScreen({ session }) {
               setShowCreateForm((state) => !state)
             }}
           >
-            {showCreateForm ? 'Fechar criação' : '+ Adicionar produto'}
+            {showCreateForm ? 'Fechar formulário' : '+ Adicionar produto'}
           </button>
         </div>
       </header>
@@ -543,7 +543,7 @@ export function RestaurantChainCatalogScreen({ session }) {
       <article className="rb-search-wrap">
         <input
           className="rb-search"
-          placeholder="Procurar produtos..."
+          placeholder="Pesquisar produtos..."
           value={searchText}
           onChange={(event) => setSearchText(event.target.value)}
         />
@@ -573,7 +573,7 @@ export function RestaurantChainCatalogScreen({ session }) {
         {!loading && visibleProducts.length === 0 ? (
           <div className="rb-empty-state rb-empty-state-inline rb-grid-empty">
             <h3>Sem produtos no catálogo</h3>
-            <p>Adiciona o primeiro produto base da cadeia.</p>
+            <p>Adicione o primeiro produto da cadeia.</p>
           </div>
         ) : null}
 
@@ -588,8 +588,7 @@ export function RestaurantChainCatalogScreen({ session }) {
                 </div>
                 <span className="rb-menu-tag">{categoryLabel(product.category_name)}</span>
                 <p>{product.description || 'Sem descrição'}</p>
-                <div className="rb-menu-bottom">
-                  <span className="rb-chip">Base da cadeia</span>
+                <div className="rb-menu-bottom rb-menu-bottom-actions">
                   <div className="rb-card-actions">
                     <button type="button" className="rb-icon-mini" onClick={() => startEdit(product)}>
                       Editar
@@ -615,7 +614,6 @@ export function RestaurantChainCatalogScreen({ session }) {
       <ConfirmDialog
         open={Boolean(selectedEditingProduct)}
         title="Editar produto da cadeia"
-        description="Atualiza o produto base e, se precisares, os seus grupos de opções."
         confirmLabel="Guardar alterações"
         cancelLabel="Fechar"
         cardClassName="rb-dialog-card-wide"
@@ -685,7 +683,6 @@ export function RestaurantChainCatalogScreen({ session }) {
       <ConfirmDialog
         open={showCreateForm}
         title="Criar produto da cadeia"
-        description="Cria um produto base. Cada restaurante pode depois ativá-lo no seu menu."
         confirmLabel="Criar produto"
         cancelLabel="Fechar"
         cardClassName="rb-dialog-card-wide"
@@ -705,7 +702,7 @@ export function RestaurantChainCatalogScreen({ session }) {
                 setNewProduct((current) => ({ ...current, category: event.target.value }))
               }
             >
-              <option value="">Seleciona uma categoria</option>
+              <option value="">Selecione uma categoria</option>
               {categoryOptions.map((category) => (
                 <option key={category} value={category}>
                   {category}
@@ -720,7 +717,7 @@ export function RestaurantChainCatalogScreen({ session }) {
               onChange={(event) =>
                 setNewProduct((current) => ({ ...current, name: event.target.value }))
               }
-              placeholder="Ex: Pizza margherita"
+              placeholder="Ex.: Pizza margarita"
             />
           </label>
           <label>
@@ -733,7 +730,7 @@ export function RestaurantChainCatalogScreen({ session }) {
               onChange={(event) =>
                 setNewProduct((current) => ({ ...current, price: event.target.value }))
               }
-              placeholder="Ex: 9.50"
+              placeholder="Ex.: 9.50"
             />
           </label>
           <label>
@@ -743,14 +740,14 @@ export function RestaurantChainCatalogScreen({ session }) {
               onChange={(event) =>
                 setNewProduct((current) => ({ ...current, description: event.target.value }))
               }
-              placeholder="Ex: Tomate, mozzarella e manjericão"
+              placeholder="Ex.: tomate, mozzarella e manjericão"
             />
           </label>
           {renderOptionGroupsEditor({
             groups: newProductOptionGroups,
             setter: setNewProductOptionGroups,
             keyPrefix: 'create',
-            emptyText: 'Sem grupos. Útil para escolhas como "tamanho" ou "molho".',
+            emptyText: 'Sem grupos.',
           })}
           {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
         </div>
@@ -759,7 +756,6 @@ export function RestaurantChainCatalogScreen({ session }) {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Apagar produto da cadeia"
-        description={`Vais apagar "${deleteTarget?.name ?? 'produto'}" do catálogo da cadeia. Isto remove-o de todos os restaurantes.`}
         confirmLabel="Apagar"
         destructive
         loading={saving}
@@ -772,7 +768,6 @@ export function RestaurantChainCatalogScreen({ session }) {
       <ConfirmDialog
         open={showCategoriesModal}
         title="Gerir categorias"
-        description="Adicionar, renomear ou apagar categorias da cadeia."
         confirmLabel="Fechar"
         loading={saving}
         onCancel={() => {
@@ -792,7 +787,7 @@ export function RestaurantChainCatalogScreen({ session }) {
           {categories.length === 0 ? (
             <div className="rb-empty-state rb-empty-state-inline">
               <h3>Sem categorias</h3>
-              <p>Cria uma categoria para organizar o catálogo.</p>
+              <p>Crie uma categoria para organizar o catálogo.</p>
             </div>
           ) : null}
           {categories.map((category) => (
@@ -863,7 +858,7 @@ export function RestaurantChainCatalogScreen({ session }) {
       <ConfirmDialog
         open={Boolean(deleteCategoryTarget)}
         title="Apagar categoria"
-        description={`Apagar "${deleteCategoryTarget?.name ?? ''}" da cadeia.`}
+        description={`Irá apagar "${deleteCategoryTarget?.name ?? ''}" da cadeia.`}
         confirmLabel="Apagar"
         destructive
         loading={saving}

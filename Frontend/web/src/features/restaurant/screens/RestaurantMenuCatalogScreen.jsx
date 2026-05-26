@@ -211,7 +211,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
 
   async function handleAddFromCatalog() {
     if (!pickerDraft.productId) {
-      setErrorText('Escolhe um produto do catálogo.')
+      setErrorText('Escolha um produto do catálogo.')
       return
     }
     if (pickerDraft.localPrice !== '') {
@@ -258,7 +258,6 @@ export function RestaurantMenuCatalogScreen({ session }) {
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Menu do restaurante</h2>
-          <p>Escolhe produtos da cadeia e ajusta preço, tempo de preparação e disponibilidade</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="button" className="rb-primary" onClick={openAddFromCatalog}>
@@ -270,7 +269,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
       <article className="rb-search-wrap">
         <input
           className="rb-search"
-          placeholder="Procurar no menu..."
+          placeholder="Pesquisar no menu..."
           value={searchText}
           onChange={(event) => setSearchText(event.target.value)}
         />
@@ -300,7 +299,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
         {!loading && visibleProducts.length === 0 ? (
           <div className="rb-empty-state rb-empty-state-inline rb-grid-empty">
             <h3>Sem produtos no menu</h3>
-            <p>Usa &quot;Adicionar do catálogo&quot; para escolher produtos da cadeia.</p>
+            <p>Use &quot;Adicionar do catálogo&quot; para escolher produtos da cadeia.</p>
           </div>
         ) : null}
 
@@ -313,13 +312,15 @@ export function RestaurantMenuCatalogScreen({ session }) {
                   <h4>{product.name ?? 'Produto'}</h4>
                   <strong>{Number(product.price ?? 0).toFixed(2)} EUR</strong>
                 </div>
-                <span className="rb-menu-tag">{categoryLabel(product.category)}</span>
-                <p>{product.description || 'Sem descrição'}</p>
-                <p>Preparação: {product.estimated_preparation_time_min ?? '-'} min</p>
-                <div className="rb-menu-bottom">
-                  <span className={`rb-chip ${product.is_available ? 'done' : 'off'}`}>
+                <div className="rb-menu-tags">
+                  <span className="rb-menu-tag">{categoryLabel(product.category)}</span>
+                  <span className={`rb-chip rb-chip-compact ${product.is_available ? 'done' : 'off'}`}>
                     {availabilityLabel(product.is_available)}
                   </span>
+                </div>
+                <p>{product.description || 'Sem descrição'}</p>
+                <p>Preparação: {product.estimated_preparation_time_min ?? '-'} min</p>
+                <div className="rb-menu-bottom rb-menu-bottom-actions">
                   <div className="rb-card-actions">
                     <button type="button" className="rb-icon-mini" onClick={() => toggleAvailability(product)}>
                       {product.is_available ? 'Desativar' : 'Ativar'}
@@ -349,7 +350,6 @@ export function RestaurantMenuCatalogScreen({ session }) {
       <ConfirmDialog
         open={Boolean(selectedEditingProduct)}
         title="Editar item do menu"
-        description="Ajusta apenas os dados locais deste restaurante."
         confirmLabel="Guardar alterações"
         cancelLabel="Fechar"
         loading={saving}
@@ -361,7 +361,6 @@ export function RestaurantMenuCatalogScreen({ session }) {
         }}
       >
         <div className="rb-login-form rb-create-product-modal-form">
-          <small>Nome, descrição e grupos de opções vêm do catálogo da cadeia.</small>
           <label>
             Preço local (EUR)
             <input
@@ -402,7 +401,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
       <ConfirmDialog
         open={showAddFromCatalog}
         title="Adicionar do catálogo"
-        description="Escolhe um produto da cadeia para acrescentar a este restaurante."
+        description="Escolha um produto da cadeia para acrescentar a este restaurante."
         confirmLabel="Adicionar"
         cancelLabel="Fechar"
         cardClassName="rb-dialog-card-wide"
@@ -416,7 +415,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
         <div className="rb-login-form rb-create-product-modal-form">
           <input
             className="rb-search"
-            placeholder="Procurar no catálogo..."
+            placeholder="Pesquisar no catálogo..."
             value={catalogSearch}
             onChange={(event) => setCatalogSearch(event.target.value)}
           />
@@ -462,7 +461,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
                   onChange={(event) =>
                     setPickerDraft((current) => ({ ...current, localPrice: event.target.value }))
                   }
-                  placeholder={`Base: ${Number(selectedCatalogProduct.price ?? 0).toFixed(2)}`}
+                  placeholder={`Preço base: ${Number(selectedCatalogProduct.price ?? 0).toFixed(2)}`}
                 />
               </label>
               <label>
@@ -487,7 +486,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Remover do menu"
-        description={`Vais remover "${deleteTarget?.name ?? 'produto'}" deste restaurante. Os clientes deixam de o ver.`}
+        description={`Irá remover "${deleteTarget?.name ?? 'produto'}" deste restaurante.`}
         confirmLabel="Remover"
         destructive
         loading={saving}

@@ -29,14 +29,14 @@ export const RESTAURANT_VIEWS = [
   {
     id: 'history',
     path: 'history',
-    label: 'Historico',
+    label: 'Histórico',
     icon: 'HS',
     Component: RestaurantOrdersHistoryScreen,
   },
   {
     id: 'stats',
     path: 'stats',
-    label: 'Estatisticas',
+    label: 'Estatísticas',
     icon: 'ST',
     Component: RestaurantStatsScreen,
   },
@@ -51,7 +51,7 @@ export const RESTAURANT_VIEWS = [
   {
     id: 'chain-catalog',
     path: 'chain-catalog',
-    label: 'Catalogo da cadeia',
+    label: 'Catálogo da cadeia',
     icon: 'CC',
     Component: RestaurantChainCatalogScreen,
     chainOnly: true,
@@ -66,7 +66,7 @@ export const RESTAURANT_VIEWS = [
   {
     id: 'reviews',
     path: 'reviews',
-    label: 'Avaliacoes',
+    label: 'Avaliações',
     icon: 'AV',
     Component: RestaurantReviewsScreen,
   },
@@ -96,7 +96,7 @@ export const RESTAURANT_VIEWS = [
   {
     id: 'notifications',
     path: 'notifications',
-    label: 'Notificacoes',
+    label: 'Notificações',
     icon: 'NT',
     Component: RestaurantNotificationsScreen,
   },

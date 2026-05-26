@@ -10,32 +10,18 @@ import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
 import { DeliveryLeafletMap } from '../../../components/common/DeliveryLeafletMap'
 import { subscribeToOrderTrackingTopic } from '../../../services/realtime/topicsRealtime'
 import { formatEventType } from '../../../utils/orderEventLabel'
-
-function statusLabel(status) {
-  if (status === 'PENDING') return 'Pendente'
-  if (status === 'COURIER_ASSIGNED') return 'Estafeta atribuído'
-  if (status === 'CONFIRMED') return 'Confirmado'
-  if (status === 'PREPARING') return 'A preparar'
-  if (status === 'READY') return 'Pronto'
-  if (status === 'OUT_FOR_DELIVERY') return 'Em entrega'
-  if (status === 'DELIVERED') return 'Entregue'
-  if (status === 'CANCELLED') return 'Cancelado'
-  return status ?? '-'
-}
+import {
+  deliveryStatusLabel,
+  orderStatusLabel,
+  paymentMethodLabel,
+  paymentStatusLabel,
+} from '../../../utils/statusLabels'
 
 function statusTone(status) {
   if (status === 'PENDING' || status === 'COURIER_ASSIGNED') return 'pending'
   if (status === 'CONFIRMED' || status === 'PREPARING') return 'prep'
   if (status === 'READY' || status === 'OUT_FOR_DELIVERY' || status === 'DELIVERED') return 'done'
   return 'off'
-}
-
-function paymentStatusLabel(status) {
-  if (status === 'PENDING') return 'Pendente'
-  if (status === 'COMPLETED') return 'Pago'
-  if (status === 'CANCELLED') return 'Reembolsado'
-  if (status === 'FAILED') return 'Falhou'
-  return status ?? '-'
 }
 
 function paymentTone(status) {
@@ -151,13 +137,13 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
       <section className="rb-page">
         <header className="rb-page-head">
           <h2>Detalhe do pedido</h2>
-          <p>Selecciona um pedido no Dashboard ou Cozinha.</p>
+          <p>Selecione um pedido no dashboard ou na cozinha.</p>
         </header>
         <div className="rb-empty-state">
           <strong>Nenhum pedido selecionado.</strong>
-          <p>Volta ao dashboard para escolher um pedido.</p>
+          <p>Regresse ao dashboard para escolher um pedido.</p>
           <button type="button" className="rb-btn-outline" onClick={() => onNavigate?.('dashboard')}>
-            Ir para Dashboard
+            Ir para o dashboard
           </button>
         </div>
       </section>
@@ -198,13 +184,13 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
           <h2>Pedido #{String(order.id).slice(0, 8)}</h2>
           <p>{order.user?.name ?? order.user_id} - {formatTime(order.created_at)}</p>
         </div>
-        <span className={`rb-chip ${statusTone(order.status)}`}>{statusLabel(order.status)}</span>
+        <span className={`rb-chip ${statusTone(order.status)}`}>{orderStatusLabel(order.status)}</span>
       </header>
 
       <div className="rb-detail-grid">
         <article className="rb-table-card">
           <div className="rb-table-head">
-            <h3>Items</h3>
+            <h3>Itens</h3>
           </div>
           <div className="rb-prep-lines">
             {(order.items ?? []).map((item) => (
@@ -225,7 +211,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
                   ) : null}
                 </div>
                 <div className="rb-step-pills">
-                  <span className={`rb-chip ${statusTone(item.status)}`}>{statusLabel(item.status)}</span>
+                  <span className={`rb-chip ${statusTone(item.status)}`}>{orderStatusLabel(item.status)}</span>
                   <strong>{Number(item.total_price ?? 0).toFixed(2)} EUR</strong>
                 </div>
               </div>
@@ -247,7 +233,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
 
         <article className="rb-table-card">
           <div className="rb-table-head">
-            <h3>Cliente & Entrega</h3>
+            <h3>Cliente e entrega</h3>
           </div>
           <div className="rb-detail-row">
             <span>Cliente</span>
@@ -270,7 +256,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
             <strong>
               {order.payment ? (
                 <>
-                  {order.payment.method}{' '}
+                  {paymentMethodLabel(order.payment.method)}{' '}
                   <span className={`rb-chip ${paymentTone(order.payment.status)}`}>
                     {paymentStatusLabel(order.payment.status)}
                   </span>
@@ -289,7 +275,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
           {order.payment?.status === 'CANCELLED' && order.payment?.paid_at ? (
             <div className="rb-detail-row" style={{ color: '#7c2d12' }}>
               <span>Reembolso</span>
-              <strong>Pagamento cancelado apos cobranca. Reembolso emitido.</strong>
+              <strong>Pagamento cancelado após cobrança. Reembolso emitido.</strong>
             </div>
           ) : null}
           {order.delivery ? (
@@ -301,8 +287,8 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
                 </strong>
               </div>
               <div className="rb-detail-row">
-                <span>Estado entrega</span>
-                <strong>{order.delivery.status}</strong>
+                <span>Estado da entrega</span>
+                <strong>{deliveryStatusLabel(order.delivery.status)}</strong>
               </div>
               {order.delivery.pickup_time ? (
                 <div className="rb-detail-row">
@@ -318,7 +304,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
               ) : null}
               {courierPosition?.recorded_at ? (
                 <div className="rb-detail-row">
-                  <span>Posicao courier (live)</span>
+                  <span>Posição do estafeta (em direto)</span>
                   <strong>{formatTime(courierPosition.recorded_at)}</strong>
                 </div>
               ) : null}
@@ -335,7 +321,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
             ? {
                 lat: Number(order.restaurant.address.latitude),
                 lng: Number(order.restaurant.address.longitude),
-                label: order.restaurant?.name ?? 'Pickup',
+                label: order.restaurant?.name ?? 'Recolha',
               }
             : null
 
@@ -371,8 +357,8 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
                 {liveCourier
                   ? courierPosition
                     ? 'Posição em tempo real (WebSocket)'
-                    : 'Ultima posicao conhecida'
-                  : 'Pickup e dropoff'}
+                    : 'Última posição conhecida'
+                  : 'Recolha e entrega'}
               </small>
             </div>
             <DeliveryLeafletMap pickup={pickup} dropoff={dropoff} courier={liveCourier} />
@@ -440,7 +426,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
               )
             }
           >
-            Iniciar preparo
+            Iniciar preparação
           </button>
         ) : null}
         {order.status === 'PREPARING' ? (
@@ -460,9 +446,6 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
         ) : null}
         <button type="button" className="rb-btn-outline" onClick={handleOpenChat}>
           Abrir chat
-        </button>
-        <button type="button" className="rb-btn-outline" onClick={() => window.print()}>
-          Imprimir
         </button>
       </div>
 
@@ -501,7 +484,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
           <textarea
             value={rejectReason}
             onChange={(event) => setRejectReason(event.target.value)}
-            placeholder="Ex: rutura de stock"
+            placeholder="Ex.: rutura de stock"
             disabled={busy}
           />
         </label>

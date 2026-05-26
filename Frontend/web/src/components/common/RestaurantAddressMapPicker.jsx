@@ -73,11 +73,11 @@ export function RestaurantAddressMapPicker({
 
   function handleUseCurrentLocation() {
     if (!navigator.geolocation) {
-      setLocationStatus('Localizacao indisponivel neste navegador.')
+      setLocationStatus('Localização indisponível neste navegador.')
       return
     }
 
-    setLocationStatus('A obter localizacao...')
+    setLocationStatus('A obter localização...')
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocationStatus('')
@@ -87,7 +87,7 @@ export function RestaurantAddressMapPicker({
         })
       },
       () => {
-        setLocationStatus('Permissao de localizacao negada ou indisponivel.')
+        setLocationStatus('Permissão de localização negada ou indisponível.')
       },
       {
         enableHighAccuracy: false,
@@ -100,7 +100,7 @@ export function RestaurantAddressMapPicker({
   return (
     <div className="rb-address-map-picker">
       <div className="rb-address-map-head">
-        <strong>Localizacao no mapa</strong>
+        <strong>Localização no mapa</strong>
         <button type="button" className="rb-icon-mini" onClick={handleUseCurrentLocation}>
           Usar localizacao
         </button>

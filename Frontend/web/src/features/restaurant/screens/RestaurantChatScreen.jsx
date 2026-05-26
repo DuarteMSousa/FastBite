@@ -8,6 +8,7 @@ import {
   sendChatMessageOverSocket,
   subscribeToChatTopic,
 } from '../../../services/realtime/topicsRealtime'
+import { StatusBadge } from '../../../components/common/StatusBadge'
 
 const MAX_ITEMS = 50
 
@@ -242,7 +243,7 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
 
   async function handleCreateChat() {
     if (!selectedOrder) {
-      setErrorText('Seleciona uma encomenda para abrir chat.')
+      setErrorText('Selecione uma encomenda para abrir o chat.')
       return
     }
 
@@ -322,16 +323,16 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Chat</h2>
-          <p>Comunica directamente com o cliente e o estafeta de cada encomenda.</p>
+          <p>Comunique diretamente com o cliente e o estafeta de cada encomenda.</p>
         </div>
         {chat?.id ? (
           <div className={`rb-realtime-pill rb-realtime-${status}`}>
             <span className="rb-realtime-dot" />
             <strong>
               {status === 'live'
-                ? 'Realtime ativo'
+                ? 'Em Tempo Real'
                 : status === 'error'
-                  ? 'Realtime offline'
+                  ? 'Ligação indisponível'
                   : 'A ligar...'}
             </strong>
           </div>
@@ -349,7 +350,7 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
                 if (onSelectOrder) onSelectOrder(event.target.value)
               }}
             >
-              <option value="">Selecionar encomenda...</option>
+              <option value="">Selecione uma encomenda...</option>
               {orders.map((order) => (
                 <option value={order.order_id} key={order.order_id}>
                   {orderLabel(order)}
@@ -359,9 +360,7 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
           </label>
           {selectedOrder ? (
             <div className="rb-chat-order-meta">
-              <span className={`rb-chip ${selectedOrder.order_status === 'CANCELLED' ? 'off' : 'done'}`}>
-                {selectedOrder.order_status}
-              </span>
+              <StatusBadge kind="order" status={selectedOrder.order_status} />
               <small>{Number(selectedOrder.total ?? 0).toFixed(2)} EUR</small>
             </div>
           ) : null}
@@ -369,17 +368,15 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
 
         {!effectiveOrderId ? (
           <div className="rb-empty-state rb-empty-state-inline">
-            <p className="rb-empty-icon">💬</p>
-            <h3>Escolhe uma encomenda</h3>
-            <p>Seleciona uma encomenda em cima para abrir o chat.</p>
+            <h3>Escolha uma encomenda</h3>
+            <p>Selecione uma encomenda acima para abrir o chat.</p>
           </div>
         ) : loading && !chat ? (
           <p style={{ padding: 20 }}>A carregar chat...</p>
         ) : !chat?.id ? (
           <div className="rb-empty-state rb-empty-state-inline">
-            <p className="rb-empty-icon">💬</p>
             <h3>Sem chat ativo</h3>
-            <p>Cria um canal de conversa para esta encomenda.</p>
+            <p>Crie um canal de conversa para esta encomenda.</p>
             <button
               type="button"
               className="rb-btn-accept rb-btn-small"
@@ -395,7 +392,7 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
               {messageGroups.length === 0 ? (
                 <div className="rb-chat-empty-stream">
                   <p>Ainda não há mensagens.</p>
-                  <small>Inicia a conversa enviando uma mensagem em baixo.</small>
+                  <small>Inicie a conversa enviando uma mensagem abaixo.</small>
                 </div>
               ) : (
                 messageGroups.map((group, groupIdx) => (
@@ -436,7 +433,7 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
                 placeholder={
                   orderIsCancelled
                     ? 'Chat encerrado: encomenda cancelada.'
-                    : 'Escreve uma mensagem...'
+                    : 'Escreva uma mensagem...'
                 }
                 disabled={orderIsCancelled}
                 onKeyDown={(event) => {

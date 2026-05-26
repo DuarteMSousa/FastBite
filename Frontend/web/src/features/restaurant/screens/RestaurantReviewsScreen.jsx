@@ -14,7 +14,7 @@ export function RestaurantReviewsScreen({ session }) {
 
   const load = useCallback(async () => {
     if (!session?.restaurantId) {
-      setErrorText('Sem restaurantId na sessão.')
+      setErrorText('Não foi encontrada uma unidade associada à sessão.')
       return
     }
     try {
@@ -60,7 +60,7 @@ export function RestaurantReviewsScreen({ session }) {
     <section className="rb-page">
       <header className="rb-page-head rb-page-head-row">
         <div>
-          <h2>Avaliacoes do restaurante</h2>
+          <h2>Avaliações do restaurante</h2>
           <p>Feedback recebido dos clientes</p>
         </div>
         <button type="button" className="rb-btn-outline" onClick={load} disabled={loading}>
@@ -70,13 +70,13 @@ export function RestaurantReviewsScreen({ session }) {
 
       <div className="rb-stat-grid">
         <article className="rb-stat-card">
-          <p className="rb-stat-label">Media</p>
+          <p className="rb-stat-label">Média</p>
           <p className="rb-stat-value">
             {stats.total > 0 ? `${stats.average.toFixed(2)} / 5` : '-'}
           </p>
         </article>
         <article className="rb-stat-card">
-          <p className="rb-stat-label">Total avaliacoes</p>
+          <p className="rb-stat-label">Total de avaliações</p>
           <p className="rb-stat-value">{stats.total}</p>
         </article>
         {[5, 4, 3, 2, 1].slice(0, 2).map((star) => (
@@ -111,10 +111,12 @@ export function RestaurantReviewsScreen({ session }) {
 
       <article className="rb-table-card">
         <div className="rb-table-head">
-          <h3>Comentarios</h3>
+          <h3>Comentários</h3>
         </div>
         {visibleReviews.length === 0 && !loading ? (
-          <p>Sem avaliacoes para mostrar.</p>
+          <div className="rb-empty-state rb-empty-state-inline">
+            <h3>Sem avaliações para mostrar.</h3>
+          </div>
         ) : null}
         {visibleReviews.map((review) => (
           <div key={review.id} className="rb-review-card">
@@ -122,7 +124,7 @@ export function RestaurantReviewsScreen({ session }) {
               <strong>{renderStars(review.rating)}</strong>
               <small>{review.created_at ? new Date(review.created_at).toLocaleString() : '-'}</small>
             </div>
-            <p>{review.comment || 'Sem comentario.'}</p>
+            <p>{review.comment || 'Sem comentário.'}</p>
           </div>
         ))}
       </article>

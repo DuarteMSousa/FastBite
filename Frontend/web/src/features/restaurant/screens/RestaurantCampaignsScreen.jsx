@@ -123,7 +123,7 @@ function CampaignItemPicker({ draft, products, categories, onChange, onClose }) 
     <ConfirmDialog
       open={draft.target === 'PRODUCT' || draft.target === 'CATEGORY'}
       title={title}
-      description="Seleciona os itens abrangidos por esta campanha."
+      description="Selecione os itens abrangidos por esta campanha."
       confirmLabel="Aplicar seleção"
       cancelLabel="Fechar"
       cardClassName="rb-dialog-card-wide"
@@ -181,7 +181,7 @@ export function RestaurantCampaignsScreen({ session }) {
 
   const load = useCallback(async () => {
     if (!session?.chainId) {
-      setErrorText('Sem chain_id na sessão. Esta vista exige permissões de cadeia.')
+      setErrorText('Não foi encontrada uma cadeia associada à sessão. Esta vista exige permissões de cadeia.')
       return
     }
     try {
@@ -220,11 +220,11 @@ export function RestaurantCampaignsScreen({ session }) {
       return
     }
     if (promotionDraft.target === 'PRODUCT' && promotionDraft.item_ids.length === 0) {
-      setErrorText('Escolhe pelo menos um produto.')
+      setErrorText('Escolha pelo menos um produto.')
       return
     }
     if (promotionDraft.target === 'CATEGORY' && promotionDraft.item_ids.length === 0) {
-      setErrorText('Escolhe pelo menos uma categoria.')
+      setErrorText('Escolha pelo menos uma categoria.')
       return
     }
     if (
@@ -308,11 +308,11 @@ export function RestaurantCampaignsScreen({ session }) {
       return
     }
     if (couponDraft.target === 'PRODUCT' && couponDraft.item_ids.length === 0) {
-      setErrorText('Escolhe pelo menos um produto.')
+      setErrorText('Escolha pelo menos um produto.')
       return
     }
     if (couponDraft.target === 'CATEGORY' && couponDraft.item_ids.length === 0) {
-      setErrorText('Escolhe pelo menos uma categoria.')
+      setErrorText('Escolha pelo menos uma categoria.')
       return
     }
     if (couponDraft.expiry_date && couponDraft.expiry_date < todayInputValue()) {
@@ -417,7 +417,7 @@ export function RestaurantCampaignsScreen({ session }) {
         {promotions.length === 0 && !loading ? (
           <div className="rb-empty-state rb-empty-state-inline">
             <h3>Sem promoções</h3>
-            <p>Cria uma promoção para a cadeia quando quiseres destacar uma oferta.</p>
+            <p>Crie uma promoção para a cadeia quando pretender destacar uma oferta.</p>
           </div>
         ) : null}
 
@@ -523,7 +523,7 @@ export function RestaurantCampaignsScreen({ session }) {
         {coupons.length === 0 && !loading ? (
           <div className="rb-empty-state rb-empty-state-inline">
             <h3>Sem cupões</h3>
-            <p>Cria um cupão quando quiseres lançar um código promocional.</p>
+            <p>Crie um cupão quando pretender lançar um código promocional.</p>
           </div>
         ) : null}
 
@@ -607,7 +607,7 @@ export function RestaurantCampaignsScreen({ session }) {
       <ConfirmDialog
         open={showPromotionForm}
         title={editingPromotionId ? 'Editar promoção' : 'Criar promoção'}
-        description="Define o desconto e escolhe o alvo da promoção."
+        description="Defina o desconto e escolha o alvo da promoção."
         confirmLabel={editingPromotionId ? 'Guardar alterações' : 'Criar promoção'}
         cancelLabel="Fechar"
         cardClassName="rb-dialog-card-wide"
@@ -632,7 +632,7 @@ export function RestaurantCampaignsScreen({ session }) {
               onChange={(event) =>
                 setPromotionDraft((current) => ({ ...current, name: event.target.value }))
               }
-              placeholder="Ex: Almoços de semana"
+              placeholder="Ex.: Almoços de semana"
             />
           </label>
           <label>
@@ -642,7 +642,7 @@ export function RestaurantCampaignsScreen({ session }) {
               onChange={(event) =>
                 setPromotionDraft((current) => ({ ...current, description: event.target.value }))
               }
-              placeholder="Ex: Desconto nos pedidos ao almoço"
+              placeholder="Ex.: Desconto nos pedidos ao almoço"
             />
           </label>
           <div className="rb-login-grid">
@@ -693,7 +693,7 @@ export function RestaurantCampaignsScreen({ session }) {
               onChange={(event) =>
                 setPromotionDraft((current) => ({ ...current, discount: event.target.value }))
               }
-              placeholder="Ex: 10"
+              placeholder="Ex.: 10"
             />
           </label>
           {promotionDraft.target === 'PRODUCT' || promotionDraft.target === 'CATEGORY' ? (
@@ -748,7 +748,7 @@ export function RestaurantCampaignsScreen({ session }) {
       <ConfirmDialog
         open={showCouponForm}
         title={editingCouponId ? 'Editar cupão' : 'Criar cupão'}
-        description="Define o código, o desconto e a validade do cupão."
+        description="Defina o código, o desconto e a validade do cupão."
         confirmLabel={editingCouponId ? 'Guardar alterações' : 'Criar cupão'}
         cancelLabel="Fechar"
         cardClassName="rb-dialog-card-wide"
@@ -773,7 +773,7 @@ export function RestaurantCampaignsScreen({ session }) {
               onChange={(event) =>
                 setCouponDraft((current) => ({ ...current, code: event.target.value }))
               }
-              placeholder="Ex: LUNCH10"
+              placeholder="Ex.: ALMOCO10"
             />
           </label>
           <label>
@@ -783,7 +783,7 @@ export function RestaurantCampaignsScreen({ session }) {
               onChange={(event) =>
                 setCouponDraft((current) => ({ ...current, description: event.target.value }))
               }
-              placeholder="Ex: Cupão para a hora de almoço"
+              placeholder="Ex.: Cupão para a hora de almoço"
             />
           </label>
           <div className="rb-login-grid">
@@ -834,7 +834,7 @@ export function RestaurantCampaignsScreen({ session }) {
               onChange={(event) =>
                 setCouponDraft((current) => ({ ...current, discount: event.target.value }))
               }
-              placeholder="Ex: 10"
+              placeholder="Ex.: 10"
             />
           </label>
           {couponDraft.target === 'PRODUCT' || couponDraft.target === 'CATEGORY' ? (
@@ -877,7 +877,7 @@ export function RestaurantCampaignsScreen({ session }) {
       <ConfirmDialog
         open={Boolean(deletePromotionTarget)}
         title="Apagar promoção"
-        description={`Apagar "${deletePromotionTarget?.name ?? ''}". Os clientes deixam de a ver.`}
+        description={`Irá apagar "${deletePromotionTarget?.name ?? ''}". Os clientes deixam de a ver.`}
         confirmLabel="Apagar"
         destructive
         loading={saving}
@@ -890,7 +890,7 @@ export function RestaurantCampaignsScreen({ session }) {
       <ConfirmDialog
         open={Boolean(deleteCouponTarget)}
         title="Apagar cupão"
-        description={`Apagar cupão "${deleteCouponTarget?.code ?? ''}".`}
+        description={`Irá apagar o cupão "${deleteCouponTarget?.code ?? ''}".`}
         confirmLabel="Apagar"
         destructive
         loading={saving}

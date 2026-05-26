@@ -9,8 +9,6 @@ export function RestaurantSideNav({ views, operatorName, onLogout, session }) {
     return true
   })
 
-  const profileLabel = isChainManager ? 'Gestor de cadeia' : 'Gestor local'
-
   return (
     <aside className="rb-sidebar">
       {visibleViews.map((view) => (
@@ -26,16 +24,9 @@ export function RestaurantSideNav({ views, operatorName, onLogout, session }) {
           {view.badge ? <span className="rb-sidebar-badge">{view.badge}</span> : null}
         </NavLink>
       ))}
-      <div className="rb-sidebar-status">
-        <p>
-          <strong>{session?.restaurant ?? 'Unidade'}</strong>
-          <br />
-          {profileLabel}
-        </p>
-      </div>
       <div className="rb-sidebar-footer">
         <p>
-          Sessao: <strong>{operatorName}</strong>
+          Sessão: <strong>{operatorName}</strong>
         </p>
         <button type="button" className="rb-link-btn" onClick={onLogout}>
           Terminar sessão

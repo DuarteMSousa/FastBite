@@ -84,25 +84,40 @@ export function DeliveryLeafletMap({
     ? [points[0].lat, points[0].lng]
     : [41.1579, -8.6291]
 
-  // Fetch route real via OSRM (rede viaria), fallback para linha reta
+  const pickupLat = pickup?.lat
+  const pickupLng = pickup?.lng
+  const dropoffLat = dropoff?.lat
+  const dropoffLng = dropoff?.lng
+
+  // Fetch route real via OSRM (rede viária), fallback para linha reta
   useEffect(() => {
-    if (!pickup || !dropoff) {
-      setRoute(null)
-      setRouteMeta(null)
-      setRouteError(false)
-      return undefined
+    let cancelled = false
+
+    if (pickupLat == null || pickupLng == null || dropoffLat == null || dropoffLng == null) {
+      queueMicrotask(() => {
+        if (cancelled) return
+        setRoute(null)
+        setRouteMeta(null)
+        setRouteError(false)
+      })
+      return () => {
+        cancelled = true
+      }
     }
 
     const controller = new AbortController()
     const url =
       `https://router.project-osrm.org/route/v1/driving/` +
-      `${pickup.lng},${pickup.lat};${dropoff.lng},${dropoff.lat}` +
+      `${pickupLng},${pickupLat};${dropoffLng},${dropoffLat}` +
       `?overview=full&geometries=geojson`
 
-    setRouteError(false)
+    queueMicrotask(() => {
+      if (!cancelled) setRouteError(false)
+    })
     fetch(url, { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : Promise.reject(response.status)))
       .then((payload) => {
+        if (cancelled) return
         const r = payload?.routes?.[0]
         if (!r?.geometry?.coordinates) {
           setRouteError(true)
@@ -113,16 +128,19 @@ export function DeliveryLeafletMap({
         setRouteMeta({ distance: r.distance, duration: r.duration })
       })
       .catch((error) => {
-        if (error?.name === 'AbortError') return
+        if (cancelled || error?.name === 'AbortError') return
         setRouteError(true)
         setRoute(null)
         setRouteMeta(null)
       })
 
-    return () => controller.abort()
-  }, [pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng])
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [pickupLat, pickupLng, dropoffLat, dropoffLng])
 
-  // Linha do estafeta -> dropoff (mantemos reta porque a posicao do estafeta muda em tempo real)
+  // Linha do estafeta -> dropoff (mantemos reta porque a posição do estafeta muda em tempo real)
   const courierLine = useMemo(() => {
     if (!courier || !dropoff) return null
     return [
@@ -232,7 +250,7 @@ export function DeliveryLeafletMap({
           }}
         >
           {routeError ? (
-            <span style={{ color: '#b91c1c' }}>Rota indisponivel (linha reta)</span>
+            <span style={{ color: '#b91c1c' }}>Rota indisponível (linha reta)</span>
           ) : (
             <>
               {distanceLabel ? <div>{distanceLabel}</div> : null}

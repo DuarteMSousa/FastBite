@@ -25,7 +25,7 @@ function normalizeNotification(payload) {
   return {
     id: payload?.notificationId ?? payload?.eventId ?? `${Date.now()}-${Math.random()}`,
     type: payload?.type ?? 'INFO',
-    title: payload?.title ?? 'Nova notificacao',
+    title: payload?.title ?? 'Nova notificação',
     message: payload?.message ?? 'Sem descrição',
     timestamp: payload?.sentAt ?? new Date().toISOString(),
     read: false,
@@ -145,7 +145,7 @@ export function RestaurantNotificationsScreen({ session }) {
           item.id === id ? { ...item, read: true, read_at: new Date().toISOString() } : item,
         ),
       )
-      setInfoText('Notificacao marcada como lida.')
+      setInfoText('Notificação marcada como lida.')
     } catch (error) {
       setErrorText(error.message)
     } finally {
@@ -159,7 +159,7 @@ export function RestaurantNotificationsScreen({ session }) {
       await markAllOperatorNotificationsRead({ session })
       const nowIso = new Date().toISOString()
       setItems((current) => current.map((item) => ({ ...item, read: true, read_at: item.read_at ?? nowIso })))
-      setInfoText('Todas as notificacoes foram marcadas como lidas.')
+      setInfoText('Todas as notificações foram marcadas como lidas.')
     } catch (error) {
       setErrorText(error.message)
     } finally {
@@ -171,13 +171,13 @@ export function RestaurantNotificationsScreen({ session }) {
     <section className="rb-page">
       <header className="rb-page-head rb-page-head-row">
         <div>
-          <h2>Notificacoes</h2>
-          <p>Atualizacoes em tempo real sobre pedidos, entregas e operacoes.</p>
+          <h2>Notificações</h2>
+          <p>Atualizações em tempo real sobre pedidos, entregas e operações.</p>
         </div>
         <div className={`rb-realtime-pill rb-realtime-${status}`}>
           <span className="rb-realtime-dot" />
           <strong>
-            {status === 'live' ? 'Realtime ativo' : status === 'error' ? 'Realtime offline' : 'A ligar...'}
+            {status === 'live' ? 'Em Tempo Real' : status === 'error' ? 'Ligação indisponível' : 'A ligar...'}
           </strong>
         </div>
       </header>
@@ -185,7 +185,7 @@ export function RestaurantNotificationsScreen({ session }) {
       <article className="rb-notif-summary">
         <div className="rb-notif-summary-count">
           <strong>{unreadCount}</strong>
-          <span>{unreadCount === 1 ? 'notificacao por ler' : 'notificacoes por ler'}</span>
+          <span>{unreadCount === 1 ? 'notificação por ler' : 'notificações por ler'}</span>
         </div>
         <div className="rb-notif-summary-actions">
           <button
@@ -193,7 +193,7 @@ export function RestaurantNotificationsScreen({ session }) {
             className={`rb-filter ${showUnreadOnly ? 'active' : ''}`}
             onClick={() => setShowUnreadOnly((current) => !current)}
           >
-            {showUnreadOnly ? 'Mostrar todas' : 'Mostrar só não lidas'}
+            {showUnreadOnly ? 'Mostrar todas' : 'Mostrar apenas não lidas'}
           </button>
           <button
             type="button"
@@ -201,21 +201,20 @@ export function RestaurantNotificationsScreen({ session }) {
             onClick={handleMarkAllRead}
             disabled={saving || unreadCount === 0}
           >
-            Marcar tudo como lida
+            Marcar tudo como lido
           </button>
         </div>
       </article>
 
-      {loading && items.length === 0 ? <p>A carregar notificacoes...</p> : null}
+      {loading && items.length === 0 ? <p>A carregar notificações...</p> : null}
 
       {!loading && visibleItems.length === 0 ? (
         <article className="rb-empty-state">
-          <p className="rb-empty-icon">📭</p>
-          <h3>{showUnreadOnly ? 'Nada por ler' : 'Sem notificacoes'}</h3>
+          <h3>{showUnreadOnly ? 'Nada por ler' : 'Sem notificações'}</h3>
           <p>
             {showUnreadOnly
-              ? 'Todas as notificacoes ja foram lidas.'
-              : 'Quando houver atualizacoes, vao aparecer aqui em tempo real.'}
+              ? 'Todas as notificações já foram lidas.'
+              : 'Quando houver atualizações, irão aparecer aqui em tempo real.'}
           </p>
         </article>
       ) : null}

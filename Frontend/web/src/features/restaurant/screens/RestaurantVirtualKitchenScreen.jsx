@@ -222,7 +222,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
     try {
       setBusyOrderId(orderId)
       await startPreparingRestaurantOrder({ session, orderId })
-      setInfoText('Encomenda passada para preparação.')
+      setInfoText('Encomenda em preparação.')
       await loadOrders()
     } catch (error) {
       setErrorText(error.message)
@@ -235,7 +235,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
     try {
       setBusyOrderId(order.order_id)
       await markRestaurantOrderReady({ session, orderId: order.order_id })
-      setInfoText('Encomenda marcada como pronta. Estafeta ja atribuido; aguarda recolha.')
+      setInfoText('')
       await loadOrders()
     } catch (error) {
       setErrorText(error.message)
@@ -258,18 +258,18 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
     <section className="rb-page">
       <header className="rb-page-head rb-page-head-row">
         <div>
-          <h2>Cozinha Virtual</h2>
-          <p>Gerir encomendas e preparação de pratos</p>
+          <h2>Cozinha virtual</h2>
+          <p>Gestão de encomendas e preparação de pratos</p>
         </div>
         <div className={`rb-realtime-pill rb-realtime-${realtimeState}`}>
           <span className="rb-realtime-dot" />
           <strong>
             {realtimeState === 'live'
-              ? 'Realtime ativo'
+              ? 'Em Tempo Real'
               : realtimeState === 'connecting'
                 ? 'A ligar...'
                 : realtimeState === 'error'
-                  ? 'Realtime offline'
+                  ? 'Ligação indisponível'
                   : 'Offline'}
           </strong>
         </div>
@@ -278,25 +278,11 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
       {pendingAlerts.length > 0 ? (
         <div className="rb-pending-alert">
           <strong>Nova encomenda recebida!</strong>
-          <span>{pendingAlerts.length} pedido(s) por aceitar</span>
+          <span>{pendingAlerts.length} encomenda(s) por aceitar</span>
           <button
             type="button"
             className="rb-btn-outline"
             onClick={() => setPendingAlerts([])}
-          >
-            OK, vi
-          </button>
-        </div>
-      ) : null}
-
-      {realtimeState === '__ready_announcement_disabled__' ? (
-        <div className="rb-pending-alert" style={{ borderColor: '#3479ed', background: '#eaf2ff' }}>
-          <strong>Estafeta atribuido</strong>
-          <span>Notificação enviada por WebSocket. Aguarde atribuição.</span>
-          <button
-            type="button"
-            className="rb-btn-outline"
-            onClick={() => {}}
           >
             Dispensar
           </button>
@@ -308,8 +294,16 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
       </h3>
 
       <div className="rb-kitchen-grid">
-        {loading && pendingOrders.length === 0 ? <p>A carregar...</p> : null}
-        {!loading && pendingOrders.length === 0 ? <p>Sem encomendas por aceitar.</p> : null}
+        {loading && pendingOrders.length === 0 ? (
+          <div className="rb-empty-state rb-empty-state-inline rb-grid-empty">
+            <h3>A carregar encomendas...</h3>
+          </div>
+        ) : null}
+        {!loading && pendingOrders.length === 0 ? (
+          <div className="rb-empty-state rb-empty-state-inline rb-grid-empty">
+            <h3>Sem encomendas pendentes.</h3>
+          </div>
+        ) : null}
 
         {pendingOrders.map((order) => (
           <article className="rb-kitchen-card" key={order.order_id}>
@@ -326,7 +320,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
 
             <div className="rb-kitchen-contact">
               <p>{order.customer_name ?? 'Cliente'}</p>
-              <p>{order.delivery_address ?? 'Morada indisponivel'}</p>
+              <p>{order.delivery_address ?? 'Morada indisponível'}</p>
             </div>
 
             <div className="rb-kitchen-items">
@@ -378,7 +372,11 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
         Em preparação <span className="blue">{prepOrders.length}</span>
       </h3>
 
-      {prepOrders.length === 0 ? <p>Sem encomendas em preparação.</p> : null}
+      {prepOrders.length === 0 ? (
+        <div className="rb-empty-state rb-empty-state-inline">
+          <h3>Sem encomendas em preparação.</h3>
+        </div>
+      ) : null}
 
       {prepOrders.map((order) => (
         <article className="rb-prep-detail" key={order.order_id}>
@@ -397,7 +395,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
 
           <div className="rb-kitchen-contact">
             <p>{order.customer_name ?? 'Cliente'}</p>
-            <p>{order.delivery_address ?? 'Morada indisponivel'}</p>
+            <p>{order.delivery_address ?? 'Morada indisponível'}</p>
           </div>
 
           <div className="rb-prep-lines">
@@ -465,17 +463,19 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
                 onClick={() => handleStartPreparing(order.order_id)}
                 disabled={busyOrderId === order.order_id}
               >
-                Iniciar preparo
+                Iniciar preparação
               </button>
             ) : null}
-            <button
-              type="button"
-              className="rb-btn-accept"
-              onClick={() => handleMarkOrderReady(order)}
-              disabled={busyOrderId === order.order_id || order.order_status !== 'PREPARING'}
-            >
-              Marcar encomenda pronta
-            </button>
+            {order.order_status === 'PREPARING' ? (
+              <button
+                type="button"
+                className="rb-btn-accept"
+                onClick={() => handleMarkOrderReady(order)}
+                disabled={busyOrderId === order.order_id}
+              >
+                Marcar encomenda como pronta
+              </button>
+            ) : null}
             <button
               type="button"
               className="rb-btn-outline"
@@ -500,7 +500,11 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
         Prontas para entrega <span className="green">{readyOrders.length}</span>
       </h3>
 
-      {readyOrders.length === 0 ? <p>Sem encomendas prontas.</p> : null}
+      {readyOrders.length === 0 ? (
+        <div className="rb-empty-state rb-empty-state-inline">
+          <h3>Sem encomendas prontas.</h3>
+        </div>
+      ) : null}
 
       {readyOrders.map((order) => (
         <article className="rb-prep-detail rb-prep-detail-ready" key={order.order_id}>
@@ -519,10 +523,12 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
 
           <div className="rb-kitchen-contact">
             <p>{order.customer_name ?? 'Cliente'}</p>
-            <p>{order.delivery_address ?? 'Morada indisponivel'}</p>
+            <p>{order.delivery_address ?? 'Morada indisponível'}</p>
           </div>
 
-          <p className="rb-prep-note">Estafeta ja atribuido. Ja podes tirar do balcao quando ele chegar.</p>
+          <p className="rb-prep-note">
+            Encomenda marcada como pronta e estafeta já atribuído, a aguardar recolha.
+          </p>
 
           <footer className="rb-prep-actions">
             <button
@@ -551,7 +557,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
       <ConfirmDialog
         open={Boolean(rejectTarget)}
         title="Rejeitar encomenda"
-        description="O motivo e usado em auditoria e notifica o cliente."
+        description="O motivo é usado em auditoria e notifica o cliente."
         confirmLabel="Rejeitar"
         destructive
         loading={dialogLoading}
@@ -568,7 +574,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
           <textarea
             value={rejectReason}
             onChange={(event) => setRejectReason(event.target.value)}
-            placeholder="Ex: rutura de stock"
+            placeholder="Ex.: rutura de stock"
             disabled={dialogLoading}
           />
         </label>
