@@ -1,26 +1,27 @@
 # FastBite - Diagramas atualizados
 
-Esta pasta contem uma nova versao dos diagramas baseada no estado atual da implementacao.
+Esta pasta contém uma nova versão dos diagramas baseada no estado atual da implementação.
 
 ## Ficheiros
 
-- `01_diagrama_classes_atual.puml`: classes principais do dominio, camadas de backend e relacoes com frontends/realtime.
-- `02_diagrama_er_atual.puml`: modelo entidade-relacao com as tabelas principais das migrations atuais.
-- `03a_sequencia_checkout.puml`: fluxo de cliente desde carrinho ate checkout, pagamento, outbox e atribuicao de estafeta.
+- `01_diagrama_classes_atual.puml`: classes principais do domínio, camadas de backend e relações com frontends/realtime.
+- `02_diagrama_er_atual.puml`: modelo entidade-relação com as tabelas principais das migrations atuais.
+- `03a_sequencia_checkout.puml`: fluxo de cliente desde carrinho até checkout, pagamento, outbox e atribuição de estafeta.
 - `03b_sequencia_restaurante_preparacao.puml`: fluxo do restaurante ao aceitar/preparar/marcar pedido como pronto.
-- `03c_sequencia_estafeta_entrega_tracking.puml`: fluxo de oferta, aceitacao, recolha, tracking e entrega.
-- `03d_sequencia_notificacoes_chat_realtime.puml`: fluxo de notificacoes, push, chat e publicacao realtime.
-- `04a_estado_encomenda.puml`: maquina de estados de `OrderStatus`.
-- `04b_estado_pagamento.puml`: maquina de estados de `PaymentStatus`.
-- `04c_estado_entrega.puml`: maquina de estados de `DeliveryStatus`.
+- `03c_sequencia_estafeta_entrega_tracking.puml`: fluxo de oferta, aceitação, recolha, tracking e entrega.
+- `03f_sequencia_catalogo_campanhas.puml`: fluxo de gestão de catálogo, menu local, promoções e cupões.
+- `03g_sequencia_avaliacao_pos_entrega.puml`: fluxo de avaliação após entrega e consulta de reviews.
+- `04a_estado_encomenda.puml`: máquina de estados de `OrderStatus`.
+- `04b_estado_pagamento.puml`: máquina de estados de `PaymentStatus`.
+- `04c_estado_entrega.puml`: máquina de estados de `DeliveryStatus`.
 - `04d_estado_oferta_entrega.puml`: ciclo de vida de `DeliveryOfferStatus`.
 - `04e_estado_estafeta.puml`: ciclo operacional de `CourierStatus`.
 - `04f_estado_item_encomenda.puml`: ciclo de vida de `OrderItemStatus`.
-- `04g_estado_outbox.puml`: ciclo de publicacao de `OutboxStatus`.
+- `04g_estado_outbox.puml`: ciclo de publicação de `OutboxStatus`.
 
-## Notas de coerencia
+## Notas de coerência
 
-- O realtime esta representado com GatewayWorker/Workerman, atraves de eventos Laravel, outbox e `SocketMessageDispatcher`.
-- A autenticacao/autorizacao esta representada como identificacao simplificada por utilizador/sessao, de acordo com as decisoes de ambito.
-- Os pagamentos sao simulados. O dominio modela estados e eventos, mas nao integra gateways externos.
-- A base de dados considerada e PostgreSQL, coerente com o `README` e com o uso de `jsonb` nas migrations.
+- O realtime está representado com GatewayWorker/Workerman, através de eventos Laravel, outbox e `SocketMessageDispatcher`.
+- A autenticação/autorização está representada como identificação simplificada por utilizador/sessão, de acordo com as decisões de âmbito.
+- Os pagamentos são simulados. O domínio modela estados e eventos, mas não integra gateways externos.
+- A base de dados considerada é PostgreSQL, coerente com o `README` e com o uso de `jsonb` nas migrations.

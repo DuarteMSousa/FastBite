@@ -3,19 +3,14 @@ title FastBite - Estados da Outbox (OutboxStatus)
 
 skinparam shadowing false
 
-[*] --> PENDING : OutboxService.enqueue(...)
+[*] --> PENDING : evento de domínio é registado\npara publicação assíncrona
 
-PENDING --> PROCESSING : PublishOutboxEventJob\nmarkProcessing
-FAILED --> PROCESSING : retry quando next_attempt_at permite
+PENDING --> PROCESSING : worker da queue apanha o evento\ne inicia tentativa de publicação
+FAILED --> PROCESSING : chega o momento de nova tentativa\napós erro anterior
 
-PROCESSING --> PUBLISHED : evento publicado com sucesso
-PROCESSING --> FAILED : exception ao publicar\nmarkRetryAfterFailure
+PROCESSING --> PUBLISHED : evento foi enviado ao canal realtime\nou ao consumidor pretendido
+PROCESSING --> FAILED : publicação falha e são guardados\nerro, contador e próxima tentativa
 
 PUBLISHED --> [*]
-
-note right of FAILED
-  Guarda retry_count, next_attempt_at e last_error.
-  O job pode relancar a excecao para a queue voltar a tentar.
-end note
 
 @enduml

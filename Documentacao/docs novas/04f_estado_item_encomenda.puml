@@ -3,20 +3,15 @@ title FastBite - Estados de Item de Encomenda (OrderItemStatus)
 
 skinparam shadowing false
 
-[*] --> PENDING : item criado no checkout
+[*] --> PENDING : item é copiado do carrinho\npara a encomenda
 
-PENDING --> PREPARING : updateOrderItemStatus\ncozinha inicia item
-PENDING --> CANCELLED : updateOrderItemStatus\nitem indisponivel
+PENDING --> PREPARING : cozinha inicia preparação\ndeste item específico
+PENDING --> CANCELLED : item fica indisponivel\nantes de ser preparado
 
-PREPARING --> READY : updateOrderItemStatus\nitem pronto
-PREPARING --> CANCELLED : updateOrderItemStatus\nfalha/indisponibilidade
+PREPARING --> READY : item fica pronto para seguir\ncom o resto do pedido
+PREPARING --> CANCELLED : falha durante preparação\nou rutura de stock
 
 READY --> [*]
 CANCELLED --> [*]
-
-note right of READY
-  O estado dos itens suporta a cozinha virtual.
-  A encomenda global tem a sua propria maquina de estados.
-end note
 
 @enduml

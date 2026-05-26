@@ -3,30 +3,30 @@ title FastBite - Estados de Encomenda (OrderStatus)
 
 skinparam shadowing false
 
-[*] --> PENDING : checkout CARD/MBWAY/PAYPAL\nou pagamento pendente
-[*] --> CONFIRMED : checkout CASH\nou payment COMPLETED
+[*] --> PENDING : cliente conclui checkout\nmas o pagamento ainda aguarda confirmação
+[*] --> CONFIRMED : pagamento fica concluído\ne a encomenda entra na fila do restaurante
 
-PENDING --> CONFIRMED : confirmOrderAfterPayment\nORDER_CONFIRMED
-PENDING --> CANCELLED : cancelOrderByClient/System\nORDER_CANCELLED
+PENDING --> CONFIRMED : pagamento pendente foi confirmado\ne o restaurante pode receber o pedido
+PENDING --> CANCELLED : cliente cancela ou o sistema anula\nantes da confirmação
 
-CONFIRMED --> PREPARING : startPreparingOrder\nORDER_PREPARING
-CONFIRMED --> CANCELLED : reject/cancel\nORDER_CANCELLED
+CONFIRMED --> PREPARING : restaurante aceita trabalhar o pedido\ne inicia a preparação
+CONFIRMED --> CANCELLED : restaurante rejeita ou o pedido é cancelado\npor indisponibilidade/falha
 
-PREPARING --> READY : markOrderReady\nORDER_READY
-PREPARING --> CANCELLED : cancel/falha\nORDER_CANCELLED
+PREPARING --> READY : cozinha termina a preparação\ne o pedido fica pronto para recolha
+PREPARING --> CANCELLED : pedido falha durante a preparação\nou é cancelado
 
-READY --> OUT_FOR_DELIVERY : markOrderOutForDelivery\nORDER_OUT_FOR_DELIVERY
-READY --> CANCELLED : cancel/falha\nORDER_CANCELLED
+READY --> OUT_FOR_DELIVERY : estafeta recolhe e segue\npara a morada do cliente
+READY --> CANCELLED : pedido pronto deixa de poder ser entregue\npor cancelamento/falha
 
-OUT_FOR_DELIVERY --> DELIVERED : markOrderDelivered\nORDER_DELIVERED
-OUT_FOR_DELIVERY --> CANCELLED : cancel/falha\nORDER_CANCELLED
+OUT_FOR_DELIVERY --> DELIVERED : estafeta confirma entrega\njunto do cliente
+OUT_FOR_DELIVERY --> CANCELLED : entrega falha e o sistema\ncancela a encomenda
 
 DELIVERED --> [*]
 CANCELLED --> [*]
 
 note right of CONFIRMED
-  O restaurante so deve iniciar preparacao
-  quando existe estafeta atribuido.
+  O restaurante só deve iniciar preparação
+  quando existe estafeta atribuído.
 end note
 
 @enduml

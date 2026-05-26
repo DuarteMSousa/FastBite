@@ -3,11 +3,11 @@ title FastBite - Estados de Oferta de Entrega (DeliveryOfferStatus)
 
 skinparam shadowing false
 
-[*] --> PENDING : createDeliveryOfferForCourier\nJOB_OFFERED
+[*] --> PENDING : sistema escolhe um estafeta disponível\ne envia uma oferta temporária
 
-PENDING --> ACCEPTED : acceptDeliveryOffer\nJOB_ACCEPTED
-PENDING --> REJECTED : rejectDeliveryOffer\nJOB_REJECTED
-PENDING --> EXPIRED : ExpireDeliveryOfferJob\nJOB_EXPIRED
+PENDING --> ACCEPTED : estafeta aceita a oferta\ndentro do prazo
+PENDING --> REJECTED : estafeta rejeita a oferta\ne o sistema tenta outro
+PENDING --> EXPIRED : prazo termina sem resposta\ndo estafeta
 
 ACCEPTED --> [*]
 REJECTED --> [*]
@@ -15,7 +15,7 @@ EXPIRED --> [*]
 
 note right of REJECTED
   Depois de rejeitada ou expirada,
-  AssignCourierToDeliveryJob tenta outro estafeta.
+  o sistema tenta encontrar outro estafeta.
 end note
 
 @enduml

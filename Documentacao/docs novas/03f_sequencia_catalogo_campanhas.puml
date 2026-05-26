@@ -1,0 +1,66 @@
+@startuml FastBite_Seq_Catalogo_Campanhas
+title FastBite - Sequencia: Gestao de catalogo, disponibilidade e campanhas
+
+skinparam shadowing false
+
+actor "Gestor da cadeia/restaurante" as Manager
+participant "Web Restaurante" as Web
+participant "GraphQL\nMenu/Campaign Mutations" as GQL
+participant "CategoryService" as CategorySvc
+participant "ProductService" as ProductSvc
+participant "RestaurantProductService" as RestaurantProductSvc
+participant "PromotionService" as PromotionSvc
+participant "CouponService" as CouponSvc
+database "PostgreSQL" as DB
+
+== Catalogo da cadeia ==
+
+Manager -> Web: cria categoria
+Web -> GQL: mutation createCategory(input)
+GQL -> CategorySvc: createCategory(CreateCategoryDTO)
+CategorySvc -> DB: insert categories
+CategorySvc --> GQL: Category
+GQL --> Web: categoria criada
+
+Manager -> Web: cria produto com preco base
+Web -> GQL: mutation createProduct(input)
+GQL -> ProductSvc: createProduct(CreateProductDTO)
+ProductSvc -> DB: insert products
+ProductSvc -> DB: insert option groups/options se aplicavel
+ProductSvc --> GQL: Product
+GQL --> Web: produto criado
+
+== Menu local do restaurante ==
+
+Manager -> Web: adiciona produto ao restaurante
+Web -> GQL: mutation createRestaurantProduct(input)
+GQL -> RestaurantProductSvc: createRestaurantProduct(dto)
+RestaurantProductSvc -> DB: insert restaurant_products
+RestaurantProductSvc --> GQL: RestaurantProduct
+GQL --> Web: produto disponivel no menu
+
+Manager -> Web: altera disponibilidade/preco local
+Web -> GQL: mutation setRestaurantProductAvailability(id, is_available)
+GQL -> RestaurantProductSvc: setRestaurantProductAvailability(...)
+RestaurantProductSvc -> DB: update restaurant_products
+GQL --> Web: menu atualizado
+
+== Campanhas e cupoes ==
+
+Manager -> Web: cria promocao
+Web -> GQL: mutation createPromotion(input)
+GQL -> PromotionSvc: createPromotion(CreatePromotionDTO)
+PromotionSvc -> DB: insert promotions
+PromotionSvc -> DB: insert promotion_items
+PromotionSvc --> GQL: Promotion
+GQL --> Web: promocao ativa
+
+Manager -> Web: cria cupao
+Web -> GQL: mutation createCoupon(input)
+GQL -> CouponSvc: createCoupon(CreateCouponDTO)
+CouponSvc -> DB: insert coupons
+CouponSvc -> DB: insert promotion_items quando tem alvos
+CouponSvc --> GQL: Coupon
+GQL --> Web: cupao disponivel para checkout
+
+@enduml

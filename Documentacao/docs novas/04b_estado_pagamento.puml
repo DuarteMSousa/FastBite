@@ -3,14 +3,14 @@ title FastBite - Estados de Pagamento (PaymentStatus)
 
 skinparam shadowing false
 
-[*] --> PENDING : createPayment/checkout\nmetodos simulados pendentes
-[*] --> COMPLETED : checkout CASH\nno fluxo atual
+[*] --> PENDING : pagamento é criado e fica\na aguardar confirmação/expiração
+[*] --> COMPLETED : pagamento é considerado concluído\nno momento do checkout
 
-PENDING --> COMPLETED : confirmPayment\nPAYMENT_COMPLETED
-PENDING --> FAILED : failPayment/expirePayment\nPAYMENT_FAILED/PAYMENT_EXPIRED
-PENDING --> CANCELLED : cancelPayment\nPAYMENT_CANCELLED
+PENDING --> COMPLETED : confirmação do pagamento recebida\ne o valor fica aceite
+PENDING --> FAILED : pagamento recusado ou prazo expirou\nsem confirmação
+PENDING --> CANCELLED : cliente ou sistema cancelou\no pagamento pendente
 
-COMPLETED --> REFUNDED : refundPayment\nPAYMENT_REFUNDED
+COMPLETED --> REFUNDED : valor pago foi devolvido\ne registado como reembolso
 
 FAILED --> [*]
 CANCELLED --> [*]

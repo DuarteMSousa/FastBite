@@ -3,22 +3,22 @@ title FastBite - Estados de Entrega (DeliveryStatus)
 
 skinparam shadowing false
 
-[*] --> PENDING : createDeliveryForOrder
+[*] --> PENDING : encomenda confirmada cria entrega\nainda sem percurso iniciado
 
-PENDING --> PICKED_UP : markDeliveryPickedUp\nDELIVERY_PICKED_UP
-PENDING --> FAILED : markDeliveryFailed/System\nDELIVERY_FAILED
+PENDING --> PICKED_UP : estafeta chega ao restaurante\ne recolhe o pedido
+PENDING --> FAILED : não foi possível atribuir/recolher\na entrega
 
-PICKED_UP --> IN_TRANSIT : markDeliveryInTransit\nDELIVERY_IN_TRANSIT
-PICKED_UP --> FAILED : markDeliveryFailed/System\nDELIVERY_FAILED
+PICKED_UP --> IN_TRANSIT : estafeta sai do restaurante\na caminho do cliente
+PICKED_UP --> FAILED : problema após recolha impede\na continuação da entrega
 
-IN_TRANSIT --> DELIVERED : markDeliveryDelivered\nDELIVERY_DELIVERED
-IN_TRANSIT --> FAILED : markDeliveryFailed/System\nDELIVERY_FAILED
+IN_TRANSIT --> DELIVERED : cliente recebe o pedido\ne a entrega é concluída
+IN_TRANSIT --> FAILED : morada, cliente ou outro problema\nimpede entrega final
 
 DELIVERED --> [*]
 FAILED --> [*]
 
 note right of PENDING
-  A atribuicao do estafeta e feita por delivery_offers.
+  A atribuição do estafeta é feita por delivery_offers.
   Aceitar oferta preenche courier_id e marca o estafeta BUSY.
 end note
 
