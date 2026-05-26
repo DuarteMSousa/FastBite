@@ -7,6 +7,8 @@ use App\Domain\StateMachines\Payments\PaymentStateFactory;
 use App\DTOs\Payment\CreatePaymentDTO;
 use App\DTOs\Payment\CreatePaymentEventDTO;
 use App\DTOs\Payment\UpdatePaymentDTO;
+use App\Enums\OutboxAggregateType;
+use App\Enums\OutboxEventType;
 use App\Enums\PaymentEventType;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
@@ -150,6 +152,6 @@ class PaymentService implements PaymentServiceInterface
             payload: $eventPayload,
         ));
 
-        app(OutboxService::class)->enqueue('payment', $payment->id, $eventType->value, $eventPayload);
+        app(OutboxService::class)->enqueue(OutboxAggregateType::PAYMENT, $payment->id, OutboxEventType::from($eventType->value), $eventPayload);
     }
 }

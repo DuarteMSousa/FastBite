@@ -3,7 +3,7 @@
 namespace App\Gateway\ClientEvents\Handlers;
 
 use App\DTOs\Chat\SendMessageDTO;
-use App\Enums\OutboxEventName;
+use App\Enums\OutboxEventType;
 use App\Gateway\ClientEvents\ClientEventHandler;
 use App\Gateway\ClientEvents\ClientSocketMessage;
 use App\Gateway\ClientEvents\ReadsClientPayload;
@@ -41,9 +41,9 @@ class SendChatMessageClientEventHandler implements ClientEventHandler
 
         Gateway::sendToGroup(
             "chat.{$data->chat_id}",
-            SocketMessage::event(OutboxEventName::CHAT_MESSAGE_SENT->value, "chat.{$data->chat_id}", [
+            SocketMessage::event(OutboxEventType::CHAT_MESSAGE_SENT->value, "chat.{$data->chat_id}", [
                 'event_id' => (string) Str::uuid(),
-                'event_name' => OutboxEventName::CHAT_MESSAGE_SENT->value,
+                'event_name' => OutboxEventType::CHAT_MESSAGE_SENT->value,
                 'chat_id' => $data->chat_id,
                 'message_id' => $chatMessage->id,
                 'sender_user_id' => $senderUserId,

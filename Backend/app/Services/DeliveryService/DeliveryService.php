@@ -14,6 +14,8 @@ use App\Enums\DeliveryEventType;
 use App\Enums\DeliveryOfferEventType;
 use App\Enums\DeliveryOfferStatus;
 use App\Enums\DeliveryStatus;
+use App\Enums\OutboxAggregateType;
+use App\Enums\OutboxEventType;
 use App\Events\NotificationEventRecorded;
 use App\Jobs\AssignCourierToDeliveryJob;
 use App\Jobs\ExpireDeliveryOfferJob;
@@ -343,7 +345,7 @@ class DeliveryService implements DeliveryServiceInterface
             payload: $eventPayload,
         ));
 
-        app(OutboxService::class)->enqueue('delivery', $delivery->id, $eventType->value, $eventPayload);
+        app(OutboxService::class)->enqueue(OutboxAggregateType::DELIVERY, $delivery->id, OutboxEventType::from($eventType->value), $eventPayload);
         NotificationEventRecorded::dispatch($eventType, $eventPayload);
     }
 
@@ -408,7 +410,7 @@ class DeliveryService implements DeliveryServiceInterface
             'channels' => ["courier.{$offer->courier_id}.jobs"],
         ];
 
-        app(OutboxService::class)->enqueue('delivery_offer', $offer->id, $eventType->value, $payload);
+        app(OutboxService::class)->enqueue(OutboxAggregateType::DELIVERY_OFFER, $offer->id, OutboxEventType::from($eventType->value), $payload);
         NotificationEventRecorded::dispatch($eventType, $payload);
     }
 

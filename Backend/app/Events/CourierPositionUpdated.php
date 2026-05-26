@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Enums\OutboxEventName;
+use App\Enums\OutboxEventType;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -19,7 +19,7 @@ class CourierPositionUpdated
 
     public function broadcastAs(): string
     {
-        return OutboxEventName::COURIER_POSITION_UPDATED->value;
+        return OutboxEventType::COURIER_POSITION_UPDATED->value;
     }
 
     /**

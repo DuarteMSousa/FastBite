@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('aggregate_type');
             $table->uuid('aggregate_id')->nullable();
-            $table->string('event_name');
+            $table->string('event_type');
             $table->json('payload');
             $table->enum('status', ['PENDING', 'PROCESSING', 'PUBLISHED', 'FAILED'])->default('PENDING');
             $table->unsignedInteger('retry_count')->default(0);

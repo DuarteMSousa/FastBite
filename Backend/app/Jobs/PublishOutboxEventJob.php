@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Enums\OutboxEventName;
+use App\Enums\OutboxEventType;
 use App\Enums\OutboxStatus;
 use App\Events\ChatMessageSent;
 use App\Events\CourierPositionUpdated;
@@ -39,7 +39,7 @@ class PublishOutboxEventJob implements ShouldQueue
         $outboxRepository->markProcessing($outbox);
 
         try {
-            $this->publish($outbox->event_name, (array) $outbox->payload);
+            $this->publish($outbox->event_type, (array) $outbox->payload);
 
             $outboxRepository->markPublished($outbox);
         } catch (Throwable $exception) {
@@ -55,9 +55,9 @@ class PublishOutboxEventJob implements ShouldQueue
     private function publish(string $eventName, array $payload): void
     {
         match ($eventName) {
-            OutboxEventName::COURIER_POSITION_UPDATED->value => event(new CourierPositionUpdated($payload)),
-            OutboxEventName::CHAT_MESSAGE_SENT->value => event(new ChatMessageSent($payload)),
-            OutboxEventName::USER_NOTIFICATION_CREATED->value => $this->publishUserNotification($payload),
+            OutboxEventType::COURIER_POSITION_UPDATED->value => event(new CourierPositionUpdated($payload)),
+            OutboxEventType::CHAT_MESSAGE_SENT->value => event(new ChatMessageSent($payload)),
+            OutboxEventType::USER_NOTIFICATION_CREATED->value => $this->publishUserNotification($payload),
             default => $this->publishDomainEvent($eventName, $payload),
         };
     }

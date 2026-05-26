@@ -2,7 +2,7 @@
 
 namespace App\Gateway\ServerEvents\Handlers;
 
-use App\Enums\OutboxEventName;
+use App\Enums\OutboxEventType;
 use App\Events\CourierPositionUpdated;
 use App\Gateway\GatewayClientSocketPusher;
 use App\Gateway\ServerEvents\SocketEventHandler;
@@ -27,7 +27,7 @@ class CourierPositionUpdatedSocketHandler implements SocketEventHandler
 
         $this->pusher->sendToGroup(
             "order.{$orderId}.tracking",
-            OutboxEventName::COURIER_POSITION_UPDATED->value,
+            OutboxEventType::COURIER_POSITION_UPDATED->value,
             $event->payload
         );
     }

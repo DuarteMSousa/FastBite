@@ -7,7 +7,8 @@ use App\DTOs\Chat\CreateOrderChatDTO;
 use App\DTOs\Chat\SendMessageDTO;
 use App\Enums\ChatType;
 use App\Enums\OrderStatus;
-use App\Enums\OutboxEventName;
+use App\Enums\OutboxAggregateType;
+use App\Enums\OutboxEventType;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\Order;
@@ -117,9 +118,9 @@ class ChatService implements ChatServiceInterface
 
         $message = $this->chats->createMessage($data->chat_id, $participant->id, $data->content);
 
-        app(OutboxService::class)->enqueue('chat', $chat->id, OutboxEventName::CHAT_MESSAGE_SENT->value, [
+        app(OutboxService::class)->enqueue(OutboxAggregateType::CHAT, $chat->id, OutboxEventType::CHAT_MESSAGE_SENT, [
             'event_id' => (string) Str::uuid(),
-            'event_name' => OutboxEventName::CHAT_MESSAGE_SENT->value,
+            'event_name' => OutboxEventType::CHAT_MESSAGE_SENT->value,
             'chat_id' => $chat->id,
             'message_id' => $message->id,
             'sender_user_id' => $senderUserId,

@@ -13,9 +13,9 @@ class OutboxRepository implements OutboxRepositoryInterface
     public function createOutboxEvent(CreateOutboxEventDTO $data): OutboxEvent
     {
         return OutboxEvent::query()->create([
-            'aggregate_type' => $data->aggregateType,
+            'aggregate_type' => $data->aggregateType->value,
             'aggregate_id' => $data->aggregateId,
-            'event_name' => $data->eventName,
+            'event_type' => $data->eventType->value,
             'payload' => $data->payload,
             'status' => OutboxStatus::PENDING,
             'retry_count' => 0,

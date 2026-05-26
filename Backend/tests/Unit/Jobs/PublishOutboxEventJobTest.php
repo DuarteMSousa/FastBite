@@ -28,7 +28,7 @@ class PublishOutboxEventJobTest extends TestCase
             'id' => 'outbox-1',
             'aggregate_type' => 'order',
             'aggregate_id' => 'order-1',
-            'event_name' => 'ORDER_COURIER_ASSIGNED',
+            'event_type' => 'ORDER_COURIER_ASSIGNED',
             'payload' => [
                 'eventName' => 'ORDER_COURIER_ASSIGNED',
                 'channels' => ['restaurant.restaurant-1.orders'],

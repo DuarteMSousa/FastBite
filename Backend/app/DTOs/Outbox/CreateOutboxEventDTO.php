@@ -2,15 +2,18 @@
 
 namespace App\DTOs\Outbox;
 
+use App\Enums\OutboxAggregateType;
+use App\Enums\OutboxEventType;
+
 final readonly class CreateOutboxEventDTO
 {
     /**
      * @param  array<string, mixed>  $payload
      */
     public function __construct(
-        public string $aggregateType,
+        public OutboxAggregateType $aggregateType,
         public ?string $aggregateId,
-        public string $eventName,
+        public OutboxEventType $eventType,
         public array $payload,
     ) {
     }

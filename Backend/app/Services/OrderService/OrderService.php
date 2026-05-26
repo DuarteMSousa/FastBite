@@ -13,6 +13,8 @@ use App\DTOs\Order\OrderItemOption\CreateOrderItemOptionDTO;
 use App\Enums\OrderEventType;
 use App\Enums\OrderItemStatus;
 use App\Enums\OrderStatus;
+use App\Enums\OutboxAggregateType;
+use App\Enums\OutboxEventType;
 use App\Enums\PaymentEventType;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -664,7 +666,7 @@ class OrderService implements OrderServiceInterface
             'order' => $this->orderSnapshot($order->refresh()),
         ];
 
-        app(OutboxService::class)->enqueue('order', $order->id, $eventType->value, $broadcastPayload);
+        app(OutboxService::class)->enqueue(OutboxAggregateType::ORDER, $order->id, OutboxEventType::from($eventType->value), $broadcastPayload);
         NotificationEventRecorded::dispatch($eventType, $broadcastPayload);
     }
 

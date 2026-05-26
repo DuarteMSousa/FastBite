@@ -2,7 +2,7 @@
 
 namespace App\Gateway\ServerEvents\Handlers;
 
-use App\Enums\OutboxEventName;
+use App\Enums\OutboxEventType;
 use App\Events\ChatMessageSent;
 use App\Gateway\GatewayClientSocketPusher;
 use App\Gateway\ServerEvents\SocketEventHandler;
@@ -27,7 +27,7 @@ class ChatMessageSentSocketHandler implements SocketEventHandler
 
         $this->pusher->sendToGroup(
             "chat.{$chatId}",
-            OutboxEventName::CHAT_MESSAGE_SENT->value,
+            OutboxEventType::CHAT_MESSAGE_SENT->value,
             $event->payload
         );
     }

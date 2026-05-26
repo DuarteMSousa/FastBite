@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\DTOs\Outbox\CreateOutboxEventDTO;
+use App\Enums\OutboxAggregateType;
+use App\Enums\OutboxEventType;
 use App\Jobs\PublishOutboxEventJob;
 use App\Models\OutboxEvent;
 use App\Repositories\OutboxRepository\OutboxRepositoryInterface;
@@ -15,16 +17,16 @@ class OutboxService
      * @param  array<string, mixed>  $payload
      */
     public function enqueue(
-        string $aggregateType,
+        OutboxAggregateType $aggregateType,
         ?string $aggregateId,
-        string $eventName,
+        OutboxEventType $eventType,
         array $payload,
         bool $dispatchNow = true
     ): OutboxEvent {
         $outbox = $this->outboxEvents->createOutboxEvent(new CreateOutboxEventDTO(
             aggregateType: $aggregateType,
             aggregateId: $aggregateId,
-            eventName: $eventName,
+            eventType: $eventType,
             payload: $payload,
         ));
 

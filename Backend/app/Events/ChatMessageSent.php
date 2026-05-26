@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Enums\OutboxEventName;
+use App\Enums\OutboxEventType;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
@@ -19,7 +19,7 @@ class ChatMessageSent
 
     public function broadcastAs(): string
     {
-        return OutboxEventName::CHAT_MESSAGE_SENT->value;
+        return OutboxEventType::CHAT_MESSAGE_SENT->value;
     }
 
     /**

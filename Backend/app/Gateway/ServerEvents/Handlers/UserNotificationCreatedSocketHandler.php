@@ -2,7 +2,7 @@
 
 namespace App\Gateway\ServerEvents\Handlers;
 
-use App\Enums\OutboxEventName;
+use App\Enums\OutboxEventType;
 use App\Events\UserNotificationCreated;
 use App\Gateway\GatewayClientSocketPusher;
 use App\Gateway\ServerEvents\SocketEventHandler;
@@ -27,7 +27,7 @@ class UserNotificationCreatedSocketHandler implements SocketEventHandler
 
         $this->pusher->sendToGroup(
             "user.{$userId}.notifications",
-            OutboxEventName::USER_NOTIFICATION_CREATED->value,
+            OutboxEventType::USER_NOTIFICATION_CREATED->value,
             $event->payload
         );
     }

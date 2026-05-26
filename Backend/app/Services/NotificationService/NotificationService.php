@@ -5,7 +5,8 @@ namespace App\Services\NotificationService;
 use App\Aspects\Transactional;
 use App\DTOs\Notification\CreateNotificationDTO;
 use App\Enums\NotificationType;
-use App\Enums\OutboxEventName;
+use App\Enums\OutboxAggregateType;
+use App\Enums\OutboxEventType;
 use App\Enums\PushTokenProvider;
 use App\Jobs\SendPushNotificationJob;
 use App\Models\Notification;
@@ -156,7 +157,7 @@ class NotificationService implements NotificationServiceInterface
 
         $payload = [
             'eventId' => (string) Str::uuid(),
-            'eventName' => OutboxEventName::USER_NOTIFICATION_CREATED->value,
+            'eventName' => OutboxEventType::USER_NOTIFICATION_CREATED->value,
             'notificationId' => $notification->id,
             'userId' => $notification->user_id,
             'type' => $notification->type->value,
@@ -167,9 +168,9 @@ class NotificationService implements NotificationServiceInterface
         ];
 
         $this->outboxService->enqueue(
-            aggregateType: 'notification',
+            aggregateType: OutboxAggregateType::NOTIFICATION,
             aggregateId: $notification->id,
-            eventName: OutboxEventName::USER_NOTIFICATION_CREATED->value,
+            eventType: OutboxEventType::USER_NOTIFICATION_CREATED,
             payload: $payload
         );
 
