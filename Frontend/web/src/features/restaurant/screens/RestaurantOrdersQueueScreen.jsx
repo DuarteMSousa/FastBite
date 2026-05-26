@@ -48,6 +48,14 @@ function orderFromRealtimePayload(payload) {
   return socketOrder ? mapRestaurantOrder(socketOrder) : null;
 }
 
+function domainOrderEventName(socketEventName, payload) {
+  if (socketEventName !== "ORDER_STATUS_UPDATED") {
+    return socketEventName;
+  }
+
+  return payload?.eventName ?? payload?.event_name ?? socketEventName;
+}
+
 export function RestaurantOrdersQueueScreen({
   session,
   onSelectOrder,
@@ -103,15 +111,16 @@ export function RestaurantOrdersQueueScreen({
         onEvent: (eventName, payload) => {
           if (cancelled) return;
           setRealtimeState("live");
+          const domainEventName = domainOrderEventName(eventName, payload);
           const realtimeOrder = orderFromRealtimePayload(payload);
           if (realtimeOrder) {
             setOrders((current) =>
               reconcileActiveOrderList(current, realtimeOrder),
             );
           }
-          if (eventName === "ORDER_COURIER_ASSIGNED") {
+          if (domainEventName === "ORDER_COURIER_ASSIGNED") {
             setInfoText("Novo pedido com estafeta atribuído.");
-          } else if (eventName === "ORDER_CREATED") {
+          } else if (domainEventName === "ORDER_CREATED") {
             setInfoText("Novo pedido recebido.");
           }
         },

@@ -79,6 +79,14 @@ function orderFromRealtimePayload(payload) {
   return payload?.order ? mapRestaurantOrder(payload.order) : null
 }
 
+function domainOrderEventName(socketEventName, payload) {
+  if (socketEventName !== 'ORDER_STATUS_UPDATED') {
+    return socketEventName
+  }
+
+  return payload?.eventName ?? payload?.event_name ?? socketEventName
+}
+
 export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavigate }) {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
@@ -125,12 +133,13 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
         onSubscribed: () => setRealtimeState('live'),
         onEvent: (eventName, payload) => {
           setRealtimeState('live')
+          const domainEventName = domainOrderEventName(eventName, payload)
           const orderId = payload?.data?.order_id ?? payload?.orderId ?? null
           const realtimeOrder = orderFromRealtimePayload(payload)
           if (realtimeOrder) {
             setOrders((current) => reconcileActiveOrderList(current, realtimeOrder))
           }
-          if (eventName === 'ORDER_COURIER_ASSIGNED' || eventName === 'ORDER_CREATED') {
+          if (domainEventName === 'ORDER_COURIER_ASSIGNED' || domainEventName === 'ORDER_CREATED') {
             playKitchenBeep(beepRef)
             setPendingAlerts((current) => {
               if (!orderId || current.includes(orderId)) return current

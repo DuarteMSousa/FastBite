@@ -36,6 +36,14 @@ function formatTime(value) {
   return new Date(value).toLocaleString()
 }
 
+function domainOrderEventName(socketEventName, payload) {
+  if (socketEventName !== 'ORDER_STATUS_UPDATED') {
+    return socketEventName
+  }
+
+  return payload?.eventName ?? payload?.event_name ?? socketEventName
+}
+
 export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelectOrder, onNavigate }) {
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -75,12 +83,16 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
         orderId: selectedOrderId,
         authToken: session.token,
         devUserId: session.devUserId,
-        onEvent: (_eventName, payload) => {
+        onEvent: (eventName, payload) => {
+          const domainEventName = domainOrderEventName(eventName, payload)
           if (payload?.order) {
             setOrder((current) => ({
               ...(current ?? {}),
               ...payload.order,
             }))
+          }
+          if (domainEventName !== eventName && !payload?.order) {
+            loadDetail()
           }
         },
         onPositionUpdated: (payload) => {
@@ -98,7 +110,7 @@ export function RestaurantOrderDetailScreen({ session, selectedOrderId, onSelect
     return () => {
       if (unsubscribe) unsubscribe()
     }
-  }, [selectedOrderId, session?.token, session?.devUserId])
+  }, [selectedOrderId, session?.token, session?.devUserId, loadDetail])
 
   useEffect(() => {
     let cancelled = false

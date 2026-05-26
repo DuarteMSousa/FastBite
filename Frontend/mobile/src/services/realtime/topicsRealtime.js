@@ -132,6 +132,7 @@ export function subscribeToOrderTrackingTopic({
     channel,
     [
       'COURIER_POSITION_UPDATED',
+      'ORDER_STATUS_UPDATED',
       'ORDER_CONFIRMED',
       'ORDER_COURIER_ASSIGNED',
       'ORDER_PREPARING',
@@ -181,6 +182,7 @@ export function subscribeToCustomerOrdersTopic({
     channel,
     [
       'ORDER_CREATED',
+      'ORDER_STATUS_UPDATED',
       'ORDER_CONFIRMED',
       'ORDER_REJECTED',
       'ORDER_PREPARING',

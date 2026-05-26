@@ -84,6 +84,7 @@ const EVENT_LABELS_PT = {
   ORDER_OUT_FOR_DELIVERY: 'Em entrega',
   ORDER_DELIVERED: 'Entregue ao cliente',
   ORDER_CANCELLED: 'Pedido cancelado',
+  ORDER_STATUS_UPDATED: 'Estado do pedido atualizado',
   DELIVERY_ACCEPTED: 'Entrega aceite',
   DELIVERY_PICKED_UP: 'Encomenda recolhida',
   DELIVERY_IN_TRANSIT: 'A caminho',

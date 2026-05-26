@@ -111,6 +111,14 @@ function socketOrderId(payload) {
   )
 }
 
+function domainOrderEventName(socketEventName, payload) {
+  if (socketEventName !== 'ORDER_STATUS_UPDATED') {
+    return socketEventName
+  }
+
+  return payload?.eventName ?? payload?.event_name ?? socketEventName
+}
+
 function isTerminalOrderEvent(eventName) {
   return eventName === 'ORDER_DELIVERED' || eventName === 'ORDER_CANCELLED'
 }
@@ -373,6 +381,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         onEvent: (eventName, payload) => {
           if (cancelled) return
 
+          const domainEventName = domainOrderEventName(eventName, payload)
           const eventOrderId = socketOrderId(payload)
           const currentActiveOrderId = activeOrderIdRef.current
           const currentPendingPayment = pendingPaymentRef.current
@@ -381,8 +390,8 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             loadTracking(eventOrderId)
           }
 
-          if (isTerminalOrderEvent(eventName)) {
-            const terminalStatus = statusForTerminalEvent(eventName)
+          if (isTerminalOrderEvent(domainEventName)) {
+            const terminalStatus = statusForTerminalEvent(domainEventName)
             setOrdersHistory((current) =>
               current.map((order) =>
                 order.id === eventOrderId
@@ -397,7 +406,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
               setActiveOrderId('')
             }
             // Pos-entrega: abrir prompt de avaliação do restaurante automaticamente.
-            if (eventName === 'ORDER_DELIVERED' && eventOrderId) {
+            if (domainEventName === 'ORDER_DELIVERED' && eventOrderId) {
               promptReviewAfterDelivery(eventOrderId)
             }
           }
@@ -616,6 +625,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         onEvent: (eventName, payload) => {
           if (cancelled || eventName === 'COURIER_POSITION_UPDATED') return
 
+          const domainEventName = domainOrderEventName(eventName, payload)
           setRealtimeState('live')
           setTrackingUpdateCount((value) => value + 1)
           setTrackingLastUpdateMs(Date.now())
@@ -625,7 +635,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             loadTracking(eventOrderId)
           }
 
-          if (isTerminalOrderEvent(eventName) && eventOrderId === activeOrderId) {
+          if (isTerminalOrderEvent(domainEventName) && eventOrderId === activeOrderId) {
             setActiveOrderId('')
           }
         },

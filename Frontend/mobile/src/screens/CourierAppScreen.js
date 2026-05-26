@@ -103,6 +103,14 @@ function socketOfferId(payload) {
   return payload?.offerId ?? payload?.offer_id ?? payload?.data?.offer_id ?? null
 }
 
+function domainOrderEventName(socketEventName, payload) {
+  if (socketEventName !== 'ORDER_STATUS_UPDATED') {
+    return socketEventName
+  }
+
+  return payload?.eventName ?? payload?.event_name ?? socketEventName
+}
+
 export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
   const [courierStatus, setCourierStatus] = useState('OFFLINE')
   const [phase, setPhase] = useState('offer')
@@ -406,9 +414,10 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         orderId: activeDelivery.order_id,
         authToken: session?.token,
         devUserId: session?.devUserId,
-        onEvent: (eventName) => {
+        onEvent: (eventName, payload) => {
+          const domainEventName = domainOrderEventName(eventName, payload)
           setTrackingRealtimeState('live')
-          if (eventName === 'ORDER_CANCELLED') {
+          if (domainEventName === 'ORDER_CANCELLED') {
             setErrorText('Pedido cancelado pelo cliente ou restaurante.')
             stopBackgroundLocation().catch(() => {})
             setActiveDelivery(null)
@@ -417,14 +426,14 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             setCourierStatus('AVAILABLE')
             return
           }
-          if (eventName === 'ORDER_DELIVERED' || eventName === 'DELIVERY_DELIVERED') {
+          if (domainEventName === 'ORDER_DELIVERED' || domainEventName === 'DELIVERY_DELIVERED') {
             stopBackgroundLocation().catch(() => {})
             loadTracking(activeDelivery.order_id)
           }
-          if (eventName === 'DELIVERY_FAILED') {
+          if (domainEventName === 'DELIVERY_FAILED') {
             stopBackgroundLocation().catch(() => {})
           }
-          if (eventName === 'ORDER_READY') {
+          if (domainEventName === 'ORDER_READY') {
             setToast('Pedido pronto para recolha.')
             setReadyBanner(true)
           }

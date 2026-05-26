@@ -126,6 +126,7 @@ export function subscribeToRestaurantOrdersTopic({
 
   const eventNames = [
     'ORDER_CREATED',
+    'ORDER_STATUS_UPDATED',
     'ORDER_CONFIRMED',
     'ORDER_REJECTED',
     'ORDER_PREPARING',
@@ -171,6 +172,7 @@ export function subscribeToOrderTrackingTopic({
     channel,
     [
       'COURIER_POSITION_UPDATED',
+      'ORDER_STATUS_UPDATED',
       'ORDER_COURIER_ASSIGNED',
       'ORDER_PREPARING',
       'ORDER_READY',
