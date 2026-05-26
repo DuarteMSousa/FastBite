@@ -80,7 +80,7 @@ export function AddressMapPicker({ latitude, longitude, onChange }) {
   return (
     <View style={styles.wrapper}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Selecione a localizacao</Text>
+        <Text style={styles.title}>Selecione a localização</Text>
         <Pressable style={styles.gpsBtn} onPress={handleUseCurrent}>
           <Text style={styles.gpsBtnText}>Usar GPS</Text>
         </Pressable>
@@ -96,10 +96,10 @@ export function AddressMapPicker({ latitude, longitude, onChange }) {
         </MapView>
       </View>
       <Text style={styles.hint}>
-        Toca no mapa para definir o ponto de entrega. As coordenadas sao guardadas automaticamente.
+        Toque no mapa para definir o ponto de entrega. As coordenadas são guardadas automaticamente.
       </Text>
       {permissionState === 'denied' ? (
-        <Text style={styles.warn}>Permissao de localizacao negada.</Text>
+        <Text style={styles.warn}>Permissão de localização negada.</Text>
       ) : null}
     </View>
   )

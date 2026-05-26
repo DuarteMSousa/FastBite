@@ -1,7 +1,7 @@
 import { Linking, Platform } from 'react-native'
 
 // Abre o Google Maps (ou Apple Maps em iOS sem GMaps instalado) com rota
-// definida directamente em modo conducao. Tenta primeiro o scheme nativo
+// definida diretamente em modo de condução. Tenta primeiro o esquema nativo
 // (abre a app instalada com a rota carregada) e cai para HTTPS universal
 // (que o OS resolve para a app ou browser).
 export async function openGoogleMaps({ lat, lng, label }) {
@@ -48,9 +48,9 @@ export async function openWaze({ lat, lng, label }) {
 async function tryOpenAny(urls, _label) {
   for (const url of urls) {
     try {
-      // Em iOS o canOpenURL para schemes nao-http requer LSApplicationQueriesSchemes.
+      // Em iOS, canOpenURL para esquemas não HTTP requer LSApplicationQueriesSchemes.
       // Em Android e mais permissivo. Em qualquer caso, openURL falha silenciosamente
-      // se o scheme nao for resolvivel — apanhamos no catch e tentamos o proximo.
+      // Se o esquema não for resolúvel, apanhamos no catch e tentamos o próximo.
       const supported = await Linking.canOpenURL(url).catch(() => false)
       if (!supported && !url.startsWith('http')) {
         continue
@@ -58,7 +58,7 @@ async function tryOpenAny(urls, _label) {
       await Linking.openURL(url)
       return true
     } catch {
-      // tenta a proxima
+      // Tenta a próxima.
     }
   }
   return false

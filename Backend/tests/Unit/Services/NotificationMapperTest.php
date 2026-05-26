@@ -24,7 +24,7 @@ class NotificationMapperTest extends TestCase
         $this->assertSame('customer-1', $dto->userId);
         $this->assertSame(NotificationType::ORDER_UPDATE, $dto->type);
         $this->assertSame('Pedido pronto', $dto->title);
-        $this->assertSame('O pedido esta pronto para recolha.', $dto->message);
+        $this->assertSame('O seu pedido #ORDER-1 está pronto para recolha.', $dto->message);
         $this->assertSame('order-1', $dto->data['order_id']);
         $this->assertSame('READY', $dto->data['status']);
     }
@@ -41,7 +41,7 @@ class NotificationMapperTest extends TestCase
 
         $this->assertNotNull($dto);
         $this->assertSame('Pedido criado', $dto->title);
-        $this->assertSame('O teu pedido em Fast Pizza aguarda pagamento.', $dto->message);
+        $this->assertSame('O seu pedido #ORDER-1 em Fast Pizza aguarda pagamento.', $dto->message);
     }
 
     public function test_ignores_created_order_with_completed_payment_to_avoid_duplicate_confirmed_notification(): void

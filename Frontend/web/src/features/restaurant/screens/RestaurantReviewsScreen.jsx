@@ -61,7 +61,6 @@ export function RestaurantReviewsScreen({ session }) {
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Avaliações do restaurante</h2>
-          <p>Feedback recebido dos clientes</p>
         </div>
         <button type="button" className="rb-btn-outline" onClick={load} disabled={loading}>
           {loading ? 'A carregar...' : 'Atualizar'}

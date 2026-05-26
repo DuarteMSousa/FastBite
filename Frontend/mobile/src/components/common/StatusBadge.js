@@ -14,7 +14,7 @@ const ORDER_LABELS = {
 const DELIVERY_LABELS = {
   PENDING: 'Pendente',
   PICKED_UP: 'Recolhida',
-  IN_TRANSIT: 'Em transito',
+  IN_TRANSIT: 'Em trânsito',
   DELIVERED: 'Entregue',
   FAILED: 'Falhada',
 }
@@ -22,8 +22,18 @@ const DELIVERY_LABELS = {
 const PAYMENT_LABELS = {
   PENDING: 'Pendente',
   COMPLETED: 'Pago',
-  FAILED: 'Falhou',
+  FAILED: 'Falhado',
   CANCELLED: 'Cancelado',
+  REFUNDED: 'Reembolsado',
+}
+
+function fallbackEnumLabel(value) {
+  if (!value) return '-'
+
+  return String(value)
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/^\w/, (match) => match.toUpperCase())
 }
 
 function toneStyle(status) {
@@ -52,7 +62,7 @@ export function StatusBadge({ kind = 'order', status }) {
 
   return (
     <Text style={[styles.badge, toneStyle(status), toneTextStyle(status)]}>
-      {labels[status] ?? status ?? '-'}
+      {labels[status] ?? fallbackEnumLabel(status)}
     </Text>
   )
 }

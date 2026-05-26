@@ -11,6 +11,7 @@ import {
 import { ConfirmDialog } from '../../../components/common/ConfirmDialog'
 import { subscribeToRestaurantOrdersTopic } from '../../../services/realtime/topicsRealtime'
 import { formatEventType } from '../../../utils/orderEventLabel'
+import { orderStatusLabel } from '../../../utils/statusLabels'
 
 function mapOrderTone(status) {
   if (status === 'PENDING' || status === 'COURIER_ASSIGNED') return 'pending'
@@ -27,13 +28,7 @@ function mapItemTone(status) {
 }
 
 function mapStatusLabel(status) {
-  if (status === 'PENDING') return 'Pendente'
-  if (status === 'COURIER_ASSIGNED') return 'Estafeta atribuído'
-  if (status === 'CONFIRMED') return 'Confirmado'
-  if (status === 'PREPARING') return 'A preparar'
-  if (status === 'READY') return 'Pronto'
-  if (status === 'CANCELLED') return 'Cancelado'
-  return status
+  return orderStatusLabel(status)
 }
 
 function formatTime(value) {
@@ -268,7 +263,6 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Cozinha virtual</h2>
-          <p>Gestão de encomendas e preparação de pratos</p>
         </div>
         <div className={`rb-realtime-pill rb-realtime-${realtimeState}`}>
           <span className="rb-realtime-dot" />

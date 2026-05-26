@@ -10,9 +10,9 @@ import { registerDevicePushToken } from './src/services/pushNotificationService'
 import { ErrorBoundary } from './src/components/common/ErrorBoundary';
 import { ToastProvider } from './src/components/common/ToastProvider';
 
-// Expo Go (Android, SDK 53+) ja nao suporta push remoto. O modulo expo-notifications
+// Expo Go (Android, SDK 53+) já não suporta push remoto. O módulo expo-notifications
 // emite warning automatico atraves do seu TokenAutoRegistration listener antes
-// do nosso codigo correr. Em dev build/iOS a feature funciona normalmente.
+// do nosso código correr. Em dev build/iOS a funcionalidade funciona normalmente.
 LogBox.ignoreLogs([
   'expo-notifications: Android Push notifications',
   '`expo-notifications` functionality is not fully supported in Expo Go',
@@ -109,7 +109,7 @@ function AppInner() {
       handleNotificationResponse,
     );
 
-    // Caso a app abra a partir de notificacao (cold start).
+    // Caso a app abra a partir de notificação (cold start).
     Notifications.getLastNotificationResponseAsync()
       .then((response) => {
         if (response) handleNotificationResponse(response);

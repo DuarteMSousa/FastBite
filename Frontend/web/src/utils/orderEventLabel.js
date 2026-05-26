@@ -39,5 +39,5 @@ export function formatEventType(eventType) {
   return String(eventType ?? '')
     .replaceAll('_', ' ')
     .toLowerCase()
-    .replace(/(^\w|\s\w)/g, (match) => match.toUpperCase())
+    .replace(/^\w/, (match) => match.toUpperCase())
 }

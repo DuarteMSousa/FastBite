@@ -7,14 +7,10 @@ import {
 } from "../../../services/restaurantOpsService";
 import { ConfirmDialog } from "../../../components/common/ConfirmDialog";
 import { subscribeToRestaurantOrdersTopic } from "../../../services/realtime/topicsRealtime";
+import { orderStatusLabel } from "../../../utils/statusLabels";
 
 function statusLabel(status) {
-  if (status === "PENDING") return "Pendente";
-  if (status === "CONFIRMED") return "Confirmado";
-  if (status === "PREPARING") return "A preparar";
-  if (status === "READY") return "Pronto";
-  if (status === "OUT_FOR_DELIVERY") return "Em entrega";
-  return status;
+  return orderStatusLabel(status);
 }
 
 function statusTone(status) {

@@ -323,7 +323,6 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Chat</h2>
-          <p>Comunique diretamente com o cliente e o estafeta de cada encomenda.</p>
         </div>
         {chat?.id ? (
           <div className={`rb-realtime-pill rb-realtime-${status}`}>

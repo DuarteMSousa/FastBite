@@ -117,8 +117,6 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     overflow: 'hidden',
-    textTransform: 'uppercase',
-    letterSpacing: 0.2,
   },
   statusChipOk: {
     backgroundColor: 'rgba(236, 253, 245, 0.92)',
@@ -506,10 +504,11 @@ export const styles = StyleSheet.create({
   },
   historyLink: {
     marginTop: 12,
-    alignSelf: 'flex-start',
+    alignSelf: 'stretch',
+    alignItems: 'center',
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 999,
+    paddingVertical: 9,
+    borderRadius: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.35)',

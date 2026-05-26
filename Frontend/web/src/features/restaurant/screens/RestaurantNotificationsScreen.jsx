@@ -172,7 +172,6 @@ export function RestaurantNotificationsScreen({ session }) {
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Notificações</h2>
-          <p>Atualizações em tempo real sobre pedidos, entregas e operações.</p>
         </div>
         <div className={`rb-realtime-pill rb-realtime-${status}`}>
           <span className="rb-realtime-dot" />

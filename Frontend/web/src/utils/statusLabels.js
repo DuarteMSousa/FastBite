@@ -1,5 +1,6 @@
 const ORDER_LABELS = {
   PENDING: 'Pendente',
+  COURIER_ASSIGNED: 'Estafeta atribuído',
   CONFIRMED: 'Confirmado',
   PREPARING: 'A preparar',
   READY: 'Pronto',
@@ -27,7 +28,7 @@ const PAYMENT_STATUS_LABELS = {
 const PAYMENT_METHOD_LABELS = {
   CASH: 'Dinheiro',
   CARD: 'Cartão',
-  MBWAY: 'MB WAY',
+  MBWAY: 'MB Way',
   PAYPAL: 'PayPal',
 }
 
@@ -42,10 +43,9 @@ function fallbackEnumLabel(value) {
   if (!value) return '-'
 
   return String(value)
+    .replaceAll('_', ' ')
     .toLowerCase()
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ')
+    .replace(/^\w/, (match) => match.toUpperCase())
 }
 
 export function orderStatusLabel(status) {

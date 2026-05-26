@@ -54,7 +54,7 @@ export function MobileLoginScreen({ onLogin }) {
       <View style={styles.container}>
         <Text style={styles.brand}>FastBite</Text>
         <Text style={styles.subtitle}>
-          {activeMode === 'login' ? 'Inicia sessão' : 'Cria a tua conta'}
+          {activeMode === 'login' ? 'Iniciar sessão' : 'Criar conta'}
         </Text>
         <View style={styles.formCard}>
           <View style={styles.modeRow}>
@@ -88,7 +88,7 @@ export function MobileLoginScreen({ onLogin }) {
                 style={styles.input}
                 value={name}
                 onChangeText={setName}
-                placeholder={role === 'courier' ? 'Nome do estafeta' : 'Nome do cliente'}
+                placeholder="Nome completo"
                 placeholderTextColor="#95a5c0"
               />
             </>
@@ -101,7 +101,7 @@ export function MobileLoginScreen({ onLogin }) {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
-            placeholder="cliente@fastbite.pt"
+            placeholder="nome@exemplo.pt"
             placeholderTextColor="#95a5c0"
           />
 

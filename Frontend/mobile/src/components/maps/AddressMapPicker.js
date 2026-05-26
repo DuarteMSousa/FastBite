@@ -1,11 +1,11 @@
 import { StyleSheet, Text, View } from 'react-native'
 
-// Fallback para web: nao tenta carregar react-native-maps.
+// Fallback para web: não tenta carregar react-native-maps.
 export function AddressMapPicker() {
   return (
     <View style={styles.wrapper}>
       <Text style={styles.text}>
-        Mapa interativo apenas disponivel no telefone. Introduz latitude e longitude
+        Mapa interativo apenas disponível no telefone. Introduza latitude e longitude
         manualmente abaixo.
       </Text>
     </View>

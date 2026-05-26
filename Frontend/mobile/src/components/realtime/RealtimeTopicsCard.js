@@ -72,8 +72,8 @@ export function RealtimeTopicsCard() {
           setNotificationEvents((current) =>
             prependLimited(current, {
               id: payload?.eventId ?? payload?.notificationId ?? `${Date.now()}-${Math.random()}`,
-              title: payload?.title ?? payload?.type ?? 'Notificacao',
-              meta: payload?.message ?? 'Sem descricao',
+              title: payload?.title ?? payload?.type ?? 'Notificação',
+              meta: payload?.message ?? 'Sem descrição',
               at: resolveTimestamp(payload),
             }),
           )
@@ -106,7 +106,7 @@ export function RealtimeTopicsCard() {
 
   const statusLabel =
     status === 'live'
-      ? 'AO VIVO'
+      ? 'Ao vivo'
       : status === 'connecting'
         ? 'A ligar'
         : status === 'missing-config'
@@ -119,8 +119,8 @@ export function RealtimeTopicsCard() {
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>Realtime de chat e notificacoes</Text>
-          <Text style={styles.subtitle}>Topicos privados com eventos push sem refresh.</Text>
+          <Text style={styles.title}>Tempo real de chat e notificações</Text>
+          <Text style={styles.subtitle}>Tópicos privados com eventos push sem atualização manual.</Text>
         </View>
         <View style={[styles.statusPill, status === 'live' ? styles.statusLive : styles.statusWarn]}>
           <Text style={[styles.statusLabel, status === 'live' ? styles.statusLabelLive : styles.statusLabelWarn]}>
@@ -137,7 +137,7 @@ export function RealtimeTopicsCard() {
             autoCapitalize="none"
             value={chatId}
             onChangeText={setChatId}
-            placeholder="uuid do chat"
+            placeholder="UUID do chat"
             placeholderTextColor="#9aa7ba"
           />
         </View>
@@ -149,7 +149,7 @@ export function RealtimeTopicsCard() {
             autoCapitalize="none"
             value={userId}
             onChangeText={setUserId}
-            placeholder="uuid do user"
+            placeholder="UUID do utilizador"
             placeholderTextColor="#9aa7ba"
           />
         </View>

@@ -621,6 +621,11 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  inboxHeaderText: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 10,
+  },
   inboxTitle: {
     color: '#0f172a',
     fontSize: 20,
@@ -638,6 +643,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#f1f5f9',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   inboxCloseText: {
     color: '#475569',
@@ -806,8 +812,6 @@ export const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     overflow: 'hidden',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
   },
   orderStatusOk: {
     backgroundColor: '#dcfce7',

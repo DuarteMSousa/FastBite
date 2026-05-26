@@ -44,7 +44,7 @@ export function ProfileScreen({
             style={styles.couponInput}
             value={profileDraft.email}
             onChangeText={(text) => onChangeDraft((current) => ({ ...current, email: text }))}
-            placeholder="email@dominio.pt"
+            placeholder="nome@exemplo.pt"
             placeholderTextColor="#94a3b8"
             autoCapitalize="none"
             keyboardType="email-address"
@@ -74,7 +74,7 @@ export function ProfileScreen({
         </View>
 
         <View style={styles.checkoutCard}>
-          <Text style={styles.checkoutSectionTitle}>Meus pedidos</Text>
+          <Text style={styles.checkoutSectionTitle}>Os meus pedidos</Text>
           <Text style={styles.checkoutRowValue}>
             Histórico completo de encomendas, com detalhe, repetir e cancelar.
           </Text>
@@ -87,11 +87,11 @@ export function ProfileScreen({
         </View>
 
         <View style={styles.checkoutCard}>
-          <Text style={styles.checkoutSectionTitle}>Minhas avaliações</Text>
+          <Text style={styles.checkoutSectionTitle}>As minhas avaliações</Text>
           <Text style={styles.checkoutRowValue}>
             {reviewsCount === 0
               ? 'Sem avaliações ainda.'
-              : `${reviewsCount} avaliação(ões) submetida(s).`}
+              : `${reviewsCount} ${reviewsCount === 1 ? 'avaliação submetida' : 'avaliações submetidas'}.`}
           </Text>
           <Pressable
             style={[styles.addressAddBtn, { marginTop: 12 }]}

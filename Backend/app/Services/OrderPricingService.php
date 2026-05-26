@@ -90,7 +90,7 @@ class OrderPricingService
 
         if (! $restaurant->address) {
             throw ValidationException::withMessages([
-                'restaurant_id' => 'Restaurant has no pickup address configured.',
+                'restaurant_id' => 'O restaurante não tem morada de recolha configurada.',
             ]);
         }
 

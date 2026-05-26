@@ -49,11 +49,10 @@ export function HomeScreen({
         </View>
 
         <View style={styles.searchField}>
-          <Text style={styles.searchIcon}>{ICON.search}</Text>
           <TextInput
             style={styles.searchInput}
             value={filters?.q ?? ''}
-            placeholder="Procurar restaurantes..."
+            placeholder="Pesquisar restaurantes"
             placeholderTextColor="#dbe7ff"
             onChangeText={(text) =>
               onChangeFilters?.((current) => ({ ...current, q: text }))
@@ -76,7 +75,7 @@ export function HomeScreen({
           <TextInput
             style={styles.filterInput}
             value={filters?.postalCode ?? ''}
-            placeholder="Cod. postal"
+            placeholder="Código postal"
             placeholderTextColor="#dbe7ff"
             onChangeText={(text) =>
               onChangeFilters?.((current) => ({ ...current, postalCode: text }))
@@ -110,7 +109,7 @@ export function HomeScreen({
               {ICON.bell} {notificationPreview.title}
             </Text>
             <Text style={styles.notificationBannerText}>
-              {notificationPreview.message} {'\u00B7'} toca para abrir inbox
+              {notificationPreview.message} {'\u00B7'} Toque para abrir as notificações
             </Text>
           </Pressable>
         ) : null}
@@ -133,13 +132,13 @@ export function HomeScreen({
           ) : null}
 
           <Pressable style={styles.ordersLink} onPress={onOpenOrders}>
-            <Text style={styles.ordersLinkText}>Meus pedidos</Text>
+            <Text style={styles.ordersLinkText}>Os meus pedidos</Text>
           </Pressable>
         </View>
 
         {pushStatus === 'permission_denied' || pushStatus === 'error' ? (
           <Text style={styles.pushChip}>
-            Push desativado {'\u00B7'} ativa nas definições para receber atualizações
+            Notificações desativadas {'\u00B7'} ative nas definições para receber atualizações
           </Text>
         ) : null}
       </View>
@@ -164,7 +163,7 @@ export function HomeScreen({
         {!loading && restaurants.length === 0 ? (
           <View style={styles.emptyStateCard}>
             <Text style={styles.emptyStateTitle}>Sem restaurantes</Text>
-            <Text style={styles.emptyStateText}>Ajusta os filtros ou tenta atualizar a lista.</Text>
+            <Text style={styles.emptyStateText}>Ajuste os filtros ou tente atualizar a lista.</Text>
           </View>
         ) : null}
         {restaurants.map((item) => (
