@@ -2,27 +2,24 @@
 
 namespace App\Events;
 
+use App\Enums\OutboxEventType;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class DomainEventBroadcasted
+class CourierAssigned
 {
     use Dispatchable, SerializesModels;
 
     /**
-     * @param  array<int, string>  $channels
      * @param  array<string, mixed>  $payload
      */
-    public function __construct(
-        public string $eventName,
-        public array $channels,
-        public array $payload
-    ) {
+    public function __construct(public array $payload)
+    {
     }
 
     public function broadcastAs(): string
     {
-        return $this->eventName;
+        return OutboxEventType::ORDER_COURIER_ASSIGNED->value;
     }
 
     /**

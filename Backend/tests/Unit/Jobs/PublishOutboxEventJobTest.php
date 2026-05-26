@@ -31,7 +31,6 @@ class PublishOutboxEventJobTest extends TestCase
             'event_type' => 'ORDER_COURIER_ASSIGNED',
             'payload' => [
                 'eventName' => 'ORDER_COURIER_ASSIGNED',
-                'channels' => ['restaurant.restaurant-1.orders'],
                 'orderId' => 'order-1',
             ],
             'status' => OutboxStatus::PENDING,
@@ -64,7 +63,7 @@ class PublishOutboxEventJobTest extends TestCase
             ->shouldReceive('sendToGroup')
             ->once()
             ->with(
-                'restaurant.restaurant-1.orders',
+                'order.order-1.tracking',
                 'ORDER_COURIER_ASSIGNED',
                 Mockery::type('array')
             )

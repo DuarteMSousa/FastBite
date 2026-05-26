@@ -18,7 +18,6 @@ use App\Enums\OutboxEventType;
 use App\Enums\PaymentEventType;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
-use App\Events\NotificationEventRecorded;
 use App\Jobs\AssignCourierToDeliveryJob;
 use App\Jobs\ExpirePendingPaymentJob;
 use App\Models\Cart;
@@ -631,15 +630,6 @@ class OrderService implements OrderServiceInterface
     private function recordEvent(Order $order, OrderEventType $eventType, array $payload = []): void
     {
         $occurredAt = now();
-        $channels = [
-            "customer.{$order->user_id}.orders",
-            "order.{$order->id}.tracking",
-        ];
-
-        if ($this->shouldBroadcastToRestaurant($order)) {
-            $channels[] = "restaurant.{$order->restaurant_id}.orders";
-        }
-
         $eventPayload = [
             'eventId' => (string) Str::uuid(),
             'eventName' => $eventType->value,
@@ -651,7 +641,6 @@ class OrderService implements OrderServiceInterface
             'restaurantName' => $order->restaurant_name_snapshot,
             'occurredAt' => $occurredAt->toIso8601String(),
             'data' => $payload,
-            'channels' => $channels,
         ];
 
         $this->orders->addEvent($order, $eventType->value, $occurredAt, $eventPayload);
@@ -667,14 +656,6 @@ class OrderService implements OrderServiceInterface
         ];
 
         app(OutboxService::class)->enqueue(OutboxAggregateType::ORDER, $order->id, OutboxEventType::from($eventType->value), $broadcastPayload);
-        NotificationEventRecorded::dispatch($eventType, $broadcastPayload);
-    }
-
-    private function shouldBroadcastToRestaurant(Order $order): bool
-    {
-        return $order->delivery()
-            ->whereNotNull('courier_id')
-            ->exists();
     }
 
     /**

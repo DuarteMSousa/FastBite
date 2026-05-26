@@ -11,7 +11,9 @@ class SocketMessageDispatcher
         Handlers\ChatMessageSentSocketHandler::class,
         Handlers\CourierPositionUpdatedSocketHandler::class,
         Handlers\UserNotificationCreatedSocketHandler::class,
-        Handlers\DomainEventBroadcastedSocketHandler::class,
+        Handlers\DeliveryOfferedSocketHandler::class,
+        Handlers\CourierAssignedSocketHandler::class,
+        Handlers\OrderStatusUpdatedSocketHandler::class,
     ];
 
     public function dispatch(object $event): void

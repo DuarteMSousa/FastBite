@@ -16,7 +16,6 @@ use App\Enums\DeliveryOfferStatus;
 use App\Enums\DeliveryStatus;
 use App\Enums\OutboxAggregateType;
 use App\Enums\OutboxEventType;
-use App\Events\NotificationEventRecorded;
 use App\Jobs\AssignCourierToDeliveryJob;
 use App\Jobs\ExpireDeliveryOfferJob;
 use App\Models\Delivery;
@@ -333,10 +332,6 @@ class DeliveryService implements DeliveryServiceInterface
             'deliveryStatus' => $deliveryStatus,
             'occurredAt' => $occurredAt->toIso8601String(),
             'data' => $payload,
-            'channels' => array_values(array_filter([
-                "order.{$delivery->order_id}.tracking",
-                $delivery->courier_id ? "courier.{$delivery->courier_id}.jobs" : null,
-            ])),
         ];
 
         $this->deliveries->createEvent($delivery, new CreateDeliveryEventDTO(
@@ -346,7 +341,6 @@ class DeliveryService implements DeliveryServiceInterface
         ));
 
         app(OutboxService::class)->enqueue(OutboxAggregateType::DELIVERY, $delivery->id, OutboxEventType::from($eventType->value), $eventPayload);
-        NotificationEventRecorded::dispatch($eventType, $eventPayload);
     }
 
     private function failDeliveryWithoutCourier(Delivery $delivery): void
@@ -407,11 +401,9 @@ class DeliveryService implements DeliveryServiceInterface
                 'delivery_id' => $offer->delivery_id,
                 'order_id' => $offerSnapshot['order_id'] ?? null,
             ],
-            'channels' => ["courier.{$offer->courier_id}.jobs"],
         ];
 
         app(OutboxService::class)->enqueue(OutboxAggregateType::DELIVERY_OFFER, $offer->id, OutboxEventType::from($eventType->value), $payload);
-        NotificationEventRecorded::dispatch($eventType, $payload);
     }
 
     /**

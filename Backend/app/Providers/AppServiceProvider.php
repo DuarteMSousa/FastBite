@@ -3,17 +3,21 @@
 namespace App\Providers;
 
 use App\Enums\CampaignMorphType;
-use App\Events\CourierLastSocketDisconnected;
 use App\Events\ChatMessageSent;
+use App\Events\CourierAssigned;
+use App\Events\CourierLastSocketDisconnected;
 use App\Events\CourierPositionUpdated;
-use App\Events\DomainEventBroadcasted;
-use App\Events\NotificationEventRecorded;
+use App\Events\DeliveryOffered;
+use App\Events\OrderStatusUpdated;
+use App\Events\OutboxEventPublished;
 use App\Events\UserNotificationCreated;
-use App\Listeners\CreateNotificationFromDomainEvent;
-use App\Listeners\DispatchSocketMessage;
 use App\Listeners\CourierConnectionStatusListener;
+use App\Listeners\DispatchLaravelEventFromOutbox;
+use App\Listeners\DispatchNotificationChannelsFromUserNotificationCreated;
+use App\Listeners\DispatchSocketMessage;
 use App\Models\Coupon;
 use App\Models\Promotion;
+use App\Outbox\Handlers\CreateNotificationFromOutboxEventHandler;
 use App\Services\CartService\CartService;
 use App\Services\CartService\CartServiceInterface;
 use App\Services\CategoryService\CategoryService;
@@ -82,6 +86,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TrackingServiceInterface::class, TrackingService::class);
         $this->app->bind(UserAddressServiceInterface::class, UserAddressService::class);
         $this->app->bind(UserServiceInterface::class, UserService::class);
+
     }
 
     /**
@@ -94,11 +99,15 @@ class AppServiceProvider extends ServiceProvider
             CampaignMorphType::PROMOTION->value => Promotion::class,
         ]);
 
-        Event::listen(NotificationEventRecorded::class, CreateNotificationFromDomainEvent::class);
+        Event::listen(OutboxEventPublished::class, DispatchLaravelEventFromOutbox::class);
+        Event::listen(OutboxEventPublished::class, CreateNotificationFromOutboxEventHandler::class);
         Event::listen(ChatMessageSent::class, DispatchSocketMessage::class);
+        Event::listen(CourierAssigned::class, DispatchSocketMessage::class);
         Event::listen(CourierPositionUpdated::class, DispatchSocketMessage::class);
+        Event::listen(DeliveryOffered::class, DispatchSocketMessage::class);
+        Event::listen(OrderStatusUpdated::class, DispatchSocketMessage::class);
+        Event::listen(UserNotificationCreated::class, DispatchNotificationChannelsFromUserNotificationCreated::class);
         Event::listen(UserNotificationCreated::class, DispatchSocketMessage::class);
-        Event::listen(DomainEventBroadcasted::class, DispatchSocketMessage::class);
         Event::listen(CourierLastSocketDisconnected::class, CourierConnectionStatusListener::class);
     }
 }

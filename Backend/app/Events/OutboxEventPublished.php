@@ -2,11 +2,10 @@
 
 namespace App\Events;
 
-use BackedEnum;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class NotificationEventRecorded
+class OutboxEventPublished
 {
     use Dispatchable, SerializesModels;
 
@@ -14,7 +13,7 @@ class NotificationEventRecorded
      * @param  array<string, mixed>  $payload
      */
     public function __construct(
-        public BackedEnum $eventType,
+        public string $eventName,
         public array $payload,
     ) {
     }
