@@ -38,7 +38,7 @@ export function statusLabel(status) {
   if (status === 'IN_TRANSIT') return 'A caminho'
   if (status === 'FAILED') return 'Falhada'
   if (status === 'COMPLETED') return 'Concluído'
-  return status ?? '-'
+  return fallbackEnumLabel(status)
 }
 
 export function orderItemStatusLabel(status) {
@@ -46,7 +46,7 @@ export function orderItemStatusLabel(status) {
   if (status === 'PREPARING') return 'Em preparação'
   if (status === 'READY') return 'Pronto'
   if (status === 'CANCELLED') return 'Cancelado'
-  return status ?? '-'
+  return fallbackEnumLabel(status)
 }
 
 export function orderItemStatusChipStyle(status) {
@@ -57,11 +57,26 @@ export function orderItemStatusChipStyle(status) {
 }
 
 export function paymentMethodLabel(method) {
-  if (method === 'CASH') return 'Dinheiro à entrega'
+  if (method === 'CASH') return 'Dinheiro no ato da entrega'
   if (method === 'CARD') return 'Cartão'
   if (method === 'MBWAY') return 'MB Way'
   if (method === 'PAYPAL') return 'PayPal'
-  return method
+  return fallbackEnumLabel(method)
+}
+
+export function paymentStatusLabel(status) {
+  if (status === 'PENDING') return 'Pendente'
+  if (status === 'COMPLETED') return 'Pago'
+  if (status === 'FAILED') return 'Falhado'
+  if (status === 'CANCELLED') return 'Cancelado'
+  if (status === 'REFUNDED') return 'Reembolsado'
+  return fallbackEnumLabel(status)
+}
+
+export function reviewTargetLabel(targetType) {
+  if (targetType === 'RESTAURANT') return 'Restaurante'
+  if (targetType === 'COURIER') return 'Estafeta'
+  return fallbackEnumLabel(targetType)
 }
 
 export function orderStatusChipStyle(status) {
@@ -108,8 +123,14 @@ const EVENT_LABELS_PT = {
 export function eventTypeLabel(eventType) {
   const key = String(eventType ?? '').toUpperCase()
   if (EVENT_LABELS_PT[key]) return EVENT_LABELS_PT[key]
-  return String(eventType ?? '')
+  return fallbackEnumLabel(eventType)
+}
+
+export function fallbackEnumLabel(value) {
+  if (!value) return '-'
+
+  return String(value)
     .replaceAll('_', ' ')
     .toLowerCase()
-    .replace(/(^\w|\s\w)/g, (match) => match.toUpperCase())
+    .replace(/^\w/, (match) => match.toUpperCase())
 }

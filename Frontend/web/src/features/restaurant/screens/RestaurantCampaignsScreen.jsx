@@ -383,7 +383,6 @@ export function RestaurantCampaignsScreen({ session }) {
       <header className="rb-page-head rb-page-head-row">
         <div>
           <h2>Campanhas</h2>
-          <p>Promoções e cupões da cadeia</p>
         </div>
         <button type="button" className="rb-btn-outline" onClick={load} disabled={loading}>
           {loading ? 'A carregar...' : 'Atualizar'}

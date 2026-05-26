@@ -69,7 +69,7 @@ export async function loginMobileUser({ email, password, token = '' }) {
   const trimmedPassword = String(password ?? '').trim()
 
   if (!trimmedEmail || !trimmedPassword) {
-    throw new Error('Preenche email e password.')
+    throw new Error('Preencha o email e a palavra-passe.')
   }
 
   const data = await graphqlRequest({
@@ -97,7 +97,7 @@ export async function registerMobileUser({ email, password, name, role = 'custom
   const trimmedName = String(name ?? '').trim()
 
   if (!trimmedName || !trimmedEmail || !trimmedPassword) {
-    throw new Error('Preenche nome, email e password.')
+    throw new Error('Preencha o nome, o email e a palavra-passe.')
   }
 
   try {
@@ -126,11 +126,12 @@ export async function registerMobileUser({ email, password, name, role = 'custom
       message.includes('users_email_unique') ||
       message.toLowerCase().includes('unique constraint') ||
       message.toLowerCase().includes('unique') ||
+      message.toLowerCase().includes('já está registado') ||
       message.toLowerCase().includes('ja esta registado') ||
       message.toLowerCase().includes('duplicate') ||
       message.toLowerCase().includes('already')
     ) {
-      throw new Error('Este email ja esta registado.', { cause: error })
+      throw new Error('Este email já está registado.', { cause: error })
     }
 
     throw error

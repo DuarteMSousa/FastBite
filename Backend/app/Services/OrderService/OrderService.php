@@ -459,7 +459,7 @@ class OrderService implements OrderServiceInterface
         }
 
         throw ValidationException::withMessages([
-            'delivery_id' => 'A encomenda so pode ser preparada depois de existir estafeta atribuido.',
+            'delivery_id' => 'A encomenda só pode ser preparada depois de existir estafeta atribuído.',
         ]);
     }
 
@@ -467,7 +467,7 @@ class OrderService implements OrderServiceInterface
     {
         if ($addressId === null) {
             throw ValidationException::withMessages([
-                'address_id' => 'Checkout requires a delivery address.',
+                'address_id' => 'Indique uma morada de entrega para finalizar o pedido.',
             ]);
         }
 
@@ -481,13 +481,13 @@ class OrderService implements OrderServiceInterface
         foreach ($cart->items as $item) {
             if (! $item->restaurantProduct?->is_available) {
                 throw ValidationException::withMessages([
-                    'cart' => 'Cart contains an unavailable product.',
+                    'cart' => 'O carrinho contém um produto indisponível.',
                 ]);
             }
 
             if ($item->restaurantProduct?->restaurant_id !== $restaurantId) {
                 throw ValidationException::withMessages([
-                    'cart' => 'Cart can only contain products from one restaurant.',
+                    'cart' => 'O carrinho só pode conter produtos de um restaurante.',
                 ]);
             }
         }
@@ -497,13 +497,13 @@ class OrderService implements OrderServiceInterface
 
         if (! $restaurantAddress) {
             throw ValidationException::withMessages([
-                'restaurant_id' => 'Restaurant has no pickup address configured.',
+                'restaurant_id' => 'O restaurante não tem morada de recolha configurada.',
             ]);
         }
 
         if (! $this->isRestaurantOpenNow($restaurant)) {
             throw ValidationException::withMessages([
-                'restaurant_id' => 'Restaurant is closed at this time.',
+                'restaurant_id' => 'O restaurante está fechado neste momento.',
             ]);
         }
 
@@ -516,7 +516,7 @@ class OrderService implements OrderServiceInterface
 
         if ($restaurant->delivery_radius !== null && $distanceKm > (float) $restaurant->delivery_radius) {
             throw ValidationException::withMessages([
-                'address_id' => 'Delivery address is outside the restaurant delivery radius.',
+                'address_id' => 'A morada de entrega está fora do raio de entrega do restaurante.',
             ]);
         }
     }

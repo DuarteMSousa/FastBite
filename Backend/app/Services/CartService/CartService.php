@@ -131,7 +131,7 @@ class CartService implements CartServiceInterface
 
         if ($existingRestaurantId && $existingRestaurantId !== $restaurantProduct->restaurant_id) {
             throw ValidationException::withMessages([
-                'restaurant_product_id' => 'Cart can only contain products from one restaurant.',
+                'restaurant_product_id' => 'O carrinho só pode conter produtos de um restaurante.',
             ]);
         }
     }

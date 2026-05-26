@@ -46,7 +46,7 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
 
   const stored = await readSession()
   if (!stored?.session || !stored?.deliveryId) {
-    // Sessao limpa: parar a task para nao queimar GPS indefinidamente.
+    // Sessão limpa: parar a tarefa para não manter o GPS ativo indefinidamente.
     try {
       const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_LOCATION_TASK)
       if (isRegistered) {
@@ -68,7 +68,7 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
       recordedAt: new Date(latest.timestamp ?? Date.now()).toISOString(),
     })
   } catch (err) {
-    // Se o servidor disser que a delivery ja nao esta ativa, parar a task.
+    // Se o servidor disser que a entrega já não está ativa, parar a tarefa.
     const message = String(err?.message ?? '').toLowerCase()
     const deliveryClosed =
       message.includes('not found') ||
@@ -88,7 +88,7 @@ TaskManager.defineTask(BACKGROUND_LOCATION_TASK, async ({ data, error }) => {
         // ignore
       }
     }
-    // restantes erros: proxima iteracao tenta de novo
+      // Restantes erros: a próxima iteração tenta de novo.
   }
 })
 
@@ -104,7 +104,7 @@ export async function startBackgroundLocation({ session, deliveryId }) {
     showsBackgroundLocationIndicator: true,
     foregroundService: {
       notificationTitle: 'FastBite Estafeta',
-      notificationBody: 'A enviar localizacao em segundo plano',
+      notificationBody: 'A enviar localização em segundo plano',
     },
     pausesUpdatesAutomatically: false,
   })

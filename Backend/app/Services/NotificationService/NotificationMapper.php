@@ -23,48 +23,48 @@ class NotificationMapper
             OrderEventType::ORDER_CONFIRMED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
                 $payload,
                 'Pedido confirmado',
-                'O pagamento foi confirmado e o pedido avancou.'
+                'teve o pagamento confirmado e avançou.'
             ),
             OrderEventType::ORDER_PREPARING->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
                 $payload,
-                'Pedido em preparacao',
-                'O restaurante aceitou o pedido e comecou a preparacao.'
+                'Pedido em preparação',
+                'foi aceite pelo restaurante e começou a ser preparado.'
             ),
             OrderEventType::ORDER_READY->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
                 $payload,
                 'Pedido pronto',
-                'O pedido esta pronto para recolha.'
+                'está pronto para recolha.'
             ),
             OrderEventType::ORDER_OUT_FOR_DELIVERY->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
                 $payload,
                 'Pedido a caminho',
-                'O pedido saiu para entrega.'
+                'saiu para entrega.'
             ),
             OrderEventType::ORDER_DELIVERED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
                 $payload,
                 'Pedido entregue',
-                'O pedido foi entregue.'
+                'foi entregue.'
             ),
             OrderEventType::ORDER_CANCELLED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
                 $payload,
                 'Pedido cancelado',
-                (string) ($payload['data']['reason'] ?? 'O pedido foi cancelado.')
+                $this->cancelledOrderMessage($payload)
             ),
             DeliveryOfferEventType::JOB_OFFERED->value => fn (array $payload): ?CreateNotificationDTO => $this->courierJobOffered($payload),
             OrderEventType::ORDER_COURIER_ASSIGNED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
                 $payload,
-                'Estafeta atribuido',
-                'O teu pedido ja tem estafeta atribuido.'
+                'Estafeta atribuído',
+                'já tem estafeta atribuído.'
             ),
             OrderEventType::ORDER_PICKED_UP->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
                 $payload,
                 'Pedido recolhido',
-                'O estafeta recolheu o teu pedido no restaurante.'
+                'foi recolhido pelo estafeta no restaurante.'
             ),
             DeliveryEventType::DELIVERY_FAILED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
                 $payload,
                 'Problema na entrega',
-                'A entrega teve uma falha e sera acompanhada pelo restaurante.'
+                'teve uma falha na entrega e será acompanhado pelo restaurante.'
             ),
         ];
     }
@@ -95,7 +95,7 @@ class NotificationMapper
         return $this->orderUpdate(
             $payload,
             'Pedido criado',
-            "O teu pedido em {$restaurantName} aguarda pagamento."
+            "em {$restaurantName} aguarda pagamento."
         );
     }
 
@@ -114,7 +114,7 @@ class NotificationMapper
             userId: (string) $userId,
             type: NotificationType::ORDER_UPDATE,
             title: $title,
-            message: $message,
+            message: $this->orderMessage($payload, $message),
             data: [
                 'order_id' => $payload['orderId'] ?? null,
                 'delivery_id' => $payload['deliveryId'] ?? null,
@@ -123,6 +123,42 @@ class NotificationMapper
                 'reason' => $payload['data']['reason'] ?? $payload['data']['failure_reason'] ?? null,
             ],
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function orderMessage(array $payload, string $message): string
+    {
+        return sprintf('O seu %s %s', $this->orderReference($payload), $message);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function orderReference(array $payload): string
+    {
+        $orderId = (string) ($payload['orderId'] ?? $payload['order_id'] ?? $payload['data']['order_id'] ?? '');
+
+        if ($orderId === '') {
+            return 'pedido';
+        }
+
+        return 'pedido #'.strtoupper(substr($orderId, 0, 8));
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function cancelledOrderMessage(array $payload): string
+    {
+        $reason = trim((string) ($payload['data']['reason'] ?? ''));
+
+        if ($reason === '') {
+            return 'foi cancelado.';
+        }
+
+        return 'foi cancelado. Motivo: '.rtrim($reason, ". \t\n\r\0\x0B").'.';
     }
 
     /**
@@ -140,7 +176,7 @@ class NotificationMapper
             userId: (string) $courierId,
             type: NotificationType::ORDER_UPDATE,
             title: 'Nova proposta de entrega',
-            message: 'Tens uma nova entrega disponivel para aceitar.',
+            message: 'Tem uma nova entrega disponível para aceitar.',
             data: [
                 'offer_id' => $payload['offerId'] ?? null,
                 'delivery_id' => $payload['deliveryId'] ?? null,

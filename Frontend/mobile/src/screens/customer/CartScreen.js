@@ -44,7 +44,7 @@ export function CartScreen({
         {noCouriersAvailable ? (
           <View style={styles.offlineBanner}>
             <Text style={styles.offlineBannerText}>
-              Sem estafetas disponíveis. Não podes finalizar o pedido agora.
+              Sem estafetas disponíveis. Não é possível finalizar o pedido neste momento.
             </Text>
           </View>
         ) : null}
@@ -52,7 +52,7 @@ export function CartScreen({
         {items.length === 0 ? (
           <View style={styles.emptyStateCard}>
             <Text style={styles.emptyStateTitle}>Carrinho vazio</Text>
-            <Text style={styles.emptyStateText}>Volta ao menu para adicionar produtos.</Text>
+            <Text style={styles.emptyStateText}>Volte ao menu para adicionar produtos.</Text>
           </View>
         ) : null}
 
@@ -129,7 +129,7 @@ export function CartScreen({
       <View style={styles.checkoutBar}>
         <SummaryLine label="Subtotal" value={formatCurrency(subtotal)} />
         <SummaryLine
-          label={`Taxa de entrega${selectedAddress ? '' : ' (escolhe morada)'}`}
+          label={`Taxa de entrega${selectedAddress ? '' : ' (escolha morada)'}`}
           value={formatCurrency(deliveryFee)}
         />
         {appliedDiscounts.length > 0 ? (
@@ -161,7 +161,7 @@ export function CartScreen({
               ? 'A processar...'
               : noCouriersAvailable
                 ? 'Sem estafetas disponíveis'
-                : 'Fazer Pedido'}
+                : 'Finalizar pedido'}
           </Text>
         </Pressable>
       </View>

@@ -23,7 +23,7 @@ export function OrdersHistoryScreen({
         <Pressable onPress={onBack} style={styles.backButton}>
           <Text style={styles.backArrow}>{ICON.back}</Text>
         </Pressable>
-        <Text style={styles.trackTitle}>Meus pedidos</Text>
+        <Text style={styles.trackTitle}>Os meus pedidos</Text>
         <Text style={styles.trackSub}>Histórico de encomendas</Text>
       </View>
 

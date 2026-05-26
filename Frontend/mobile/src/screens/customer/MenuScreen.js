@@ -41,7 +41,7 @@ export function MenuScreen({
       {noCouriersAvailable ? (
         <View style={styles.offlineBanner}>
           <Text style={styles.offlineBannerText}>
-            Sem estafetas disponíveis. Não é possível finalizar pedido neste momento.
+            Sem estafetas disponíveis. Não é possível finalizar o pedido neste momento.
           </Text>
         </View>
       ) : null}
@@ -122,7 +122,7 @@ export function MenuScreen({
       {itemCount > 0 ? (
         <Pressable style={styles.cartBar} onPress={onOpenCart}>
           <Text style={styles.cartBarText}>{ICON.cart} {itemCount} item</Text>
-          <Text style={styles.cartBarText}>Ver Carrinho</Text>
+          <Text style={styles.cartBarText}>Ver carrinho</Text>
           <Text style={styles.cartBarText}>{formatCurrency(total)}</Text>
         </Pressable>
       ) : null}

@@ -95,6 +95,27 @@ function formatDeliveryItems(items) {
   return mappedItems.length > 0 ? mappedItems.join(', ') : '-'
 }
 
+function realtimeStatusLabel(status) {
+  if (status === 'live') return 'ativo'
+  if (status === 'connecting') return 'a ligar'
+  if (status === 'error') return 'erro'
+  return 'offline'
+}
+
+function permissionStatusLabel(status) {
+  if (status === 'granted') return 'permitido'
+  if (status === 'denied') return 'negado'
+  if (status === 'undetermined') return 'por decidir'
+  return 'desconhecido'
+}
+
+function pushStatusLabel(status) {
+  if (status === 'registered') return 'ativo'
+  if (status === 'permission_denied') return 'sem permissão'
+  if (status === 'error') return 'erro'
+  return status || 'desconhecido'
+}
+
 function socketDeliveryId(payload) {
   return payload?.deliveryId ?? payload?.delivery_id ?? payload?.data?.delivery_id ?? null
 }
@@ -156,7 +177,8 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   const phaseRef = useRef(phase)
   const activeDeliveryRef = useRef(activeDelivery)
   const courierId = session?.userId || session?.devUserId
-  const courierInitial = String(session?.operatorName ?? 'E')
+  const courierDisplayName = String(session?.operatorName ?? session?.name ?? '').trim()
+  const courierInitial = String(courierDisplayName || 'E')
     .trim()
     .charAt(0)
     .toUpperCase() || 'E'
@@ -175,9 +197,9 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   const isCompleted = phase === 'completed'
 
   const mainButton = useMemo(() => {
-    if (isPickup) return { label: 'Cheguei ao Restaurante', nextStatus: 'PICKED_UP', nextPhase: 'collected' }
-    if (isCollected) return { label: 'Encomenda Recolhida', nextStatus: 'IN_TRANSIT', nextPhase: 'in_transit' }
-    if (isTransit) return { label: 'Entregue com Sucesso', nextStatus: 'DELIVERED', nextPhase: 'completed' }
+    if (isPickup) return { label: 'Cheguei ao restaurante', nextStatus: 'PICKED_UP', nextPhase: 'collected' }
+    if (isCollected) return { label: 'Encomenda recolhida', nextStatus: 'IN_TRANSIT', nextPhase: 'in_transit' }
+    if (isTransit) return { label: 'Entregue com sucesso', nextStatus: 'DELIVERED', nextPhase: 'completed' }
     if (isCompleted) return { label: 'Nova entrega', nextStatus: null, nextPhase: 'offer' }
     return null
   }, [isPickup, isCollected, isTransit, isCompleted])
@@ -199,7 +221,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
       return true
     }
 
-    setErrorText(`Sem internet. Nao foi possivel ${actionLabel}.`)
+    setErrorText(`Sem internet. Não foi possível ${actionLabel}.`)
     return false
   }
 
@@ -467,7 +489,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         setLocationPermission(permission.status)
 
         if (permission.status !== 'granted') {
-          setToast('Permissao de localizacao em primeiro plano negada.')
+          setToast('Permissão de localização em primeiro plano negada.')
           return
         }
 
@@ -475,7 +497,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         setBackgroundLocationPermission(backgroundPermission.status)
 
         if (backgroundPermission.status !== 'granted') {
-          setToast('Permissao de localizacao em background negada. Tracking ativo apenas com app aberta.')
+          setToast('Permissão de localização em segundo plano negada. O acompanhamento fica ativo apenas com a app aberta.')
         } else {
           startBackgroundLocation({
             session,
@@ -600,11 +622,11 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     if (activeOfferId !== nextOffer.offer_token) {
       setActiveOfferId(nextOffer.offer_token)
       setRejectReason('')
-      // Padrao de vibracao: pausa, vibra, pausa, vibra — chama atencao tipo Uber.
+      // Padrão de vibração: pausa, vibra, pausa, vibra.
       try {
         Vibration.vibrate([0, 400, 200, 400])
       } catch {
-        // silent — alguns dispositivos podem nao suportar
+        // silent: alguns dispositivos podem não suportar vibração.
       }
     }
   }, [availableOffers, courierStatus, phase, dismissedOfferIds, activeOfferId])
@@ -692,7 +714,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   }
 
   async function handleAcceptOffer(offer) {
-    if (!ensureOnline('aceitar oferta')) {
+    if (!ensureOnline('aceitar entrega')) {
       return
     }
 
@@ -723,7 +745,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   }
 
   async function handleRejectOffer(offer, reason = null) {
-    if (!ensureOnline('rejeitar oferta')) {
+    if (!ensureOnline('rejeitar entrega')) {
       return
     }
 
@@ -885,7 +907,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   }, [deepLink])
 
   async function loadHistory() {
-    if (!ensureOnline('carregar historico')) {
+    if (!ensureOnline('carregar histórico')) {
       return
     }
 
@@ -1100,7 +1122,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               <View style={styles.brandTextWrap}>
                 <Text style={styles.brand}>FastBite</Text>
                 <Text style={styles.brandSub} numberOfLines={1} ellipsizeMode="tail">
-                  {session?.operatorName ? `Estafeta - ${session.operatorName}` : 'Estafeta'}
+                  {courierDisplayName || 'Estafeta'}
                 </Text>
               </View>
             </View>
@@ -1125,7 +1147,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                 jobsRealtimeState === 'live' ? styles.statusChipOk : styles.statusChipWarn,
               ]}
             >
-              Jobs: {jobsRealtimeState}
+              Tempo real: {realtimeStatusLabel(jobsRealtimeState)}
             </Text>
             <Text
               style={[
@@ -1133,7 +1155,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                 locationPermission === 'granted' ? styles.statusChipOk : styles.statusChipWarn,
               ]}
             >
-              GPS: {locationPermission}
+              GPS: {permissionStatusLabel(locationPermission)}
             </Text>
             <Text
               style={[
@@ -1141,7 +1163,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                 backgroundLocationPermission === 'granted' ? styles.statusChipOk : styles.statusChipWarn,
               ]}
             >
-              BG: {backgroundLocationPermission}
+              Segundo plano: {permissionStatusLabel(backgroundLocationPermission)}
             </Text>
             <Text
               style={[
@@ -1149,7 +1171,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                 pushStatus === 'registered' ? styles.statusChipOk : styles.statusChipWarn,
               ]}
             >
-              Push: {pushStatus === 'registered' ? 'ok' : pushStatus === 'permission_denied' ? 'off' : pushStatus}
+              Push: {pushStatusLabel(pushStatus)}
             </Text>
           </View>
 
@@ -1176,7 +1198,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           </View>
 
           <Pressable style={styles.historyLink} onPress={openHistoryModal}>
-            <Text style={styles.historyLinkText}>Ver historico & ganhos</Text>
+            <Text style={styles.historyLinkText}>Ver histórico e ganhos</Text>
           </Pressable>
         </View>
 
@@ -1190,7 +1212,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             <Pressable style={styles.readyBanner} onPress={() => setReadyBanner(false)}>
               <Text style={styles.readyBannerTitle}>Pedido pronto para recolha</Text>
               <Text style={styles.readyBannerText}>
-                A cozinha marcou o pedido como pronto. Dirige-te ao restaurante.
+                A cozinha marcou o pedido como pronto. Dirija-se ao restaurante.
               </Text>
             </Pressable>
           ) : null}
@@ -1198,18 +1220,18 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           {!isOnline ? (
             <View style={styles.warningBox}>
               <Text style={styles.warningText}>
-                Sem internet. Operacoes remotas e realtime estao temporariamente indisponiveis.
+                Sem internet. As operações remotas e o tempo real estão temporariamente indisponíveis.
               </Text>
             </View>
           ) : null}
 
           {isOffer ? (
             <View style={styles.card}>
-              <Text style={styles.offerId}>Entregas disponiveis</Text>
+              <Text style={styles.offerId}>Entregas disponíveis</Text>
               <Text style={styles.offerRestaurant}>
                 {courierStatus === 'AVAILABLE'
                   ? `${availableOffers.length} entrega(s) pendente(s).`
-                  : 'Fica online para ver ofertas.'}
+                  : 'Fique online para ver ofertas.'}
               </Text>
 
               {courierStatus === 'AVAILABLE' ? (
@@ -1226,9 +1248,9 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                         <SummaryRow label="Restaurante" value={offer.restaurant_name} />
                         <SummaryRow label="Cliente" value={offer.customer_name ?? '-'} />
                         <SummaryRow label="Total" value={`EUR ${Number(offer.order_total ?? 0).toFixed(2)}`} />
-                        <SummaryRow label="Vai buscar" value={formatDeliveryItems(offer.items)} />
+                        <SummaryRow label="Recolha" value={formatDeliveryItems(offer.items)} />
                         <SummaryRow
-                          label="Distancia pickup"
+                          label="Distância até à recolha"
                           value={
                             offer.estimated_pickup_distance_km !== null &&
                             offer.estimated_pickup_distance_km !== undefined
@@ -1237,7 +1259,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                           }
                         />
                         <SummaryRow
-                          label="Tempo estimado pickup"
+                          label="Tempo estimado até à recolha"
                           value={
                             offer.estimated_pickup_time_min !== null &&
                             offer.estimated_pickup_time_min !== undefined
@@ -1245,7 +1267,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                               : '-'
                           }
                         />
-                        <SummaryRow label="Pickup" value={offer.pickup_address ?? '-'} />
+                        <SummaryRow label="Morada de recolha" value={offer.pickup_address ?? '-'} />
                         <SummaryRow label="Entrega" value={offer.dropoff_address ?? '-'} />
                         <View style={styles.actionsRow}>
                           <Pressable
@@ -1284,7 +1306,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               <Text style={styles.summaryTitle}>Entrega ativa</Text>
               <SummaryRow label="Restaurante" value={tracking?.restaurant_name ?? activeDelivery.restaurant_name ?? '-'} />
               <SummaryRow label="Cliente" value={tracking?.customer_name ?? activeDelivery.customer_name ?? '-'} />
-              <SummaryRow label="Recolher" value={tracking?.pickup_address ?? activeDelivery.pickup_address ?? '-'} />
+              <SummaryRow label="Recolha" value={tracking?.pickup_address ?? activeDelivery.pickup_address ?? '-'} />
               <SummaryRow label="Entregar" value={tracking?.dropoff_address ?? activeDelivery.dropoff_address ?? '-'} />
               <SummaryRow label="Itens" value={formatDeliveryItems(tracking?.items ?? activeDelivery.items)} />
               <SummaryRow label="Estado entrega" value={statusLabel(tracking?.delivery_status ?? activeDelivery.delivery_status)} />
@@ -1307,15 +1329,15 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           {activeDelivery ? (
             <NativeDeliveryMapCard
               title="Mapa da rota ativa"
-              subtitle="Posicao GPS do estafeta com envio realtime"
+              subtitle="Posição GPS do estafeta com envio em tempo real"
               pickup={
                 tracking?.pickup_latitude !== null && tracking?.pickup_latitude !== undefined
-                  ? { lat: tracking.pickup_latitude, lng: tracking.pickup_longitude, label: 'Pickup' }
+                  ? { lat: tracking.pickup_latitude, lng: tracking.pickup_longitude, label: 'Recolha' }
                   : null
               }
               dropoff={
                 tracking?.dropoff_latitude !== null && tracking?.dropoff_latitude !== undefined
-                  ? { lat: tracking.dropoff_latitude, lng: tracking.dropoff_longitude, label: 'Dropoff' }
+                  ? { lat: tracking.dropoff_latitude, lng: tracking.dropoff_longitude, label: 'Entrega' }
                   : null
               }
               courier={
@@ -1541,28 +1563,28 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                   label="Total"
                   value={`EUR ${Number(activeOffer.order_total ?? 0).toFixed(2)}`}
                 />
-                <SummaryRow label="Vai buscar" value={formatDeliveryItems(activeOffer.items)} />
-                <SummaryRow label="Pickup" value={activeOffer.pickup_address ?? '-'} />
+                <SummaryRow label="Recolha" value={formatDeliveryItems(activeOffer.items)} />
+                <SummaryRow label="Morada de recolha" value={activeOffer.pickup_address ?? '-'} />
                 <SummaryRow label="Entrega" value={activeOffer.dropoff_address ?? '-'} />
                 {activeOffer.estimated_pickup_distance_km !== null &&
                 activeOffer.estimated_pickup_distance_km !== undefined ? (
                   <SummaryRow
-                    label="Distancia pickup"
+                    label="Distância até à recolha"
                     value={`${Number(activeOffer.estimated_pickup_distance_km).toFixed(2)} km`}
                   />
                 ) : null}
                 {activeOffer.estimated_pickup_time_min !== null &&
                 activeOffer.estimated_pickup_time_min !== undefined ? (
                   <SummaryRow
-                    label="Tempo estimado pickup"
+                    label="Tempo estimado até à recolha"
                     value={`${activeOffer.estimated_pickup_time_min} min`}
                   />
                 ) : null}
 
-                <Text style={styles.offerReasonLabel}>Motivo da rejeicao (opcional)</Text>
+                <Text style={styles.offerReasonLabel}>Motivo da rejeição (opcional)</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Ex: longe demais"
+                  placeholder="Ex.: demasiado longe"
                   placeholderTextColor="#94a3b8"
                   value={rejectReason}
                   onChangeText={setRejectReason}
@@ -1616,13 +1638,13 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           <View style={styles.failModalCard}>
             <Text style={styles.offerModalTitle}>Marcar entrega como falhada</Text>
             <Text style={styles.failModalSubtitle}>
-              Esta acao e irreversivel. O motivo fica registado no historico da entrega.
+              Esta ação é irreversível. O motivo fica registado no histórico da entrega.
             </Text>
 
             <Text style={styles.offerReasonLabel}>Motivo *</Text>
             <TextInput
               style={[styles.input, styles.failReasonInput]}
-              placeholder="Ex: cliente indisponivel, morada incorreta"
+              placeholder="Ex.: cliente indisponível ou morada incorreta"
               placeholderTextColor="#94a3b8"
               value={failReason}
               onChangeText={setFailReason}
@@ -1741,7 +1763,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           >
           <View style={styles.historyModalCard}>
             <View style={styles.offerModalHeader}>
-              <Text style={styles.offerModalTitle}>Historico & ganhos</Text>
+              <Text style={styles.offerModalTitle}>Histórico e ganhos</Text>
               <Pressable
                 style={styles.offerModalClose}
                 onPress={() => setShowHistoryModal(false)}
@@ -1778,7 +1800,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
 
             {historyStats.failedCount > 0 ? (
               <Text style={styles.historyFailedNote}>
-                {historyStats.failedCount} entrega(s) falhada(s) no historico.
+                {historyStats.failedCount} entrega(s) falhada(s) no histórico.
               </Text>
             ) : null}
 
@@ -1797,7 +1819,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
 
             <ScrollView style={styles.historyList} contentContainerStyle={styles.historyListContent}>
               {!isLoadingHistory && history.length === 0 ? (
-                <Text style={styles.offerMeta}>Sem entregas no historico ainda.</Text>
+                <Text style={styles.offerMeta}>Sem entregas no histórico ainda.</Text>
               ) : null}
 
               {history.map((delivery) => (
@@ -1832,7 +1854,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                   </View>
                   {delivery.delivery_time ? (
                     <Text style={styles.historyItemMeta}>
-                      Concluida: {new Date(delivery.delivery_time).toLocaleString()}
+                      Concluída: {new Date(delivery.delivery_time).toLocaleString()}
                     </Text>
                   ) : null}
                 </View>
@@ -1906,7 +1928,7 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
                 style={styles.chatInputCourier}
                 value={chatDraft}
                 onChangeText={setChatDraft}
-                placeholder="Mensagem..."
+                placeholder="Escreva uma mensagem"
                 placeholderTextColor="#94a3b8"
                 editable={!chatSending}
                 multiline

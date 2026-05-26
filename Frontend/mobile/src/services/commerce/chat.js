@@ -149,7 +149,7 @@ export async function createOrderChat({ session, orderId, type, participantUserI
 export async function sendChatMessage({ session, chatId, content }) {
   const trimmed = String(content ?? '').trim()
   if (!trimmed) {
-    throw new Error('A mensagem nao pode ser vazia.')
+    throw new Error('A mensagem não pode estar vazia.')
   }
 
   const data = await graphqlRequest({

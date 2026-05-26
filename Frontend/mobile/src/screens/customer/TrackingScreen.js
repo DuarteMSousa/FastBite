@@ -19,7 +19,7 @@ export function TrackingScreen({
   const events = tracking?.events ?? []
   const realtimeLabel =
     realtimeState === 'live'
-      ? 'AO VIVO'
+      ? 'Ao vivo'
       : realtimeState === 'connecting'
         ? 'A ligar'
         : realtimeState === 'error'
@@ -28,9 +28,9 @@ export function TrackingScreen({
   const lastUpdateLabel = (() => {
     if (!realtimeLastUpdateMs) return '-'
     const secondsAgo = Math.max(0, Math.floor((Date.now() - realtimeLastUpdateMs) / 1000))
-    if (secondsAgo < 60) return `ha ${secondsAgo}s`
+    if (secondsAgo < 60) return `há ${secondsAgo}s`
     const minutesAgo = Math.floor(secondsAgo / 60)
-    return `ha ${minutesAgo}min`
+    return `há ${minutesAgo}min`
   })()
   const hasCourierPosition = Boolean(tracking?.latest_position)
   const courierAssigned = Boolean(tracking?.courier_id)
@@ -50,7 +50,7 @@ export function TrackingScreen({
         {!isOnline ? (
           <View style={styles.offlineBanner}>
             <Text style={styles.offlineBannerText}>
-              Sem internet. O tracking será atualizado automaticamente quando a ligação voltar.
+              Sem internet. O acompanhamento será atualizado automaticamente quando a ligação voltar.
             </Text>
           </View>
         ) : null}
@@ -66,7 +66,7 @@ export function TrackingScreen({
         ) : null}
 
         <Pressable style={styles.successBanner} onPress={onRefresh}>
-          <Text style={styles.successBannerText}>{ICON.check} Atualizar tracking</Text>
+          <Text style={styles.successBannerText}>{ICON.check} Atualizar acompanhamento</Text>
         </Pressable>
 
         <View style={styles.chatButtonsRow}>
@@ -96,13 +96,13 @@ export function TrackingScreen({
           <Text style={styles.trackSummarySub}>Entrega: {statusLabel(tracking?.delivery_status)}</Text>
           <Text style={styles.trackSummarySub}>Realtime: {realtimeLabel}</Text>
           <Text style={styles.trackSummarySub}>
-            Posição do estafeta: {hasCourierPosition ? `atualizada ${lastUpdateLabel}` : courierAssigned ? 'aguardando primeira posição...' : 'sem estafeta atribuído'}
+            Posição do estafeta: {hasCourierPosition ? `atualizada ${lastUpdateLabel}` : courierAssigned ? 'a aguardar a primeira posição...' : 'sem estafeta atribuído'}
           </Text>
           <Text style={styles.trackSummarySub}>
-            Atualizacoes recebidas: {realtimeUpdateCount}
+            Atualizações recebidas: {realtimeUpdateCount}
           </Text>
           <Text style={styles.trackSummarySub}>
-            Distancia restante: {tracking?.distance_km_remaining ?? '-'} km
+            Distância restante: {tracking?.distance_km_remaining ?? '-'} km
           </Text>
           <Text style={styles.trackSummarySub}>
             ETA: {tracking?.eta_seconds ? `${Math.ceil(tracking.eta_seconds / 60)} min` : '-'}
@@ -114,9 +114,9 @@ export function TrackingScreen({
           title="Mapa da entrega"
           subtitle={
             hasCourierPosition
-              ? `Posicao do estafeta actualizada ${lastUpdateLabel} (${realtimeLabel})`
+              ? `Posição do estafeta atualizada ${lastUpdateLabel} (${realtimeLabel})`
               : courierAssigned
-                ? `A aguardar posicao do estafeta (${realtimeLabel})`
+                ? `A aguardar a posição do estafeta (${realtimeLabel})`
                 : 'Estafeta ainda não atribuído'
           }
           pickup={
@@ -124,7 +124,7 @@ export function TrackingScreen({
               ? {
                   lat: tracking.pickup_latitude,
                   lng: tracking.pickup_longitude,
-                  label: 'Pickup',
+                  label: 'Recolha',
                 }
               : null
           }
@@ -133,7 +133,7 @@ export function TrackingScreen({
               ? {
                   lat: tracking.dropoff_latitude,
                   lng: tracking.dropoff_longitude,
-                  label: 'Dropoff',
+                  label: 'Entrega',
                 }
               : null
           }

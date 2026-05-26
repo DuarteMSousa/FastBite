@@ -326,7 +326,7 @@ export async function rejectDeliveryJob({ session, offerToken, reason = null }) 
 export async function updateDeliveryStatus({ session, deliveryId, status }) {
   const query = DELIVERY_STATUS_MUTATIONS[status]
   if (!query) {
-    throw new Error(`Estado de entrega nao suportado: ${status}`)
+    throw new Error(`Estado de entrega não suportado: ${status}`)
   }
 
   const operationName = status === 'PICKED_UP'

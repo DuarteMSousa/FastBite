@@ -109,7 +109,7 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
 
   function handleSelectRestaurant(nextRestaurantId) {
     if (!isChainManager && nextRestaurantId !== session.restaurantId) {
-      setErrorText("Gestores locais só podem aceder ao seu restaurante.");
+      setErrorText("Os gestores locais só podem aceder ao seu restaurante.");
       return;
     }
 
@@ -146,7 +146,7 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
       (field) => String(restaurantDraft[field] ?? "").trim() === "",
     );
     if (hasEmpty) {
-      setErrorText("Preenche todos os campos do restaurante.");
+      setErrorText("Preencha todos os campos do restaurante.");
       return;
     }
 
@@ -197,7 +197,7 @@ export function RestaurantProfileScreen({ session, onSessionChange }) {
     }
 
     if (!chainNameDraft.trim()) {
-      setErrorText("Preenche o nome da cadeia.");
+      setErrorText("Preencha o nome da cadeia.");
       return;
     }
 

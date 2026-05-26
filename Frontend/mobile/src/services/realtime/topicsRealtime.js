@@ -56,7 +56,7 @@ export function subscribeToChatTopic({ chatId, authToken, devUserId, onMessage, 
 export async function sendChatMessageOverSocket({ chatId, content, authToken, devUserId }) {
   const trimmed = String(content ?? '').trim()
   if (!trimmed) {
-    throw new Error('A mensagem nao pode ser vazia.')
+    throw new Error('A mensagem não pode estar vazia.')
   }
 
   const echo = getEchoClient({ authToken, devUserId })
