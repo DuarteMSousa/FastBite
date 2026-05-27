@@ -75,6 +75,8 @@ services:
                 condition: service_healthy
             pgsql:
                 condition: service_healthy
+            gateway:
+                condition: service_healthy
 
     gateway:
         image: 'sail-8.5/app'
@@ -88,6 +90,7 @@ services:
             SUPERVISOR_PHP_COMMAND: '/usr/bin/php -d variables_order=EGPCS -d xdebug.mode=off -d xdebug.start_with_request=no /var/www/html/gateway/start.php start'
             GATEWAY_WORKER_REGISTER_LISTEN_HOST: 0.0.0.0
             GATEWAY_WORKER_REGISTER_HOST: 127.0.0.1
+            GATEWAY_WORKER_LAN_IP: gateway
             XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
             XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
         volumes:
@@ -107,6 +110,18 @@ services:
                 condition: service_healthy
             pgsql:
                 condition: service_healthy
+        healthcheck:
+            test:
+                - CMD
+                - php
+                - -d
+                - default_socket_timeout=1
+                - -r
+                - 'exit(@stream_socket_client("tcp://127.0.0.1:1236") ? 0 : 1);'
+            retries: 10
+            timeout: 5s
+            interval: 5s
+            start_period: 5s
             
     pgsql:
         image: 'postgres:18-alpine'

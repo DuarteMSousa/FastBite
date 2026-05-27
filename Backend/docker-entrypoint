@@ -6,10 +6,22 @@ cd /var/www/html
 rm -f /tmp/laravel-ready
 
 if [ -f .env ]; then
+    # Load .env for local defaults without clobbering values injected by Compose.
+    declare -A existing_env=()
+    while IFS='=' read -r name value; do
+        existing_env["$name"]="$value"
+    done < <(env)
+
     set -a
     # shellcheck disable=SC1091
     . ./.env
     set +a
+
+    for name in "${!existing_env[@]}"; do
+        export "$name=${existing_env[$name]}"
+    done
+
+    unset existing_env name value
 fi
 
 if [ "${DB_CONNECTION:-}" = "pgsql" ] && [ -n "${DB_HOST:-}" ]; then
