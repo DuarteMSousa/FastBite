@@ -1,0 +1,901 @@
+﻿
+
+
+
+
+
+
+
+
+escola 
+superior
+de tecnologia
+e gestão
+POLITÉCNICO
+DO PORTO
+
+
+
+
+
+FastBite- PEDWM 
+Alexandre Freitas (8220154), Duarte Sousa (8220160), Paulo Coelho (8220195) 
+
+
+05/2026
+
+
+
+
+
+
+
+
+
+
+
+
+
+[Heading2] Resumo
+O presente projeto consiste na conceção, desenvolvimento e implementação da plataforma FastBite, uma aplicação para a gestão de encomendas e entregas de refeições, permitindo a interação em tempo real entre clientes, restaurantes e estafetas.
+
+O principal objetivo do sistema é responder aos desafios associados à sincronização de estados num ambiente multiutilizador, onde diferentes atores necessitam de acesso contínuo e atualizado à informação. Para tal, foi adotada uma arquitetura orientada a eventos, combinando a utilização de GraphQL para operações estruturadas e WebSockets para comunicação bidirecional em tempo real, garantindo baixa latência e elevada responsividade.
+
+O backend foi desenvolvido utilizando Laravel, recorrendo aos packages Lighthouse para suporte a GraphQL e Reverb para gestão de WebSockets. O sistema inclui ainda dois clientes distintos: um frontend web desenvolvido em React.js e um frontend mobile desenvolvido em React Native, permitindo uma experiência multiplataforma consistente.
+
+A aplicação suporta um conjunto abrangente de funcionalidades, incluindo exploração de restaurantes, gestão de carrinho de compras, realização de encomendas, acompanhamento em tempo real do estado das entregas, gestão de menus por parte dos restaurantes e coordenação de estafetas. Adicionalmente, foi implementado um sistema de eventos para auditoria, garantindo o registo contínuo das operações críticas do sistema.
+
+Durante o desenvolvimento foram aplicados conceitos de programação funcional, programação orientada a aspetos e programação orientada a eventos, promovendo a modularidade, escalabilidade e facilidade de manutenção do sistema.
+
+Os resultados obtidos demonstram a eficácia da utilização de tecnologias modernas e arquiteturas reativas na construção de aplicações em tempo real, evidenciando a importância da separação de responsabilidades e da modelação adequada do domínio na construção de sistemas robustos e extensíveis.
+
+[Heading2] Abstract 
+This project focuses on the design, development, and implementation of FastBite, a platform for managing food ordering and delivery processes, enabling real-time interaction between customers, restaurants, and couriers.
+
+The main objective of the system is to address the challenges associated with state synchronization in a multi-user environment, where different actors require continuous and up-to-date access to information. To achieve this, an event-driven architecture was adopted, combining GraphQL for structured operations and WebSockets for real-time bidirectional communication, ensuring low latency and high responsiveness.
+
+The backend was developed using the Laravel framework, leveraging Lighthouse for GraphQL support and Reverb for WebSocket communication. The system also includes two client applications: a web frontend built with React.js and a mobile frontend developed with React Native, providing a consistent cross-platform user experience.
+
+The application supports a wide range of functionalities, including restaurant browsing, shopping cart management, order placement, real-time order tracking, menu management by restaurants, and courier coordination. Additionally, an event logging system was implemented to ensure continuous auditing of critical operations.
+
+Throughout the development process, concepts such as functional programming, aspect-oriented programming, and event-driven programming were applied, enhancing the system’s modularity, scalability, and maintainability.
+
+The results demonstrate the effectiveness of modern technologies and reactive architectures in building real-time systems, highlighting the importance of proper domain modeling and separation of concerns in the development of robust and extensible applications.
+
+[TOCHeading] Índice
+[TOC2] Resumo2
+[TOC2] Abstract3
+[TOC1] Lista de Figuras6
+[TOC1] Capítulo I7
+[TOC2] Contextualização e Motivação7
+[TOC3] 1.1 Introdução7
+[TOC3] 1.2 Enquadramento Tecnológico8
+[TOC3] 1.3 Conhecimento Prévio das Tecnologias12
+[TOC1] Capítulo 213
+[TOC2] Conceptualização do Problema13
+[TOC3] 2.1 Introdução ao Problema13
+[TOC3] 2.2 Domínio do Sistema FastBite13
+[TOC3] 2.3 Principais Funcionalidades (Use Cases)13
+[TOC3] 2.4 Arquitetura Conceptual do Sistema14
+[TOC3] 2.5 Comunicação Cliente-Servidor14
+[TOC1] Capítulo 316
+[TOC2] Modelação e Especificação do Sistema16
+[TOC3] 3.1 Introdução16
+[TOC3] 3.2 Diagrama de Classes16
+[TOC3] 3.2.1 Domínio do Sistema18
+[TOC3] 3.2.2 Aplicação de Design Patterns18
+[TOC3] 3.2.2.1 Padrão State19
+[TOC3] 3.2.2.2 Padrão Strategy19
+[TOC3] 3.2.2.3 Padrão Command19
+[TOC3] 3.2.2.4 Padrão Observer20
+[TOC3] 3.2.2.5 Padrão Singleton20
+[TOC3] 3.2.2.6 Padrão Factory20
+[TOC3] 3.3 Diagrama ER21
+[TOC3] 3.4 Diagramas de Sequência21
+[TOC3] 3.4.1 Fluxo de criação de encomenda22
+[TOC3] 3.4.2 Fluxo de aceitação de encomenda22
+[TOC3] 3.4.3 Fluxo de entrega em tempo real23
+[TOC3] 3.4.4 Fluxo de Atribuição de Estafeta24
+[TOC3] 3.4.5 Máquinas de Estados25
+[TOC3] 3.5 Comunicação em Tempo Real e Integração com o Domínio29
+[TOC1] Capítulo 430
+[TOC2] Implementação da Solução30
+[TOC3] 4.1 Arquitetura Implementada30
+[TOC3] 4.2 Implementação do Backend30
+[TOC3] 4.2.1 Programação Orientada a Aspetos31
+[TOC3] 4.2.2 Event Sourcing e Outbox Pattern31
+[TOC3] 4.3 API GraphQL32
+[TOC3] 4.4 Comunicação em Tempo Real com WebSockets32
+[TOC3] 4.5 Implementação do Frontend33
+[TOC3] 4.5.1 Frontend Web (React.js)33
+[TOC3] 4.5.2 Frontend Mobile (React Native)33
+[TOC3] 4.5.3 Push Notifications33
+[TOC3] 4.5.4 Programação Funcional33
+[TOC3] 4.6 Validação e Testes34
+[TOC3] 4.7 Organização do Projeto e Gestão do Trabalho35
+[TOC1] Capítulo 536
+[TOC2] Discussão dos Resultados e Conclusão36
+[TOC3] 5.1 Apresentação e discussão de resultados36
+[TOC3] 5.2 Conclusão e trabalho futuro37
+[TOC1] Bibliografia38
+[TOC1] Anexos39
+[TOC1] 
+[TOC1] 
+[Heading1] Lista de Figuras
+Figura 2 Diagrama de Classes- completo15
+Figura 9 Diagrama ER19
+Figura 10 Diagrama de Sequências - Criar Sala e Entrada20
+Figura 13 Comunicação em tempo real21
+Figura 14 Demonstração da mesa de jogo26
+
+[Heading1] Capítulo I
+
+[Heading2] Contextualização e Motivação 
+
+[Heading3] 1.1 Introdução
+No contexto da unidade curricular de Paradigmas Emergentes para o Desenvolvimento Web e Mobile, foi proposto o desenvolvimento de um sistema que integrasse diferentes paradigmas de programação e tecnologias modernas de comunicação.
+
+Neste âmbito, o presente projeto consiste na conceção e desenvolvimento da plataforma FastBite, uma aplicação digital para gestão de encomendas e entregas de refeições, permitindo a interação em tempo real entre clientes, restaurantes e estafetas.
+
+Atualmente, plataformas de delivery enfrentam desafios significativos relacionados com:
+sincronização de estados entre múltiplos intervenientes; 
+atualização em tempo real do estado das encomendas; 
+escalabilidade do sistema face a múltiplos pedidos concorrentes; 
+gestão eficiente de eventos e notificações.
+
+A solução proposta baseia-se numa arquitetura moderna orientada a eventos, combinando GraphQL para operações estruturadas e WebSockets para comunicação em tempo real, permitindo garantir uma experiência fluida e responsiva para todos os utilizadores.
+
+[Heading3] 1.1.1 Objetivos
+O principal objetivo deste projeto consiste no desenvolvimento de uma aplicação que permita a gestão completa do ciclo de vida de encomendas de refeições.
+
+De forma mais específica, os objetivos incluem:
+Desenvolver uma aplicação baseada em: 
+Programação Funcional 
+Programação Orientada a Aspetos 
+Programação Event-Driven
+Criar: 
+um frontend web (React) 
+um frontend mobile (React Native) 
+Implementar um backend capaz de: 
+gerir encomendas e utilizadores; 
+coordenar restaurantes e estafetas; 
+suportar comunicação em tempo real; 
+Utilizar: 
+GraphQL para queries e mutations; 
+WebSockets para atualização de estados; 
+Modelar o domínio do sistema (clientes, pedidos, entregas, etc.); 
+Aplicar princípios de engenharia de software e arquitetura moderna; 
+Documentar toda a solução com diagramas UML e descrição técnica.
+[Heading3] 1.1.2 Resultados 
+Como resultado do desenvolvimento do projeto, espera-se obter:
+Plataforma funcional de gestão de encomendas (FastBite); 
+Backend em Laravel com suporte a GraphQL e WebSockets; 
+Frontend web e mobile integrados; 
+Sistema de eventos para atualização em tempo real; 
+Modelação completa do sistema; 
+Registo de eventos para auditoria; 
+Relatório técnico detalhado.
+
+[Heading3] 1.1.3 Organização do Documento
+O presente relatório encontra-se estruturado da seguinte forma:
+Capítulo 1 – Contextualização e MotivaçãoApresenta o enquadramento do projeto, objetivos e organização do documento;
+Capítulo 2 – Conceptualização do ProblemaDescreve o domínio da aplicação, os atores e os principais desafios;
+Capítulo 3 – Modelação do SistemaApresenta os diagramas UML e estrutura técnica da solução;
+Capítulo 4 – Implementação da SoluçãoDescreve as tecnologias utilizadas e decisões de desenvolvimento; 
+Capítulo 5 – Discussão e ConclusãoAnalisa os resultados obtidos e possíveis evoluções futuras.
+[Heading3] 
+[Heading3] 1.2 Enquadramento Tecnológico
+[Heading3] 1.2.1 Laravel
+O Laravel foi adotado como a framework base para o desenvolvimento do backend da aplicação. Sendo uma framework PHP robusta e amplamente utilizada, oferece um vasto ecossistema de ferramentas que aceleram o desenvolvimento e garantem a escalabilidade e manutenção do código.
+
+A arquitetura do backend tira partido de diversos componentes fundamentais desta framework:
+Models Eloquent: Utilizados para a interação com a base de dados através do padrão Active Record, permitindo uma representação orientada a objetos das tabelas;
+Migrations: Empregadas para o controlo de versão da estrutura da base de dados, garantindo consistência entre os diferentes ambientes de desenvolvimento;
+Jobs e Queues: Implementados para o processamento assíncrono de tarefas pesadas, não bloqueando a resposta principal ao utilizador;
+Eventos: Utilizados para desencadear reações na aplicação a determinadas ações (como a criação de uma encomenda), promovendo um baixo acoplamento entre os módulos;
+Testes com PHPUnit: O sistema integra testes automatizados para garantir a estabilidade e a fiabilidade das funcionalidades core;
+Configuração Docker/Sail: Todo o ambiente de desenvolvimento foi contentorizado utilizando o Laravel Sail e o Docker, assegurando a padronização e facilidade de execução em qualquer máquina.
+[Heading3] 1.2.2 GraphQL e Lighthouse
+Para a comunicação entre o frontend e o backend, optou-se pela utilização de GraphQL, suportado no servidor pela biblioteca Lighthouse. Ao contrário de uma API REST tradicional, onde os endpoints devolvem estruturas de dados fixas, o GraphQL permite ao cliente requisitar apenas a informação estritamente necessária.
+
+Esta escolha tecnológica foi fundamentada em vários aspetos técnicos:
+Redução de Over-fetching: O cliente (web ou mobile) dita a forma dos dados, evitando o tráfego de informações redundantes que não serão utilizadas na interface;
+Queries e Mutations: A separação clara entre Queries (utilizadas estritamente para leitura de dados) e Mutations (utilizadas para operações de escrita e alteração de estado);
+Schemas por Domínio: A definição da API foi modularizada na diretoria Backend/graphql, dividindo os schemas por domínios da aplicação, o que facilita a organização e manutenção à medida que o projeto cresce;
+Contratos Tipados: O GraphQL garante um contrato fortemente tipado entre o frontend e o backend, minimizando erros de integração e melhorando a experiência de desenvolvimento.
+
+[Heading3] 1.2.3 GatewayWorker/Workerman e WebSockets
+Para garantir atualizações em tempo real, o sistema recorre ao protocolo de WebSockets. Ao passo que as chamadas HTTP/GraphQL são ideais para o carregamento inicial e ações pontuais, os WebSockets permitem uma ligação bidirecional contínua sem a necessidade de requisições repetidas (polling).
+
+Nesta versão, a infraestrutura de tempo real foi implementada utilizando o GatewayWorker/Workerman, uma solução baseada em PHP de elevada performance. As suas principais características no contexto do projeto incluem:
+Canais Segmentados: A comunicação está dividida em canais específicos por utilizador, restaurante, encomenda, estafeta e chat, garantindo que cada cliente recebe apenas a informação relevante;
+Eventos Real-time: Propagação imediata de eventos críticos, tais como a alteração do estado de uma encomenda, a confirmação de um pagamento, atualizações de localização de uma entrega e notificações instantâneas;
+
+[Heading3] 1.2.4 React/Vite no Frontend Web
+O frontend web foi construído com React, em conjunto com o bundler Vite, focando-se predominantemente na interface e experiência de gestão por parte do restaurante e dos administradores.
+
+Esta plataforma centraliza as operações do estabelecimento, abordando os seguintes módulos:
+Gestão de Encomendas: Visualização da fila de pedidos ativos, histórico completo e detalhes específicos de cada encomenda;
+Gestão de Menu: Ferramentas para administração do catálogo de produtos, categorias e disponibilidade;
+Marketing e Qualidade: Criação de campanhas, gestão de cupões de desconto e visualização das avaliações deixadas pelos clientes;
+Comunicação e Análise: Sistema integrado de notificações, interface de chat com o cliente/estafeta e dashboards para análise de estatísticas e faturação.
+
+[Heading3] 1.2.5 React Native/Expo no Frontend Mobile
+Para cobrir as necessidades dos clientes e dos estafetas num contexto de mobilidade, a aplicação mobile foi desenvolvida em React Native com recurso ao ecossistema Expo. Esta tecnologia permite a criação de aplicações nativas para iOS e Android a partir de uma base de código unificada em JavaScript/TypeScript.
+
+A aplicação divide-se em dois fluxos de utilização distintos:
+Fluxo do Cliente: Engloba a home page, listagem de restaurantes, visualização de menus, gestão do carrinho de compras, checkout, acompanhamento (tracking) da entrega em tempo real e consulta de histórico;
+Fluxo do Estafeta: Focado na operação logística, inclui a gestão de disponibilidade, receção de ofertas de entrega, aceitação, confirmação de recolha, fluxo de entrega e transmissão contínua de localização. A infraestrutura mobile apoia-se ainda fortemente na integração de mapas, envio de notificações push e tarefas de localização em background para garantir o tracking fiável do estafeta.
+
+[Heading3] 1.2.6 Bibliotecas e Ferramentas Auxiliares
+O ecossistema do projeto foi complementado por um conjunto de bibliotecas e ferramentas especializadas, fundamentais para a resolução de problemas específicos de cada plataforma:
+No frontend web, o react-router-dom assegura a navegação entre páginas, enquanto o leaflet e react-leaflet são utilizados para a renderização e manipulação de mapas;
+No ecossistema mobile, o react-native-maps suporta a interface cartográfica nativa, aliado ao expo-location (para captação de coordenadas), expo-notifications (para alertas push) e expo-task-manager (para processamento em segundo plano);
+No backend, destaca-se o uso do spatie/laravel-data para a criação de Data Transfer Objects (DTOs) robustos, e o conjunto workerman/gateway-worker e workerman/gatewayclient para gerir a comunicação real-time;
+Adicionalmente, a biblioteca ray/aop foi integrada para suportar padrões arquiteturais avançados, focados na interceção de comportamentos no código.
+
+[Heading3] 1.2.7 Paradigmas de Programação Aplicados
+O desenvolvimento do sistema foi guiado por diferentes paradigmas de programação, escolhidos para dar resposta aos desafios específicos de cada componente da aplicação. A utilização combinada destes paradigmas permite a criação de um sistema escalável, reativo e de fácil manutenção.
+
+
+Programação Funcional
+A Programação Funcional foca-se na construção de software através da composição de funções puras, evitando a partilha de estado e a mutação de dados.
+Aplicação no Projeto: É o paradigma central no desenvolvimento do frontend (React e React Native). A utilização de Hooks e a gestão de estado imutável permitem que a interface de utilizador seja uma representação previsível do estado da aplicação num dado momento, reduzindo o surgimento de efeitos colaterais indesejados (side-effects).
+
+Programação Orientada a Aspetos (AOP) 
+A Programação Orientada a Aspetos tem como objetivo o encapsulamento de preocupações transversais (cross-cutting concerns) — como o registo de logs, a segurança ou a gestão de transações — separando-as da lógica central de negócio.
+Aplicação no Projeto: Implementada no backend através da biblioteca ray/aop. Este paradigma permite, por exemplo, aplicar regras de validação ou registar auditorias (logging) de forma global a múltiplos métodos e serviços, sem necessidade de sujar o código das regras de negócio (o core) com essas lógicas repetitivas.
+
+Programação Orientada a Eventos
+Este paradigma estrutura a arquitetura do software em torno da produção, deteção e reação a eventos, promovendo um sistema altamente assíncrono e desacoplado.
+Aplicação no Projeto: Ocorre de forma evidente tanto no backend como na comunicação com o cliente. No Laravel, quando uma dada ação ocorre (ex: "Encomenda Paga"), um evento é disparado e processado por vários Listeners independentes (que enviam e-mails, atualizam relatórios, etc.). Simultaneamente, através dos WebSockets, o sistema atua de forma reativa, notificando instantaneamente os clientes e estafetas perante mudanças de estado operacionais, sem depender de pedidos constantes ao servidor.
+
+[Heading3] 1.2.8 Plataformas de Entregas
+Atualmente, as plataformas digitais de entrega de refeições (tais como Uber Eats, Glovo ou Bolt Food) assumem um papel central no ecossistema da restauração e na economia de partilha. Estas plataformas caracterizam-se pela sua elevada complexidade logística e tecnológica, uma vez que necessitam de orquestrar três intervenientes distintos em simultâneo: o cliente final, o restaurante e o estafeta. Para garantir uma experiência fluida, dependem de arquiteturas distribuídas e de tecnologias de comunicação em tempo real, essenciais para a sincronização de dados e rastreamento (tracking) de localização.
+
+Frequentemente, estas plataformas recorrem a arquiteturas baseadas em APIs REST convencionais em conjunto com serviços de terceiros ou mecanismos de polling para a atualização de coordenadas GPS e estados dos pedidos. No entanto, o uso extensivo de polling em redes móveis pode introduzir latência indesejada e resultar num consumo excessivo de bateria e de dados nos dispositivos dos utilizadores.
+
+No presente projeto, foi adotada uma abordagem híbrida e otimizada, baseada na utilização de GraphQL para as operações de consulta (como listagem de restaurantes e ementas) e execução de comandos (como a submissão de um carrinho), combinada com WebSockets para a propagação de eventos críticos e localização em tempo real. Esta arquitetura não só resolve o problema de over-fetching, algo fundamental para garantir a performance na aplicação móvel, como permite separar claramente as operações estruturadas do fluxo de eventos assíncronos e de alta frequência.
+Além disso, o sistema foi concebido com base numa modelação explícita do domínio logístico e comercial, utilizando entidades fundamentais como Restaurant, Customer, Courier, Order, Menu e Cart. Esta estruturação permite encapsular as complexas regras de negócio, desde o cálculo de disponibilidade à atribuição de estafetas, de forma clara, modular e extensível.
+
+A conjugação de diferentes paradigmas de programação, como a Orientação a Eventos para gerir o ciclo de vida da encomenda (desde a preparação até à entrega) e a Orientação a Aspetos, constitui também um fator diferenciador da abordagem adotada, permitindo desacoplar a lógica de negócio das preocupações infraestruturais e facilitando a evolução futura e a escalabilidade do sistema.
+
+[Heading3] 1.3 Conhecimento Prévio das Tecnologias
+Relativamente às tecnologias e frameworks adotadas no desenvolvimento do projeto, os elementos do grupo não possuíam experiência prévia com as principais ferramentas escolhidas. Este cenário implicou um processo de aprendizagem contínuo, autónomo e desafiante ao longo de todo o trabalho.
+
+A framework Laravel, utilizada na construção do backend, constituiu uma novidade absoluta para a equipa. A sua adoção exigiu não só a familiarização com as particularidades do ecossistema PHP moderno, mas também a assimilação de ferramentas e conceitos arquiteturais inerentes à framework. Foi necessário investir tempo na compreensão do ORM Eloquent para interação com a base de dados, na estruturação do código através de Services e Repositories, bem como na configuração e orquestração do ambiente de desenvolvimento com recurso ao Docker e Laravel Sail.
+
+No que diz respeito ao desenvolvimento do frontend, tanto o React (utilizado na plataforma web) como o React Native (utilizado na aplicação móvel) representavam tecnologias nunca exploradas pelos membros do grupo. O domínio destas ferramentas obrigou a uma aprendizagem aprofundada dos conceitos fundamentais da biblioteca, nomeadamente a sua abordagem declarativa baseada em componentes, a gestão de estado imutável e a utilização de Hooks.
+
+Adicionalmente, a vertente mobile introduziu desafios específicos, exigindo a familiarização com o ecossistema Expo e com as particularidades do desenvolvimento multiplataforma para dispositivos móveis, tais como a gestão da navegação nativa, a integração de mapas e a captação de localização.
+
+De um modo geral, a ausência de contacto prévio com estas frameworks transformou o desenvolvimento deste projeto numa oportunidade para a consolidação e expansão das competências técnicas do grupo. Este contexto promoveu não só a aprendizagem de novas tecnologias com elevada relevância na indústria de desenvolvimento de software, mas também a sua aplicação prática e integrada na construção de um sistema de entregas.
+
+[Heading1] Capítulo 2
+
+[Heading2] Conceptualização do Problema 
+
+O desenvolvimento de plataformas de encomendas e entregas de refeições apresenta desafios técnicos significativos, especialmente quando múltiplos atores com papéis distintos necessitam de interagir simultaneamente sobre um estado partilhado do sistema. Sistemas de delivery representam um exemplo claro deste tipo de aplicações, uma vez que exigem coordenação contínua entre clientes, restaurantes e estafetas, validação centralizada de regras de negócio e atualização imediata da informação apresentada a cada participante.
+
+[Heading3] 2.1 A Plataforma FastBite
+No caso específico da FastBite, a implementação digital envolve a gestão de vários elementos do domínio da plataforma, incluindo utilizadores com diferentes perfis, restaurantes e respetivos catálogos, carrinhos de compras, encomendas, pagamentos, entregas, promoções, notificações, chat e avaliações. Além disso, é necessário garantir que as regras de negócio são aplicadas corretamente pelo sistema, por exemplo, que uma encomenda não pode ser entregue sem antes ter sido preparada, e que todos os participantes recebem atualizações do estado de forma consistente e em tempo real.
+
+Outro desafio relevante consiste na gestão simultânea de múltiplos fluxos independentes. Num dado momento, vários clientes podem estar a criar encomendas, vários restaurantes podem estar a preparar pedidos e vários estafetas podem estar em trânsito, sendo necessário isolar o estado de cada processo e evitar interferência entre fluxos diferentes.
+Tendo em conta estes requisitos, foi necessário conceber uma arquitetura que permitisse:
+manter um estado consistente de encomendas, pagamentos e entregas no servidor;
+suportar comunicação em tempo real entre clientes, restaurantes e estafetas;
+gerir múltiplos fluxos concorrentes de forma isolada;
+aplicar corretamente as regras de negócio e transições de estado;
+separar claramente a lógica de domínio da infraestrutura de comunicação.
+
+[Heading3] 2.1.1 Ciclo de Vida de uma Encomenda
+O fluxo central da FastBite é o ciclo de vida de uma encomenda, que envolve a participação coordenada dos três atores principais do sistema.
+
+O processo inicia-se quando um cliente consulta os restaurantes disponíveis, explora os respetivos catálogos de produtos e adiciona itens ao seu carrinho de compras. Cada item pode incluir opções configuráveis, como ingredientes adicionais ou variações, que influenciam o preço final. Após compor o carrinho, o cliente procede ao checkout, momento em que o sistema calcula o total da encomenda, aplica eventuais promoções ou cupões de desconto e cria a encomenda com estado inicial pendente.
+
+Segue-se a fase de pagamento, na qual o sistema regista o método escolhido pelo cliente e simula o processamento da transação. O pagamento possui o seu próprio ciclo de estados, pendente, concluído ou falhado, e pode expirar caso não seja finalizado dentro de um determinado período.
+Após a confirmação do pagamento, o sistema inicia o processo de atribuição de um estafeta antes de notificar o restaurante. Para isso, é criada uma oferta de entrega associada à encomenda, enviada a estafetas disponíveis na proximidade do restaurante. Cada estafeta pode aceitar ou rejeitar a oferta; caso a oferta expire sem aceitação, o sistema pode gerar novas ofertas para outros estafetas disponíveis.
+
+Quando um estafeta aceita a oferta, é criada a entrega associada à encomenda. Só nesse momento o restaurante é notificado da nova encomenda, podendo então aceitar ou rejeitar o pedido. Caso aceite, a encomenda transita para o estado de preparação, durante o qual o restaurante atualiza o progresso dos itens individuais. Quando todos os itens estão prontos, a encomenda é marcada como pronta para recolha.
+
+O estafeta desloca-se então ao restaurante, recolhe o pedido e inicia o transporte até ao endereço do cliente. Durante todo este percurso, o estafeta envia atualizações de localização que alimentam o sistema de tracking, permitindo ao cliente acompanhar a entrega em tempo real num mapa. A entrega transita pelos estados de aceite, a caminho do restaurante, recolhida, em trânsito e entregue, sendo que cada transição gera um evento de auditoria.
+
+Após a entrega, o cliente pode avaliar tanto o restaurante como o estafeta, contribuindo para o sistema de reputação da plataforma.
+
+[Heading3] 2.1.2 Atores do Sistema
+O sistema distingue quatro perfis de utilizador, cada um com responsabilidades e capacidades distintas no sistema.
+
+O Cliente é o ator que inicia o fluxo de negócio. As suas responsabilidades incluem procurar restaurantes, explorar catálogos e menus, construir um carrinho de compras, finalizar encomendas, efetuar pagamentos, acompanhar o estado da entrega através de tracking em tempo real, comunicar com o restaurante ou estafeta através de chat e avaliar o serviço prestado.
+
+O Restaurante é gerido por dois tipos de gestores: o gestor de cadeia, responsável por definir o catálogo de produtos, categorias, promoções e cupões ao nível da cadeia; e o gestor local, responsável por definir preços locais, disponibilidade de produtos e tempos de preparação ao nível de cada estabelecimento. As responsabilidades operacionais do restaurante incluem receber notificações de novas encomendas, aceitar ou rejeitar pedidos, atualizar o estado de preparação de cada item, gerir campanhas promocionais e consultar avaliações dos clientes.
+
+O Estafeta é o ator responsável pela última fase da entrega. As suas responsabilidades incluem definir a sua disponibilidade para receber ofertas, aceitar ou rejeitar ofertas de entrega, atualizar o estado da entrega ao longo do percurso, enviar a localização em tempo real para o sistema de tracking e comunicar com o cliente caso necessário.
+
+O Sistema atua como orquestrador central, sendo responsável por calcular preços e aplicar descontos, gerir as transições de estado das encomendas, pagamentos e entregas, atribuir estafetas a encomendas prontas, publicar eventos para notificação e sincronização em tempo real, manter o registo de auditoria de todas as ações e garantir a consistência global do domínio.
+
+
+[Heading3] 2.1.3 Modelação do Domínio
+Para garantir uma representação clara e organizada do sistema, foi realizada uma modelação do domínio baseada nos principais conceitos da plataforma de entregas. Esta modelação permite identificar as entidades fundamentais do sistema e as relações existentes entre elas.
+
+Os principais elementos do domínio identificados são:
+User – representa um utilizador do sistema, podendo assumir diferentes perfis;
+Customer – representa um cliente que efetua encomendas;
+Courier – representa um estafeta que realiza entregas;
+RestaurantChain – representa uma cadeia de restaurantes que partilha catálogo e campanhas;
+Restaurant – representa um estabelecimento individual pertencente a uma cadeia;
+Category – representa uma categoria de produtos no catálogo;
+Product – representa um produto disponível para encomenda;
+RestaurantProduct – representa a ponte entre um produto e um restaurante, com preço local e disponibilidade;
+Cart – representa o carrinho de compras de um cliente;
+Order – representa uma encomenda finalizada;
+Payment – representa o pagamento associado a uma encomenda;
+Delivery – representa a entrega física de uma encomenda;
+DeliveryOffer – representa uma oferta de entrega enviada a um estafeta;
+Promotion – representa uma campanha promocional com desconto automático;
+Coupon – representa um cupão de desconto com código;
+Notification – representa uma notificação enviada a um utilizador;
+Chat – representa uma conversa entre participantes de uma encomenda;
+Review – representa uma avaliação feita por um cliente.
+
+Estas entidades permitem representar de forma estruturada as regras e o fluxo do negócio, garantindo que o estado da plataforma pode ser gerido de forma consistente pelo sistema.
+
+[Heading3] 2.1.4 Máquinas de Estados
+Um dos aspetos mais críticos do domínio da FastBite é a gestão rigorosa dos estados das entidades principais. Transições inválidas, como marcar uma encomenda como entregue sem que tenha sido preparada, representam inconsistências graves que devem ser impedidas ao nível da lógica de domínio.
+
+Para tal, foram definidas máquinas de estados para três entidades centrais:
+A encomenda (Order) pode assumir os seguintes estados:
+Pending – encomenda criada, aguarda confirmação do restaurante;
+Confirmed – restaurante aceitou o pedido;
+Preparing – restaurante está a preparar os itens;
+Ready – pedido pronto para recolha;
+Out for Delivery – estafeta recolheu o pedido e está em trânsito;
+Delivered – encomenda entregue ao cliente;
+Cancelled – encomenda cancelada.
+O pagamento (Payment) pode assumir os seguintes estados:
+Pending – pagamento iniciado, aguarda conclusão;
+Completed – pagamento processado com sucesso;
+Failed – pagamento falhou ou expirou.
+A entrega (Delivery) pode assumir os seguintes estados:
+Pending – entrega criada, estafeta atribuído;
+Picked Up – estafeta recolheu o pedido no restaurante;
+In Transit – estafeta em trânsito para o endereço do cliente;
+Delivered – encomenda entregue com sucesso;
+Failed – entrega falhou.
+
+Cada transição de estado é validada pela respetiva máquina de estados antes de ser executada, garantindo que apenas transições legítimas são aceites pelo sistema. Adicionalmente, cada transição gera um evento de auditoria que é persistido, permitindo reconstruir o histórico completo de qualquer encomenda, pagamento ou entrega.
+
+[Heading3] 2.2 Arquitetura Conceptual do Sistema
+A arquitetura do sistema foi concebida seguindo um modelo cliente-servidor, com uma separação clara entre os componentes responsáveis pelas interfaces de utilizador e os componentes responsáveis pela lógica de negócio e persistência.
+
+De forma conceptual, a arquitetura do sistema é composta pelos seguintes elementos principais:
+Frontend Web (React/Vite) – responsável pela interface de gestão do restaurante, incluindo fila de encomendas, catálogo, campanhas e comunicação;
+Frontend Mobile (React Native/Expo) – responsável pela experiência do cliente e do estafeta, incluindo navegação de restaurantes, checkout, tracking e gestão de entregas;
+Backend (Laravel) – responsável pela lógica de negócio, gestão de estados, orquestração de eventos e processamento assíncrono;
+API GraphQL (Lighthouse) – responsável por expor operações estruturadas e tipadas de consulta e mutação;
+Servidor WebSocket (GatewayWorker/Workerman) – responsável pela propagação de eventos em tempo real para os clientes ligados;
+Base de dados (PostgreSQL) – responsável pela persistência relacional de todas as entidades do domínio;
+Sistema de Filas e Jobs – responsável pelo processamento assíncrono de tarefas como expiração de pagamentos, publicação de eventos da outbox e envio de notificações push.
+
+Esta organização permite separar claramente as responsabilidades de cada componente e facilitar a evolução futura do sistema.
+
+[Heading3] 2.2.1 Comunicação Cliente-Servidor
+A comunicação entre clientes e servidor é realizada através de duas tecnologias complementares.
+A primeira corresponde à utilização de GraphQL, que permite executar operações e consultas estruturadas sobre o sistema, como a criação de encomendas, consulta de restaurantes, adição de itens ao carrinho, checkout e consulta de histórico. O GraphQL permite que cada interface solicite exatamente os dados de que necessita para cada ecrã, reduzindo o over-fetching e evitando a proliferação de endpoints demasiado específicos.
+
+A segunda corresponde à utilização de WebSockets através de GatewayWorker/Workerman, que permitem a distribuição de eventos em tempo real para todos os utilizadores ligados. Desta forma, quando ocorre uma ação relevante no sistema — por exemplo, quando um restaurante confirma uma encomenda, quando um estafeta aceita uma oferta de entrega ou quando a localização do estafeta é atualizada, o servidor publica um evento para os canais correspondentes, garantindo que todos os participantes visualizam informação atualizada sem necessidade de polling.
+
+Os canais WebSocket estão organizados por contexto: canais por utilizador para notificações pessoais, canais por restaurante para novas encomendas, canais por encomenda para atualizações de estado, canais por entrega para tracking e canais por chat para mensagens em tempo real.
+
+Esta abordagem dual reduz significativamente a latência na atualização do estado e melhora a experiência de todos os atores do sistema.
+
+[Heading3] 2.3 Principais Desafios Técnicos
+Durante a conceção do sistema foram identificados vários desafios técnicos associados à implementação de uma plataforma de entregas com múltiplos atores e comunicação em tempo real.
+
+Um dos principais desafios consiste na sincronização de estado entre múltiplos participantes. Uma mesma encomenda é acompanhada simultaneamente pelo cliente, pelo restaurante e pelo estafeta, sendo necessário garantir que todas as ações executadas são processadas pelo servidor de forma consistente e que as atualizações são propagadas corretamente para todos os intervenientes.
+
+Outro desafio relevante prende-se com a gestão de múltiplos fluxos concorrentes. Em qualquer momento, o sistema pode estar a processar dezenas de encomendas em estados diferentes, cada uma com o seu próprio ciclo de pagamento e entrega. Isto exige mecanismos eficientes para isolar o estado de cada fluxo e evitar interferência entre processos.
+
+A consistência das transições de estado constitui outro desafio técnico importante. O sistema deve impedir que ações inválidas corrompam o estado do domínio, como cancelar uma encomenda já entregue ou aceitar uma oferta de entrega já expirada. Para tal, é necessária uma modelação adequada através de máquinas de estados com validação rigorosa em cada transição.
+
+A fiabilidade na publicação de eventos representa também um desafio relevante. Quando o estado de uma encomenda muda, é fundamental garantir que o evento correspondente é efetivamente publicado para os canais WebSocket e para o sistema de notificações. O padrão Outbox foi adotado para garantir que eventos persistidos são publicados de forma controlada, mesmo em cenários de falha parcial.
+
+Por fim, a atribuição inteligente de estafetas e o tracking em tempo real exigem o tratamento de dados geográficos: localização de restaurantes, endereços de entrega e posição atual dos estafetas, bem como mecanismos para enviar e receber atualizações de localização com frequência suficiente para proporcionar uma experiência de acompanhamento fluida ao cliente.
+
+
+
+
+[Heading1] Capítulo 3 
+
+[Heading2] Modelação e Especificação do Sistema
+
+[Heading3] 3.1 Introdução
+Neste capítulo é apresentada a modelação detalhada do sistema FastBite, com o objetivo de descrever a sua estrutura, comportamento e organização interna de forma clara e fundamentada.
+Para tal, foram utilizados diferentes tipos de diagramas UML, nomeadamente:
+Diagramas de classes — representação da estrutura estática do sistema; 
+Diagrama ER — modelação da persistência de dados; 
+Diagramas de sequência — representação dos fluxos de interação; 
+Diagramas de estados — modelação do ciclo de vida das entidades principais. 
+Adicionalmente, é descrita a integração da arquitetura orientada a eventos com o domínio do sistema, evidenciando o funcionamento da comunicação em tempo real.
+
+[Heading3] 3.2 Diagrama de Classes
+O diagrama de classes representa as principais entidades do sistema e as relações entre elas, refletindo os diferentes atores e componentes envolvidos no ciclo de vida de uma encomenda
+
+[Heading3] 3.2.1 Domínio do Sistema
+No centro do sistema encontra-se a entidade User, que representa os utilizadores da plataforma e é especializada nos seguintes tipos:
+Customer – cliente que realiza encomendas; 
+Courier – estafeta responsável pela entrega; 
+RestaurantManager / Restaurant – responsável pela gestão do restaurante. 
+Outras entidades fundamentais incluem:
+Entidades principais:
+Order 
+representa uma encomenda; 
+contém estado, valor total e timestamps; 
+OrderItem 
+representa cada item da encomenda; 
+permite gestão independente (ex: cozinha virtual); 
+Cart 
+estrutura temporária usada antes do checkout; 
+Product 
+representa um item do menu; 
+Category 
+organiza os produtos; 
+Restaurant 
+representa o estabelecimento; 
+Delivery 
+gere o processo de entrega; 
+Payment 
+gere o pagamento; 
+Address 
+localização do cliente; 
+Coupon / Promotion 
+gestão de descontos; 
+Message 
+suporte para chat em tempo real; 
+Notification 
+sistema de notificações.
+
+Relações principais
+Um Customer pode ter várias Orders; 
+Uma Order contém múltiplos OrderItems; 
+Um Restaurant possui vários Products; 
+Um Courier está associado a uma Delivery; 
+Uma Order está associada a um Payment; 
+Esta estrutura permite modelar de forma completa o fluxo de encomendas do sistema.
+
+[Heading3] 3.2.2 Aplicação de Design Patterns
+Tal como exigido no enunciado, foram aplicados diversos padrões de desenho para melhorar a organização e extensibilidade do sistema.
+
+[Heading3] 3.2.2.1 Padrão State
+O padrão State foi aplicado de forma concreta na gestão do ciclo de vida das encomendas, encapsulando o comportamento de cada estado numa classe dedicada e centralizando as transições válidas num único ponto.
+A implementação segue três componentes principais:
+OrderState (interface) — define o contrato de cada estado, incluindo métodos como status(), canTransitionTo(next) e transition(order, next). 
+AbstractOrderState — implementa a lógica comum de validação de transições, garantindo que apenas estados permitidos podem ser atingidos. Caso contrário, é lançada uma exceção. 
+OrderStateFactory — responsável por instanciar dinamicamente o estado correto com base no valor atual do enum OrderStatus. 
+
+return match ($status) {    OrderStatus::PENDING          => new PendingOrderState(),    OrderStatus::CONFIRMED        => new ConfirmedOrderState(),    OrderStatus::PREPARING        => new PreparingOrderState(),    OrderStatus::READY            => new ReadyOrderState(),    OrderStatus::OUT_FOR_DELIVERY => new OutForDeliveryOrderState(),    OrderStatus::DELIVERED        => new DeliveredOrderState(),    OrderStatus::CANCELLED        => new CancelledOrderState(),};return match ($status) {    OrderStatus::PENDING          => new PendingOrderState(),    OrderStatus::CONFIRMED        => new ConfirmedOrderState(),    OrderStatus::PREPARING        => new PreparingOrderState(),    OrderStatus::READY            => new ReadyOrderState(),    OrderStatus::OUT_FOR_DELIVERY => new OutForDeliveryOrderState(),    OrderStatus::DELIVERED        => new DeliveredOrderState(),    OrderStatus::CANCELLED        => new CancelledOrderState(),};Exemplo simplificado:
+return match ($status) {
+    OrderStatus::PENDING          => new PendingOrderState(),
+    OrderStatus::CONFIRMED        => new ConfirmedOrderState(),
+    OrderStatus::PREPARING        => new PreparingOrderState(),
+    OrderStatus::READY            => new ReadyOrderState(),
+    OrderStatus::OUT_FOR_DELIVERY => new OutForDeliveryOrderState(),
+    OrderStatus::DELIVERED        => new DeliveredOrderState(),
+    OrderStatus::CANCELLED        => new CancelledOrderState(),
+};
+
+return match ($status) {
+    OrderStatus::PENDING          => new PendingOrderState(),
+    OrderStatus::CONFIRMED        => new ConfirmedOrderState(),
+    OrderStatus::PREPARING        => new PreparingOrderState(),
+    OrderStatus::READY            => new ReadyOrderState(),
+    OrderStatus::OUT_FOR_DELIVERY => new OutForDeliveryOrderState(),
+    OrderStatus::DELIVERED        => new DeliveredOrderState(),
+    OrderStatus::CANCELLED        => new CancelledOrderState(),
+};
+
+Este excerto demonstra a criação dinâmica do estado da encomenda com base no seu valor atual, garantindo uma gestão consistente do ciclo de vida.
+
+Esta abordagem evita o uso de estruturas condicionais extensas (if/else) e garante consistência no fluxo de estados, impedindo transições inválidas (por exemplo, de PENDING diretamente para DELIVERED).
+
+[Heading3] 3.2.2.2 Padrão Strategy
+O padrão Strategy foi utilizado para encapsular diferentes comportamentos:
+Exemplos:
+Cálculo de preço 
+com ou sem desconto; 
+diferentes tipos de promoções; 
+Seleção de estafeta 
+mais próximo; 
+melhor avaliação; 
+menor tempo estimado; 
+Permite alterar comportamento sem modificar a lógica principal.
+
+[Heading3] 3.2.2.3 Padrão Command
+O padrão Command foi utilizado para encapsular ações do sistema.
+Exemplos de comandos:
+CreateOrderCommand 
+AcceptOrderCommand 
+UpdateDeliveryStatusCommand 
+AddToCartCommand 
+Benefícios:
+desacoplamento entre UI e backend; 
+facilidade de adicionar novas funcionalidades; 
+uniformização do processamento de ações.
+
+[Heading3] 3.2.2.4 Padrão Observer
+O padrão Observer é central na arquitetura event-driven.
+Quando ocorre um evento (ex: nova encomenda):
+o sistema publica um evento; 
+vários componentes reagem automaticamente: 
+frontend (via WebSockets); 
+notificações; 
+persistência. 
+Exemplo:
+OrderCreated → EventBus → WebSocket → Cliente atualizado
+
+[Heading3] 3.2.2.5 Padrão Singleton
+O padrão Singleton foi aplicado em componentes globais como:
+EventBus 
+NotificationManager 
+WebSocketHub 
+Garantindo:
+uma única instância; 
+consistência de dados; 
+ponto de acesso global.
+
+[Heading3] 3.2.2.6 Padrão Factory
+O padrão Factory foi utilizado para criação de objetos complexos.
+Exemplos:
+criação de Order com validações iniciais; 
+criação de Payment; 
+criação de User por tipo; 
+Permite:
+centralizar lógica de criação; 
+evitar inconsistências.
+[Heading3] 3.3 Diagrama ER
+O diagrama entidade-relacionamento representa a estrutura de dados persistente do sistema.
+As principais entidades são:
+User 
+Customer / Courier 
+Restaurant 
+Order 
+OrderItem 
+Payment 
+Delivery 
+Address 
+Product 
+Category 
+Events 
+O sistema utiliza uma abordagem baseada em eventos, onde:
+cada alteração gera um Event; 
+os eventos são armazenados; 
+permitem auditoria e reconstrução do estado.
+
+Figura 9 Diagrama ER
+
+[Heading3] 3.4 Diagramas de Sequência
+Os diagramas de sequência representam os principais fluxos do sistema.
+[Heading3] 3.4.1 Fluxo de criação de encomenda
+  Cliente adiciona itens ao carrinho 
+  Executa checkout 
+  Backend cria Order 
+  Evento é emitido 
+  Restaurante recebe notificação
+
+Figura 10 Diagrama de Sequências - Criar Sala e Entrada
+[Heading3] 3.4.2 Fluxo de aceitação de encomenda
+Restaurante recebe pedido 
+Aceita ou rejeita 
+Evento é publicado 
+Cliente é notificado 
+
+
+
+[Heading3] 3.4.3 Fluxo de entrega em tempo real
+Sistema seleciona estafeta 
+Estafeta aceita 
+Atualiza estados: 
+a caminho 
+entregue 
+Cliente recebe updates em tempo real
+
+
+[Heading3] 3.4.4 Fluxo de Atribuição de Estafeta
+O sistema implementa um mecanismo de atribuição automática de estafetas baseado em ofertas temporárias, em vez de um modelo onde os estafetas procuram manualmente pedidos disponíveis.
+O fluxo ocorre da seguinte forma:
+O restaurante inicia a preparação da encomenda. 
+O sistema cria automaticamente uma entidade de entrega (Delivery). 
+É iniciado um processo de seleção de estafetas disponíveis. 
+O estafeta mais próximo é selecionado com base na distância geográfica. 
+É enviada uma oferta ao estafeta com tempo limitado (ex: 30 segundos). 
+Caso o estafeta não aceite, a oferta expira e o sistema tenta outro estafeta. 
+O processo repete-se até encontrar um estafeta disponível ou atingir um limite máximo de tentativas. 
+Quando um estafeta aceita a entrega:
+a entrega é associada ao estafeta; 
+o estado é atualizado; 
+o cliente recebe uma notificação em tempo real. 
+Este mecanismo garante:
+distribuição eficiente de entregas; 
+redução de tempo de espera; 
+consistência no processo de atribuição.
+
+3.4.5 Máquinas de EstadosPara além dos fluxos de interação, foi modelado o ciclo de vida das principais entidades do sistema através de máquinas de estados, nomeadamente Order, Payment e Delivery.OrderA entidade Order percorre os estados:PENDING → CONFIRMED → PREPARING → READY → OUT_FOR_DELIVERY → DELIVEREDEm qualquer fase inicial pode ser cancelada, transitando para CANCELLED. Cada mudança de estado gera um evento que é registado no sistema e propagado em tempo real.
+PaymentO pagamento inicia em PENDING e pode transitar para:COMPLETED, FAILED ou CANCELLED.Estes estados representam, respetivamente, sucesso, falha ou cancelamento da transação, sendo estados finais.
+
+DeliveryA entrega segue o fluxo:PENDING → PICKED_UP → IN_TRANSIT → DELIVEREDPodendo transitar para FAILED em caso de erro. Durante o estado IN_TRANSIT, a posição do estafeta é atualizada em tempo real.Estas máquinas de estados garantem consistência no sistema e facilitam a validação de transições válidas.
+
+
+[Heading3] 3.5 Comunicação em Tempo Real e Integração com o Domínio
+
+Figura 13 Comunicação em tempo real 
+Um dos aspetos mais importantes do sistema é a integração entre domínio e comunicação.
+Fluxo:
+Order → Event → EventBus → WebSocket → Cliente
+Este modelo permite:
+atualização instantânea; 
+desacoplamento entre componentes; 
+escalabilidade do sistema.
+[Heading1] Capítulo 4
+
+[Heading2] Implementação da Solução
+Neste capítulo é descrita a implementação da plataforma FastBite, detalhando as principais decisões técnicas, a organização do sistema e as tecnologias utilizadas.
+A implementação segue diretamente a arquitetura definida nos capítulos anteriores, baseada numa abordagem cliente-servidor com suporte a comunicação em tempo real. O sistema foi desenvolvido com recurso a um backend em Laravel e dois clientes distintos (web e mobile), utilizando GraphQL para operações estruturadas e WebSockets para comunicação em tempo real.
+
+[Heading3] 4.1 Arquitetura Implementada
+A arquitetura final do sistema foi implementada seguindo uma abordagem modular baseada na separação de responsabilidades.
+O sistema encontra-se dividido nas seguintes camadas:
+Camada de Domínio 
+Contém a lógica de negócio; 
+Inclui entidades como Order, User, Delivery, Payment; 
+Camada de Aplicação 
+Orquestra os fluxos do sistema; 
+Processa comandos (ex: criar encomenda, aceitar pedido); 
+Camada de Infraestrutura 
+Responsável por comunicação externa; 
+Inclui GraphQL, WebSockets e acesso à base de dados. 
+Esta separação permite:
+baixo acoplamento; 
+maior facilidade de manutenção; 
+melhor testabilidade.
+
+[Heading3] 4.2 Implementação do Backend
+O backend foi desenvolvido utilizando o framework Laravel, sendo responsável pela gestão do estado do sistema, validação das regras de negócio e coordenação da comunicação entre os diferentes atores.
+A escolha do Laravel deve-se a:
+organização baseada em MVC; 
+facilidade de integração com APIs; 
+suporte a eventos e filas; 
+ecossistema robusto. 
+Componentes principais:
+Models 
+Representam entidades (Order, User, Product, etc.) 
+Services 
+Contêm lógica de negócio (OrderService, DeliveryService) 
+Repositories 
+Responsáveis pela persistência 
+Event System 
+Gestão de eventos do sistema
+[Heading3] 4.2.1 Programação Orientada a Aspetos
+A Programação Orientada a Aspetos (POA) foi aplicada com o objetivo de separar preocupações transversais da lógica principal do sistema.
+Foi utilizada uma abordagem baseada em interceptores, permitindo adicionar comportamento a métodos sem alterar diretamente o seu código.
+Foram definidos os seguintes aspetos principais:
+Gestão de Transações — métodos críticos são executados dentro de transações de base de dados automaticamente. 
+Logging — registo de execução de métodos, incluindo duração e possíveis erros. 
+Tratamento de Erros — captura e normalização de exceções. 
+#[Transactional]public function startPreparingOrder(...){    // lógica de negócio}#[Transactional]public function startPreparingOrder(...){    // lógica de negócio}Exemplo conceptual:
+#[Transactional]public function startPreparingOrder(...){    // lógica de negócio}
+
+#[Transactional]public function startPreparingOrder(...){    // lógica de negócio}
+
+
+Neste caso, o comportamento transacional é aplicado automaticamente, sem necessidade de escrever manualmente código para beginTransaction, commit ou rollback.
+Vantagens desta abordagem:
+maior separação de responsabilidades; 
+código mais limpo e legível; 
+facilidade de manutenção e evolução. 
+
+[Heading3] 4.2.2 Event Sourcing e Outbox Pattern
+A arquitetura do sistema segue uma abordagem orientada a eventos, onde todas as alterações relevantes são registadas como eventos imutáveis.
+Para cada entidade principal (como encomendas, pagamentos e entregas), são registados eventos que descrevem mudanças de estado ao longo do tempo.
+Exemplos de eventos:
+criação de encomenda; 
+alteração de estado; 
+conclusão de pagamento; 
+entrega finalizada. 
+Cada evento contém:
+tipo do evento; 
+timestamp; 
+dados associados (payload). 
+Esta abordagem permite:
+auditoria completa do sistema; 
+reconstrução do estado; 
+análise de métricas de funcionamento. 
+Adicionalmente, foi utilizado o padrão Outbox, que garante que eventos são publicados de forma fiável.
+Fluxo:
+Evento é guardado na base de dados. 
+Evento é inserido numa tabela de outbox. 
+Um processo em background envia o evento para os clientes. 
+Em caso de falha, o envio é re-tentado. 
+Este mecanismo garante consistência entre persistência e comunicação em tempo real.
+
+[Heading3] 4.3 API GraphQL
+A API GraphQL foi utilizada como principal interface de comunicação estruturada entre cliente e servidor.
+Foi implementada com o package Lighthouse, permitindo definir:
+schemas tipados; 
+queries; 
+mutations; 
+subscriptions. 
+Queries
+Permitem obter dados, como:
+lista de restaurantes; 
+detalhes de produtos; 
+histórico de encomendas; 
+estado de uma encomenda. 
+Mutations
+Permitem executar ações, como:
+registo de utilizador; 
+criação de encomenda; 
+atualização de estado; 
+gestão de carrinho. 
+Vantagens
+redução de over-fetching; 
+maior eficiência; 
+flexibilidade na resposta.
+
+[Heading3] 4.4 Comunicação em Tempo Real com WebSockets
+A comunicação em tempo real foi implementada utilizando Laravel Reverb, permitindo estabelecer ligações persistentes entre cliente e servidor.
+Cada cliente mantém uma ligação ativa, permitindo receber atualizações imediatas.
+Exemplos de eventos:
+Nova encomenda criada; 
+Pedido aceite pelo restaurante; 
+Estafeta atribuído; 
+Estado da entrega atualizado. 
+Fluxo de comunicação:
+Evento ocorre no backend 
+EventBus publica evento 
+WebSocket envia para clientes 
+Interface atualiza automaticamente 
+Isto permite:
+experiência em tempo real; 
+eliminação de polling; 
+maior eficiência.
+
+[Heading3] 4.5 Implementação do Frontend
+O sistema inclui dois frontends:
+
+
+Figura 14 Demonstração da mesa de jogo
+[Heading3] 4.5.1 Frontend Web (React.js)
+O frontend web foi desenvolvido utilizando React.js, permitindo:
+interfaces dinâmicas; 
+gestão eficiente de estado; 
+integração com GraphQL (ex: Apollo Client). 
+Funcionalidades principais:
+exploração de restaurantes; 
+gestão de carrinho; 
+checkout; 
+acompanhamento de encomendas. 
+
+[Heading3] 4.5.2 Frontend Mobile (React Native)
+O frontend mobile foi desenvolvido com React Native, permitindo:
+reutilização de lógica; 
+experiência nativa; 
+comunicação em tempo real. 
+Funcionalidades principais:
+tracking de encomendas; 
+notificações; 
+gestão de perfil; 
+interação com estafetas.
+
+[Heading3] 4.5.3 Push Notifications
+A aplicação móvel suporta notificações remotas, permitindo informar os utilizadores mesmo quando a aplicação não está ativa.
+O funcionamento baseia-se em:
+registo de um identificador único do dispositivo (push token); 
+envio desse token para o backend; 
+utilização desse token para envio de notificações. 
+As notificações são utilizadas para:
+informar sobre novas encomendas; 
+atualizar estados de entrega; 
+alertar utilizadores para eventos relevantes. 
+Adicionalmente, foi implementado deep linking, permitindo que o utilizador abra diretamente o ecrã correspondente ao evento ao clicar numa notificação.
+
+[Heading3] 4.5.4 Programação Funcional
+Foram aplicados princípios de programação funcional em várias partes do sistema, com o objetivo de melhorar a clareza, previsibilidade e testabilidade do código.
+Principais abordagens utilizadas:
+Imutabilidade — estados são representados através de enums, evitando alterações acidentais. 
+Funções puras — regras de negócio implementadas sem efeitos colaterais. 
+Encadeamento de operações — utilização de pipelines para transformar dados de forma declarativa. 
+$items = collect($items)    ->filter(fn ($item) => $item->active)    ->map(fn ($item) => transform($item))    ->sortBy(fn ($item) => $item->price);$items = collect($items)    ->filter(fn ($item) => $item->active)    ->map(fn ($item) => transform($item))    ->sortBy(fn ($item) => $item->price);Exemplo conceptual:
+$items = collect($items)    ->filter(fn ($item) => $item->active)    ->map(fn ($item) => transform($item))    ->sortBy(fn ($item) => $item->price);
+
+$items = collect($items)    ->filter(fn ($item) => $item->active)    ->map(fn ($item) => transform($item))    ->sortBy(fn ($item) => $item->price);
+
+
+Esta abordagem permite:
+código mais expressivo; 
+menor probabilidade de erros; 
+maior facilidade de testes.
+
+
+[Heading3] 4.6 Validação e Testes
+A validação do sistema foi realizada através de:
+testes unitários; 
+testes manuais; 
+validação funcional dos casos de uso. 
+Foram testados:
+criação de encomendas; 
+comunicação em tempo real; 
+consistência dos estados; 
+integração entre componentes. 
+Os testes garantem:
+robustez; 
+deteção de erros; 
+estabilidade do sistema.
+
+A validação do sistema foi feita em três planos. No backend, foram escritos testes unitários e de integração com PHPUnit (Pest), localizados em Backend/tests/, cobrindo principalmente o motor de cálculo de preços (OrderPricingServiceTest), as máquinas de estados (OrderStateMachineTest, PaymentStateMachineTest, DeliveryStateMachineTest) e os fluxos críticos via mutations GraphQL (OrderCheckoutTest, AcceptDeliveryOfferTest). Os testes correm contra uma base de dados PostgreSQL dedicada de testing, configurada via Sail para garantir paridade com produção. A invocação é docker compose exec laravel.test php artisan test.
+Os frontends foram validados manualmente por cenários ponta a ponta (E2E): criação de encomenda → pagamento → preparação → atribuição de estafeta → entrega, com observação dos eventos Reverb na consola e dos order_events / delivery_events na base de dados.
+Por fim, foi feito teste de integração em tempo real com três dispositivos simultâneos (cliente Web, restaurante Web, estafeta Mobile) para confirmar a propagação dos eventos pelos múltiplos canais.
+
+[Heading3] 4.7 Organização do Projeto e Gestão do Trabalho
+A gestão do trabalho foi realizada com base na metodologia ágil, utilizando story points para estimar o esforço associado a cada tarefa.A distribuição de esforço pelos elementos da equipa foi a seguinte:• Alexandre Freitas – 45 story points • Duarte Sousa – 38 story points • Paulo Coelho – 42 story points Esta distribuição reflete uma divisão equilibrada do trabalho, tendo em conta as diferentes responsabilidades assumidas ao longo do desenvolvimento do projeto.
+[Heading1] Capítulo 5
+
+[Heading2] Discussão dos Resultados e Conclusão
+[Heading3] 
+[Heading3] 5.1 Apresentação e discussão de resultados 
+O sistema desenvolvido, FastBite, cumpre o objetivo principal de permitir a gestão completa de encomendas de refeições em ambiente distribuído, suportando múltiplos utilizadores em simultâneo e garantindo a sincronização do estado do sistema em tempo real.
+Durante a fase de testes e validação, foi possível verificar que as principais funcionalidades implementadas — nomeadamente a criação de encomendas, gestão de carrinho, aceitação de pedidos por parte dos restaurantes, atribuição de estafetas e acompanhamento em tempo real — funcionam de forma consistente e estável.
+A arquitetura adotada, baseada na separação entre GraphQL e WebSockets, revelou-se particularmente eficaz. A utilização de GraphQL permitiu estruturar de forma clara as operações de leitura e escrita de dados, reduzindo problemas comuns em APIs tradicionais, como o over-fetching. Por outro lado, a utilização de WebSockets possibilitou a atualização imediata do estado das encomendas, garantindo uma experiência fluida para o utilizador.
+Um dos aspetos mais relevantes do sistema foi a implementação de uma arquitetura orientada a eventos. Esta abordagem permitiu desacoplar a lógica de negócio da comunicação, facilitando a propagação de alterações de estado entre os diferentes componentes do sistema. Como resultado, clientes, restaurantes e estafetas recebem atualizações praticamente em tempo real, o que é essencial para o correto funcionamento de plataformas deste tipo.
+Adicionalmente, a utilização de eventos como mecanismo central do sistema possibilitou a implementação de um registo de auditoria completo, permitindo acompanhar todas as alterações relevantes ao longo do ciclo de vida de uma encomenda.
+Outro ponto forte do sistema prende-se com a separação clara de responsabilidades entre as diferentes camadas da aplicação (domínio, aplicação e infraestrutura), o que contribuiu para uma melhor organização do código, maior facilidade de manutenção e possibilidade de evolução futura.
+No que diz respeito às tecnologias utilizadas, a adoção de Laravel, React e React Native demonstrou ser adequada para o desenvolvimento de aplicações modernas e multiplataforma. A integração entre estas tecnologias foi realizada com sucesso, garantindo consistência na comunicação e na gestão de estado.
+Apesar dos resultados positivos, foram identificadas algumas limitações no sistema:
+Complexidade na gestão de estados das encomendasA implementação do ciclo de vida das encomendas revelou-se mais complexa do que inicialmente previsto, exigindo maior controlo sobre transições de estado. 
+Gestão de comunicação em tempo realA utilização de WebSockets introduziu desafios relacionados com a gestão de ligações persistentes e sincronização de eventos. 
+Curva de aprendizagem das tecnologiasTecnologias como GraphQL e a arquitetura event-driven exigiram um período de adaptação significativo. 
+Escalabilidade não totalmente exploradaO sistema não foi testado em cenários de elevada carga, pelo que a sua escalabilidade real não foi completamente validada.
+
+[Heading3] 5.2 Conclusão e trabalho futuro 
+O desenvolvimento da plataforma FastBite permitiu aplicar, de forma integrada, diversos conceitos abordados na unidade curricular, incluindo programação funcional, programação orientada a aspetos e arquiteturas orientadas a eventos.
+De forma global, considera-se que os objetivos propostos foram atingidos, tendo sido desenvolvido um sistema funcional, coerente e tecnicamente fundamentado, capaz de suportar comunicação em tempo real entre múltiplos intervenientes.
+O projeto constituiu uma experiência relevante na construção de aplicações distribuídas modernas, permitindo consolidar conhecimentos técnicos e compreender os desafios associados à sincronização de estados em sistemas multiutilizador.
+Para trabalho futuro, identificam-se várias possíveis evoluções:
+Escalabilidade e distribuição 
+implementação de microsserviços; 
+balanceamento de carga; 
+Melhoria do sistema de entrega 
+algoritmos mais eficientes de seleção de estafetas; 
+otimização de rotas; 
+Segurança 
+autenticação robusta (JWT/OAuth); 
+proteção de dados sensíveis; 
+Funcionalidades adicionais 
+sistema de avaliações mais completo; 
+recomendações baseadas em comportamento do utilizador; 
+notificações push; 
+Resiliência 
+mecanismos de recuperação de falhas; 
+reconexão automática de clientes; 
+Monitorização 
+logs avançados; 
+métricas de desempenho; 
+dashboards operacionais; 
+Em suma, o projeto estabelece uma base sólida para o desenvolvimento de uma plataforma de delivery em produção, demonstrando o potencial das tecnologias utilizadas na construção de sistemas distribuídos e reativos.
+
+
+[Heading1] Bibliografia 
+
+Referências
+
+[1] Laravel Documentation. https://laravel.com  
+[2] GraphQL Official Documentation. https://graphql.org  
+[3] React Documentation. https://react.dev  
+[4] React Native Documentation. https://reactnative.dev  
+[5] Fowler, M. Event Sourcing.  
+[6] Gamma, E., Helm, R., Johnson, R., Vlissides, J. Design Patterns: Elements of Reusable Object-Oriented Software.
+[Heading1] Anexos
+Anexo A — Excerto do Schema GraphQL : copiar Backend/graphql/common.graphql (apenas os tipos principais: User, Order, Payment, Delivery, Cart) e os ficheiros de raiz schema.graphql se houver.
+Anexo B — Esquema da Base de Dados : output de php artisan migrate:status (lista de migrations aplicadas) + uma screenshot de pgAdmin com o ER real.
+Anexo C — Snippets de Implementação : OrderStateFactory, TransactionInterceptor, AssignCourierToDeliveryJob.
+Anexo D — Screenshots Adicionais : ecrãs que não couberam no corpo (notificações push, oferta ao estafeta com mapa, etc.).
+
+

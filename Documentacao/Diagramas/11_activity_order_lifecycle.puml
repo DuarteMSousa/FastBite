@@ -1,0 +1,83 @@
+@startuml FastBite_Activity_OrderLifecycle
+title FastBite — Ciclo de Vida de uma Encomenda
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #FAFAFA
+  BorderColor #555
+  ArrowColor #555
+  DiamondBackgroundColor #FAFAFA
+  DiamondBorderColor #555
+}
+
+|#LightBlue|Cliente|
+start
+:Pesquisar restaurantes;
+:Adicionar itens ao carrinho;
+:Confirmar checkout;
+
+|#LightYellow|Sistema|
+:Calcular precos\n(promocoes + cupoes + taxa entrega);
+:Criar Order [PENDING]\n+ event ORDER_CREATED;
+:Criar Payment [PENDING]\n+ event PAYMENT_CREATED;
+
+|#LightBlue|Cliente|
+:Pagar (simulado: CARD / MBWAY / CASH);
+
+|#LightYellow|Sistema|
+if (Pagamento OK?) then (sim)
+  :Payment [COMPLETED]\n+ event PAYMENT_COMPLETED;
+  :Order [CONFIRMED]\n+ event ORDER_CONFIRMED;
+else (timeout)
+  :ExpirePendingPaymentJob\nPayment [CANCELLED];
+  stop
+endif
+
+|#LightGreen|Restaurante|
+:Receber notificacao em tempo real\n(canal restaurant.{id}.orders);
+if (Aceita?) then (sim)
+  :Order [PREPARING]\n+ event ORDER_PREPARING;
+else (rejeita)
+  :Order [CANCELLED];
+  stop
+endif
+
+|#LightYellow|Sistema|
+:Criar Delivery [PENDING];
+:Dispatch AssignCourierToDeliveryJob\n(loop ate 3 tentativas);
+
+|#Pink|Estafeta|
+if (Algum estafeta aceita?) then (sim)
+  :Delivery atribuida\n+ event DELIVERY_ACCEPTED;
+else (3 ofertas falham)
+  |#LightYellow|Sistema|
+  :Delivery [FAILED]\n+ event DELIVERY_FAILED;
+  stop
+endif
+
+|#LightGreen|Restaurante|
+:Marcar itens prontos\n(cozinha virtual);
+:Order [READY]\n+ event ORDER_READY;
+
+|#Pink|Estafeta|
+:Confirmar pickup\nDelivery [PICKED_UP]\n+ event DELIVERY_PICKED_UP;
+:Marcar em transito\nDelivery [IN_TRANSIT]\n+ event DELIVERY_IN_TRANSIT;
+
+repeat
+:updateCourierLocation\n(a cada 5-10s);
+|#LightBlue|Cliente|
+:Ver posicao no mapa\n(tempo real);
+|#Pink|Estafeta|
+repeat while (Ainda em transito?) is (sim)
+->nao - chegou ao destino;
+
+:Marcar entregue\nDelivery [DELIVERED]\n+ event DELIVERY_DELIVERED;
+
+|#LightYellow|Sistema|
+:Order [DELIVERED]\n+ event ORDER_DELIVERED;
+
+|#LightBlue|Cliente|
+:Avaliar restaurante e estafeta;
+stop
+
+@enduml

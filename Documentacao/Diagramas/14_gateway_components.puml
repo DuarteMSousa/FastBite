@@ -1,0 +1,83 @@
+@startuml FastBite_GatewayComponents
+title FastBite — Camada Gateway: Componentes (Backend/app/Gateway/)
+
+skinparam shadowing false
+skinparam component {
+  BackgroundColor #FAFAFA
+  BorderColor #555
+  ArrowColor #555
+}
+
+package "Clientes WebSocket" as CW {
+  component "Frontend Web\n(Realtime Service)" as Web
+  component "Frontend Mobile\n(Realtime Service)" as Mobile
+}
+
+package "Backend/app/Gateway/" as GW {
+
+  package "ClientEvents/\n(entrada)" as CE {
+    component "GatewayWorkerEvents\n(onConnect, onMessage, onClose)" as GWE
+    component "ClientEventDispatcher" as CED
+    component "ClientEventHandler\n(subscribe, ack, ping)" as CEH
+  }
+
+  package "ServerEvents/\n(saida)" as SE {
+    component "SocketMessageDispatcher" as SMD
+    package "Handlers/" as H {
+      component "OrderSocketHandler" as OSH
+      component "DeliverySocketHandler" as DSH
+      component "NotificationSocketHandler" as NSH
+      component "ChatSocketHandler" as CSH
+      component "CourierTrackingSocketHandler" as CTSH
+    }
+    component "GatewayClientSocketPusher" as GCSP
+  }
+}
+
+component "GatewayWorker\n(Workerman process)" as Worker
+
+package "Laravel App" as LA {
+  component "Listener:\nDispatchSocketMessage" as Listener
+  database "Subscriptions\n(userId -> connections)" as Subs
+}
+
+' Entrada: cliente -> servidor
+Web --> Worker : connect / send
+Mobile --> Worker : connect / send
+Worker --> GWE : eventos do gateway
+GWE --> CED : dispatch
+CED --> CEH : handle(payload)
+CEH --> Subs : atualiza registo\nde subscricoes
+
+' Saida: servidor -> cliente
+Listener --> SMD : forward(event)
+SMD --> OSH : ORDER_*
+SMD --> DSH : DELIVERY_*
+SMD --> NSH : USER_NOTIFICATION_CREATED
+SMD --> CSH : CHAT_MESSAGE_SENT
+SMD --> CTSH : COURIER_POSITION_UPDATED
+OSH --> GCSP : push(channels, payload)
+DSH --> GCSP
+NSH --> GCSP
+CSH --> GCSP
+CTSH --> GCSP
+GCSP --> Worker : pushToChannel(channel, msg)
+Worker --> Web : mensagem JSON
+Worker --> Mobile : mensagem JSON
+
+note bottom of GCSP #LightYellow
+  Singleton: instancia
+  unica via container
+  Laravel. Reutiliza
+  ligacao ao gateway.
+end note
+
+note bottom of SMD #LightCyan
+  Match por event_name
+  ao handler apropriado.
+  Adicionar novo evento =
+  novo handler + entrada
+  no match.
+end note
+
+@enduml
