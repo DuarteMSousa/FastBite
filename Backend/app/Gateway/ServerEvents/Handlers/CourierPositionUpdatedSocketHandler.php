@@ -2,6 +2,8 @@
 
 namespace App\Gateway\ServerEvents\Handlers;
 
+use App\Aspects\ErrorLogged;
+use App\Aspects\Logged;
 use App\Enums\OutboxEventType;
 use App\Events\CourierPositionUpdated;
 use App\Gateway\GatewayClientSocketPusher;
@@ -16,6 +18,8 @@ class CourierPositionUpdatedSocketHandler implements SocketEventHandler
         return $event instanceof CourierPositionUpdated;
     }
 
+    #[Logged]
+    #[ErrorLogged]
     public function handle(object $event): void
     {
         /** @var CourierPositionUpdated $event */

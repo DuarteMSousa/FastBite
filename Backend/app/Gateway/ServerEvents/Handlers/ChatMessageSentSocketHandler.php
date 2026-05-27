@@ -2,6 +2,8 @@
 
 namespace App\Gateway\ServerEvents\Handlers;
 
+use App\Aspects\ErrorLogged;
+use App\Aspects\Logged;
 use App\Enums\OutboxEventType;
 use App\Events\ChatMessageSent;
 use App\Gateway\GatewayClientSocketPusher;
@@ -16,6 +18,8 @@ class ChatMessageSentSocketHandler implements SocketEventHandler
         return $event instanceof ChatMessageSent;
     }
 
+    #[Logged]
+    #[ErrorLogged]
     public function handle(object $event): void
     {
         /** @var ChatMessageSent $event */

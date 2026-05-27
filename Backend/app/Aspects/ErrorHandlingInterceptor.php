@@ -14,12 +14,27 @@ class ErrorHandlingInterceptor implements MethodInterceptor
         try {
             return $invocation->proceed();
         } catch (Throwable $exception) {
+            $target = $this->targetName($invocation);
+            $method = $invocation->getMethod()->getName();
+            $errorLogged = $invocation->getMethod()->getAnnotation(ErrorLogged::class);
+
             Log::error('aop.method.exception', [
-                'target' => $this->targetName($invocation),
-                'method' => $invocation->getMethod()->getName(),
+                'target' => $target,
+                'method' => $method,
                 'exception' => $exception::class,
                 'message' => $exception->getMessage(),
+                'timestamp' => now()->toIso8601String(),
             ]);
+
+            if ($errorLogged instanceof ErrorLogged) {
+                Log::log($errorLogged->level, 'aop.decorated.exception', [
+                    'target' => $target,
+                    'method' => $method,
+                    'exception' => $exception::class,
+                    'message' => $exception->getMessage(),
+                    'timestamp' => now()->toIso8601String(),
+                ]);
+            }
 
             throw $exception;
         }

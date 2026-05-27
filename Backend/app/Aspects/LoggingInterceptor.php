@@ -13,11 +13,21 @@ class LoggingInterceptor implements MethodInterceptor
         $startedAt = microtime(true);
         $target = $this->targetName($invocation);
         $method = $invocation->getMethod()->getName();
+        $logged = $invocation->getMethod()->getAnnotation(Logged::class);
 
         Log::info('aop.method.started', [
             'target' => $target,
             'method' => $method,
+            'timestamp' => now()->toIso8601String(),
         ]);
+
+        if ($logged instanceof Logged) {
+            Log::log($logged->level, 'aop.decorated.started', [
+                'target' => $target,
+                'method' => $method,
+                'timestamp' => now()->toIso8601String(),
+            ]);
+        }
 
         $result = $invocation->proceed();
 
@@ -25,7 +35,17 @@ class LoggingInterceptor implements MethodInterceptor
             'target' => $target,
             'method' => $method,
             'duration_ms' => round((microtime(true) - $startedAt) * 1000, 2),
+            'timestamp' => now()->toIso8601String(),
         ]);
+
+        if ($logged instanceof Logged) {
+            Log::log($logged->level, 'aop.decorated.finished', [
+                'target' => $target,
+                'method' => $method,
+                'duration_ms' => round((microtime(true) - $startedAt) * 1000, 2),
+                'timestamp' => now()->toIso8601String(),
+            ]);
+        }
 
         return $result;
     }

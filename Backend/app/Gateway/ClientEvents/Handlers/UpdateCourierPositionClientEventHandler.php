@@ -2,6 +2,8 @@
 
 namespace App\Gateway\ClientEvents\Handlers;
 
+use App\Aspects\ErrorLogged;
+use App\Aspects\Logged;
 use App\DTOs\Tracking\UpdateCourierLocationDTO;
 use App\Gateway\ClientEvents\ClientEventHandler;
 use App\Gateway\ClientEvents\ClientSocketMessage;
@@ -23,6 +25,8 @@ class UpdateCourierPositionClientEventHandler implements ClientEventHandler
         return SocketClientEventType::COURIER_POSITION_SET;
     }
 
+    #[Logged]
+    #[ErrorLogged]
     public function handle(string $clientId, ClientSocketMessage $message): void
     {
         $courierId = $this->requiredStringFromMessageOrSession($message, $clientId, 'courier_id', 'courier_id');

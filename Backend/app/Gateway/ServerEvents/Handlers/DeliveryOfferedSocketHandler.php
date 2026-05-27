@@ -2,6 +2,8 @@
 
 namespace App\Gateway\ServerEvents\Handlers;
 
+use App\Aspects\ErrorLogged;
+use App\Aspects\Logged;
 use App\Enums\OutboxEventType;
 use App\Events\DeliveryOffered;
 use App\Gateway\GatewayClientSocketPusher;
@@ -16,6 +18,8 @@ class DeliveryOfferedSocketHandler implements SocketEventHandler
         return $event instanceof DeliveryOffered;
     }
 
+    #[Logged]
+    #[ErrorLogged]
     public function handle(object $event): void
     {
         /** @var DeliveryOffered $event */

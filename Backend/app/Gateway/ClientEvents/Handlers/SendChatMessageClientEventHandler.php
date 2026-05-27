@@ -2,6 +2,8 @@
 
 namespace App\Gateway\ClientEvents\Handlers;
 
+use App\Aspects\ErrorLogged;
+use App\Aspects\Logged;
 use App\DTOs\Chat\SendMessageDTO;
 use App\Enums\OutboxEventType;
 use App\Gateway\ClientEvents\ClientEventHandler;
@@ -25,6 +27,8 @@ class SendChatMessageClientEventHandler implements ClientEventHandler
         return SocketClientEventType::CHAT_MESSAGE_SEND;
     }
 
+    #[Logged]
+    #[ErrorLogged]
     public function handle(string $clientId, ClientSocketMessage $message): void
     {
         $senderUserId = $this->requiredStringFromMessageOrSession($message, $clientId, 'user_id', 'sender_user_id');

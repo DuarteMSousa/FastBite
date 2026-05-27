@@ -2,6 +2,8 @@
 
 namespace App\Gateway\ClientEvents\Handlers;
 
+use App\Aspects\ErrorLogged;
+use App\Aspects\Logged;
 use App\Gateway\ClientEvents\ClientEventHandler;
 use App\Gateway\ClientEvents\ClientSocketMessage;
 use App\Gateway\ClientEvents\ReadsClientPayload;
@@ -20,6 +22,8 @@ class UnsubscribeClientEventHandler implements ClientEventHandler
         return SocketClientEventType::UNSUBSCRIBE;
     }
 
+    #[Logged]
+    #[ErrorLogged]
     public function handle(string $clientId, ClientSocketMessage $message): void
     {
         $channel = $message->requiredString('channel');

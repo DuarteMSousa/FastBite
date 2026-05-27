@@ -2,6 +2,8 @@
 
 namespace App\Gateway\ClientEvents\Handlers;
 
+use App\Aspects\ErrorLogged;
+use App\Aspects\Logged;
 use App\Gateway\ClientEvents\ClientEventHandler;
 use App\Gateway\ClientEvents\ClientSocketMessage;
 use App\Gateway\ClientEvents\ReadsClientPayload;
@@ -19,6 +21,8 @@ class HelloClientEventHandler implements ClientEventHandler
         return SocketClientEventType::HELLO;
     }
 
+    #[Logged]
+    #[ErrorLogged]
     public function handle(string $clientId, ClientSocketMessage $message): void
     {
         $userId = $message->requiredString('user_id');

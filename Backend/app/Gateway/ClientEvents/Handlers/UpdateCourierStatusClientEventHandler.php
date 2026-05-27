@@ -2,6 +2,8 @@
 
 namespace App\Gateway\ClientEvents\Handlers;
 
+use App\Aspects\ErrorLogged;
+use App\Aspects\Logged;
 use App\Gateway\ClientEvents\ClientEventHandler;
 use App\Gateway\ClientEvents\ClientSocketMessage;
 use App\Gateway\ClientEvents\ReadsClientPayload;
@@ -22,6 +24,8 @@ class UpdateCourierStatusClientEventHandler implements ClientEventHandler
         return SocketClientEventType::COURIER_STATUS_SET;
     }
 
+    #[Logged]
+    #[ErrorLogged]
     public function handle(string $clientId, ClientSocketMessage $message): void
     {
         $courierId = $this->requiredStringFromMessageOrSession($message, $clientId, 'courier_id', 'courier_id');
