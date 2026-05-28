@@ -155,12 +155,15 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
   }, [loadOrders])
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadOrderChat(effectiveOrderId)
-    }, 0)
+    let cancelled = false
+    queueMicrotask(() => {
+      if (!cancelled) {
+        loadOrderChat(effectiveOrderId)
+      }
+    })
 
     return () => {
-      clearTimeout(timer)
+      cancelled = true
     }
   }, [effectiveOrderId, loadOrderChat])
 
