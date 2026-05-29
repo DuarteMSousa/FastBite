@@ -167,23 +167,6 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
     }
   }, [effectiveOrderId, loadOrderChat])
 
-  useEffect(() => {
-    if (!chat?.id || !selectedOrder?.courier_id) return
-    const participantIds = new Set((chat.participants ?? []).map((p) => p.user_id))
-    if (participantIds.has(selectedOrder.courier_id)) return
-
-    let cancelled = false
-    queueMicrotask(() => {
-      if (!cancelled) {
-        loadOrderChat(effectiveOrderId)
-      }
-    })
-
-    return () => {
-      cancelled = true
-    }
-  }, [chat?.id, chat?.participants, selectedOrder?.courier_id, effectiveOrderId, loadOrderChat])
-
   // Realtime: subscreve automaticamente quando ha chat ativo
   useEffect(() => {
     if (!chat?.id) {
