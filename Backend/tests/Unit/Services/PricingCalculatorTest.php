@@ -41,5 +41,25 @@ class PricingCalculatorTest extends TestCase
         $this->assertSame(0.0, PricingCalculator::calculateTotal(5, 0, 9));
     }
 
-  
+    public function test_calculates_discount_total_with_selector_pipeline(): void
+    {
+        $discounts = [
+            ['discount_amount' => 1.25],
+            ['discount_amount' => '2.75'],
+            ['name_snapshot' => 'no discount amount'],
+        ];
+
+        $this->assertSame(4.0, PricingCalculator::calculateDiscountTotal($discounts));
+    }
+
+    public function test_pipe_composes_transformations_left_to_right(): void
+    {
+        $result = PricingCalculator::pipe(
+            2,
+            static fn (int $value): int => $value + 3,
+            static fn (int $value): int => $value * 4,
+        );
+
+        $this->assertSame(20, $result);
+    }
 }

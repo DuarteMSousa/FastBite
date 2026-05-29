@@ -140,41 +140,43 @@ class CartService implements CartServiceInterface
     {
         $restaurantProduct->loadMissing('product.optionGroups.options');
 
-        $uniqueOptionIds = array_values(array_unique($optionIds));
-        if ($options->count() !== count($uniqueOptionIds)) {
+        $selectedOptionIds = collect($optionIds)->unique()->values();
+
+        if ($options->count() !== $selectedOptionIds->count()) {
             throw ValidationException::withMessages([
                 'option_ids' => 'One or more selected options do not exist.',
             ]);
         }
 
         $validOptionIds = $restaurantProduct->product->optionGroups
-            ->flatMap(fn ($group) => $group->options->pluck('id'))
-            ->all();
+            ->flatMap(static fn ($group) => $group->options->pluck('id'))
+            ->unique()
+            ->values();
 
-        foreach ($uniqueOptionIds as $optionId) {
-            if (! in_array($optionId, $validOptionIds, true)) {
-                throw ValidationException::withMessages([
-                    'option_ids' => 'Selected options must belong to the chosen product.',
-                ]);
-            }
+        if ($selectedOptionIds->diff($validOptionIds)->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'option_ids' => 'Selected options must belong to the chosen product.',
+            ]);
         }
 
-        foreach ($restaurantProduct->product->optionGroups as $group) {
-            $selectedCount = $options
-                ->where('option_group_id', $group->id)
-                ->count();
+        $optionsByGroup = $options->groupBy('option_group_id');
+        $groupLimitError = $restaurantProduct->product->optionGroups
+            ->map(static function ($group) use ($optionsByGroup): ?string {
+                $selectedCount = $optionsByGroup->get($group->id, collect())->count();
 
-            if ($selectedCount < $group->min_options) {
-                throw ValidationException::withMessages([
-                    'option_ids' => "Select at least {$group->min_options} option(s) for {$group->name}.",
-                ]);
-            }
+                return match (true) {
+                    $selectedCount < $group->min_options => "Select at least {$group->min_options} option(s) for {$group->name}.",
+                    $selectedCount > $group->max_options => "Select at most {$group->max_options} option(s) for {$group->name}.",
+                    default => null,
+                };
+            })
+            ->filter()
+            ->first();
 
-            if ($selectedCount > $group->max_options) {
-                throw ValidationException::withMessages([
-                    'option_ids' => "Select at most {$group->max_options} option(s) for {$group->name}.",
-                ]);
-            }
+        if ($groupLimitError !== null) {
+            throw ValidationException::withMessages([
+                'option_ids' => $groupLimitError,
+            ]);
         }
     }
 }

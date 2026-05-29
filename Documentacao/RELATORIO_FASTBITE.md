@@ -379,7 +379,17 @@ Para alem destes, existem eventos de notificacao, chat e tracking. Estes eventos
 
 O projeto aplica ideias de programacao funcional em partes onde a previsibilidade e importante. O exemplo mais direto e `PricingCalculator`, que concentra funcoes puras para normalizar quantidades, calcular totais de itens, subtotal, descontos e total final. Estas funcoes recebem dados de entrada e devolvem resultados sem depender de estado externo.
 
-Tambem se encontram ideias funcionais em transformacoes de colecoes no backend e nos frontends, no mapeamento de eventos para labels de interface e nos componentes React, que sao compostos a partir de propriedades e estado local. A separacao entre calculo e efeitos colaterais torna o sistema mais testavel.
+A implementacao reforca conceitos apresentados nos slides de programacao funcional:
+
+- funcoes puras e ausencia de efeitos colaterais em `PricingCalculator`, onde os metodos apenas transformam parametros em valores;
+- composicao de funcoes atraves de `pipe`, usada para encadear soma, aplicacao de quantidade e arredondamento;
+- currying/aplicacao parcial em `multiplyByQuantity`, que recebe a quantidade e devolve uma funcao preparada para aplicar essa quantidade a qualquer valor monetario;
+- funcoes de ordem superior em `sumBy`, `discountFor`, filtros de campanhas e scoring de estafetas, que recebem ou devolvem funcoes;
+- operadores ao estilo LINQ/Laravel Collections em `CartService` e `OrderPricingService`, com `map`, `filter`, `flatMap`, `groupBy`, `diff`, `sum` e `values`;
+- `yield` em `OrderPricingService`, onde os descontos de promocoes sao gerados de forma incremental por um generator;
+- separacao entre calculo puro e efeitos colaterais: os calculos de desconto e selecao de candidatos sao isolados, enquanto persistencia, eventos e jobs ficam nos services.
+
+Tambem se encontram ideias funcionais nos frontends, no mapeamento de eventos para labels de interface e nos componentes React, que sao compostos a partir de propriedades e estado local. A separacao entre calculo e efeitos colaterais torna o sistema mais testavel; por exemplo, os testes unitarios cobrem `PricingCalculator`, validacoes funcionais do carrinho, calculo de descontos e scoring de candidatos sem depender de IO externo.
 
 ### 6.2 Programacao Orientada a Aspetos
 

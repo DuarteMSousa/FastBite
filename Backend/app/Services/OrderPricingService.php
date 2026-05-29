@@ -15,6 +15,8 @@ use App\Models\Restaurant;
 use App\Models\UserAddress;
 use App\Repositories\CouponRepository\CouponRepositoryInterface;
 use App\Repositories\PromotionRepository\PromotionRepositoryInterface;
+use Closure;
+use Generator;
 use Illuminate\Validation\ValidationException;
 
 class OrderPricingService
@@ -57,18 +59,21 @@ class OrderPricingService
 
         $subtotal = PricingCalculator::calculateSubtotal($cart->items->pluck('total_price'));
         $deliveryFee = $address ? $this->deliveryFee($restaurant, $address) : 0.0;
-        $discounts = [];
-
-        foreach ($this->activePromotions((string) $restaurant->chain_id) as $promotion) {
-            foreach ($this->promotionDiscounts($cart, $promotion, $subtotal, $deliveryFee) as $discount) {
-                $discounts[] = $discount;
-            }
-        }
+        $discounts = collect($this->activePromotions((string) $restaurant->chain_id))
+            ->flatMap(fn (Promotion $promotion): array => iterator_to_array(
+                $this->promotionDiscounts($cart, $promotion, $subtotal, $deliveryFee),
+                false
+            ))
+            ->values()
+            ->all();
 
         $coupon = null;
         if ($couponCode !== null && trim($couponCode) !== '') {
             $coupon = $this->validCoupon((string) $restaurant->chain_id, trim($couponCode), $subtotal);
-            $discounts[] = $this->couponDiscount($cart, $coupon, $subtotal, $deliveryFee);
+            $discounts = [
+                ...$discounts,
+                $this->couponDiscount($cart, $coupon, $subtotal, $deliveryFee),
+            ];
         }
 
         $discountTotal = PricingCalculator::calculateDiscountTotal($discounts);
@@ -113,11 +118,10 @@ class OrderPricingService
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return Generator<int, array<string, mixed>>
      */
-    private function promotionDiscounts(Cart $cart, Promotion $promotion, float $subtotal, float $deliveryFee): array
+    private function promotionDiscounts(Cart $cart, Promotion $promotion, float $subtotal, float $deliveryFee): Generator
     {
-        $discounts = [];
         $type = DiscountType::from($promotion->type);
         $target = DiscountTarget::from($promotion->target);
 
@@ -125,45 +129,33 @@ class OrderPricingService
             $base = $target === DiscountTarget::ORDER ? $subtotal : $deliveryFee;
             $amount = PricingCalculator::discountAmount($base, (float) $promotion->discount, $type);
 
-            return [[
-                'name_snapshot' => $promotion->name,
-                'description_snapshot' => $promotion->description,
-                'discount_amount' => $amount,
-                'discount_type' => $type->value,
-                'discount_target' => $target->value,
-                'origin_type' => CampaignMorphType::PROMOTION->value,
-                'origin_id' => $promotion->id,
-                'cart_item_id' => null,
-            ]];
+            yield $this->campaignDiscountSnapshot(
+                name: $promotion->name,
+                description: $promotion->description,
+                amount: $amount,
+                type: $type,
+                target: $target,
+                originType: CampaignMorphType::PROMOTION,
+                originId: $promotion->id,
+            );
+
+            return;
         }
 
         foreach ($promotion->promotionItems as $promotionItem) {
-            foreach ($cart->items as $cartItem) {
-                $product = $cartItem->restaurantProduct->product;
-                $matchesProduct = $target === DiscountTarget::PRODUCT
-                    && $promotionItem->item_id === $product->id;
-                $matchesCategory = $target === DiscountTarget::CATEGORY
-                    && $promotionItem->item_id === $product->category_id;
-
-                if (! $matchesProduct && ! $matchesCategory) {
-                    continue;
-                }
-
-                $amount = PricingCalculator::discountAmount((float) $cartItem->total_price, (float) $promotion->discount, $type);
-                $discounts[] = [
-                    'name_snapshot' => $promotion->name,
-                    'description_snapshot' => $promotion->description,
-                    'discount_amount' => $amount,
-                    'discount_type' => $type->value,
-                    'discount_target' => $target->value,
-                    'origin_type' => CampaignMorphType::PROMOTION->value,
-                    'origin_id' => $promotion->id,
-                    'cart_item_id' => $cartItem->id,
-                ];
-            }
+            yield from $cart->items
+                ->filter($this->matchesCampaignTarget($target, (string) $promotionItem->item_id))
+                ->map(fn ($cartItem): array => $this->campaignDiscountSnapshot(
+                    name: $promotion->name,
+                    description: $promotion->description,
+                    amount: PricingCalculator::discountAmount((float) $cartItem->total_price, (float) $promotion->discount, $type),
+                    type: $type,
+                    target: $target,
+                    originType: CampaignMorphType::PROMOTION,
+                    originId: $promotion->id,
+                    cartItemId: $cartItem->id,
+                ));
         }
-
-        return $discounts;
     }
 
     private function validCoupon(string $chainId, string $code, float $subtotal): Coupon
@@ -196,37 +188,69 @@ class OrderPricingService
 
         $amount = PricingCalculator::discountAmount($base, (float) $coupon->discount, $type);
 
-        return [
-            'name_snapshot' => $coupon->code,
-            'description_snapshot' => $coupon->description,
-            'discount_amount' => $amount,
-            'discount_type' => $type->value,
-            'discount_target' => $target->value,
-            'origin_type' => CampaignMorphType::COUPON->value,
-            'origin_id' => $coupon->id,
-            'cart_item_id' => null,
-        ];
+        return $this->campaignDiscountSnapshot(
+            name: $coupon->code,
+            description: $coupon->description,
+            amount: $amount,
+            type: $type,
+            target: $target,
+            originType: CampaignMorphType::COUPON,
+            originId: $coupon->id,
+        );
     }
 
     private function couponTargetBase(Cart $cart, Coupon $coupon, DiscountTarget $target): float
     {
-        return (float) $cart->items->sum(function ($cartItem) use ($coupon, $target): float {
+        $targetIds = $coupon->promotionItems->pluck('item_id');
+        $targetValue = $this->targetValueForCartItem($target);
+
+        return (float) $cart->items
+            ->filter(static fn ($cartItem): bool => $targetIds->contains($targetValue($cartItem)))
+            ->sum(static fn ($cartItem): float => (float) $cartItem->total_price);
+    }
+
+    private function matchesCampaignTarget(DiscountTarget $target, string $itemId): Closure
+    {
+        $targetValue = $this->targetValueForCartItem($target);
+
+        return static fn ($cartItem): bool => $targetValue($cartItem) === $itemId;
+    }
+
+    private function targetValueForCartItem(DiscountTarget $target): Closure
+    {
+        return static function ($cartItem) use ($target): ?string {
             $product = $cartItem->restaurantProduct->product;
-            $matchesTargetItem = $coupon->promotionItems->contains(
-                fn ($promotionItem) => $promotionItem->item_id === (
-                    $target === DiscountTarget::PRODUCT ? $product->id : $product->category_id
-                )
-            );
 
-            if ($target === DiscountTarget::PRODUCT && $matchesTargetItem) {
-                return (float) $cartItem->total_price;
-            }
+            return match ($target) {
+                DiscountTarget::PRODUCT => $product->id,
+                DiscountTarget::CATEGORY => $product->category_id,
+                default => null,
+            };
+        };
+    }
 
-            if ($target === DiscountTarget::CATEGORY && $matchesTargetItem) {
-                return (float) $cartItem->total_price;
-            }
-
-            return 0.0;
-        });
+    /**
+     * @return array<string, mixed>
+     */
+    private function campaignDiscountSnapshot(
+        string $name,
+        ?string $description,
+        float $amount,
+        DiscountType $type,
+        DiscountTarget $target,
+        CampaignMorphType $originType,
+        string $originId,
+        ?string $cartItemId = null,
+    ): array {
+        return [
+            'name_snapshot' => $name,
+            'description_snapshot' => $description,
+            'discount_amount' => $amount,
+            'discount_type' => $type->value,
+            'discount_target' => $target->value,
+            'origin_type' => $originType->value,
+            'origin_id' => $originId,
+            'cart_item_id' => $cartItemId,
+        ];
     }
 }

@@ -25,6 +25,7 @@ use App\Repositories\DeliveryRepository\DeliveryRepositoryInterface;
 use App\Services\CourierService\CourierServiceInterface;
 use App\Services\OrderService\OrderServiceInterface;
 use App\Services\OutboxService;
+use Closure;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -113,30 +114,7 @@ class DeliveryService implements DeliveryServiceInterface
 
         $candidate = $this->couriers
             ->getAvailableExceptUserIds($attemptedCourierIds)
-            ->map(function ($courier) use ($restaurantAddress, $maxRadiusKm): ?array {
-                if (! $restaurantAddress || $courier->latitude === null || $courier->longitude === null) {
-                    return [
-                        'courier' => $courier,
-                        'distance' => null,
-                    ];
-                }
-
-                $distanceKm = GeoMath::distanceKm(
-                    (float) $courier->latitude,
-                    (float) $courier->longitude,
-                    (float) $restaurantAddress->latitude,
-                    (float) $restaurantAddress->longitude
-                );
-
-                if ($distanceKm > $maxRadiusKm) {
-                    return null;
-                }
-
-                return [
-                    'courier' => $courier,
-                    'distance' => $distanceKm,
-                ];
-            })
+            ->map($this->scoreCourierCandidate($restaurantAddress, $maxRadiusKm))
             ->filter()
             ->sortBy(fn (array $candidate): float => $candidate['distance'] ?? PHP_FLOAT_MAX)
             ->first();
@@ -357,6 +335,34 @@ class DeliveryService implements DeliveryServiceInterface
             return $offer->status === DeliveryOfferStatus::PENDING
                 && $offer->expires_at?->isFuture();
         });
+    }
+
+    private function scoreCourierCandidate(?object $restaurantAddress, float $maxRadiusKm): Closure
+    {
+        return static function ($courier) use ($restaurantAddress, $maxRadiusKm): ?array {
+            if (! $restaurantAddress || $courier->latitude === null || $courier->longitude === null) {
+                return [
+                    'courier' => $courier,
+                    'distance' => null,
+                ];
+            }
+
+            $distanceKm = GeoMath::distanceKm(
+                (float) $courier->latitude,
+                (float) $courier->longitude,
+                (float) $restaurantAddress->latitude,
+                (float) $restaurantAddress->longitude
+            );
+
+            if ($distanceKm > $maxRadiusKm) {
+                return null;
+            }
+
+            return [
+                'courier' => $courier,
+                'distance' => $distanceKm,
+            ];
+        };
     }
 
     private function broadcastJobEvent(DeliveryOfferEventType $eventType, DeliveryOffer $offer): void

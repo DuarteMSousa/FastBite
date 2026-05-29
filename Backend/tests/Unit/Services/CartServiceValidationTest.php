@@ -20,14 +20,14 @@ class CartServiceValidationTest extends TestCase
     {
         $this->expectException(ValidationException::class);
 
-        $cart = new Cart();
-        $cart->setRelation('items', new Collection());
+        $cart = new Cart;
+        $cart->setRelation('items', new Collection);
         $restaurantProduct = new RestaurantProduct([
             'restaurant_id' => 'restaurant-1',
             'is_available' => false,
         ]);
 
-        $this->invoke(new CartService(), 'validateRestaurantProductCanBeAdded', $cart, $restaurantProduct);
+        $this->invoke(new CartService, 'validateRestaurantProductCanBeAdded', $cart, $restaurantProduct);
     }
 
     public function test_rejects_products_from_different_restaurants(): void
@@ -35,10 +35,10 @@ class CartServiceValidationTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $existingRestaurantProduct = new RestaurantProduct(['restaurant_id' => 'restaurant-1']);
-        $cartItem = new CartItem();
+        $cartItem = new CartItem;
         $cartItem->setRelation('restaurantProduct', $existingRestaurantProduct);
 
-        $cart = new Cart();
+        $cart = new Cart;
         $cart->setRelation('items', new Collection([$cartItem]));
 
         $newRestaurantProduct = new RestaurantProduct([
@@ -46,12 +46,12 @@ class CartServiceValidationTest extends TestCase
             'is_available' => true,
         ]);
 
-        $this->invoke(new CartService(), 'validateRestaurantProductCanBeAdded', $cart, $newRestaurantProduct);
+        $this->invoke(new CartService, 'validateRestaurantProductCanBeAdded', $cart, $newRestaurantProduct);
     }
 
     public function test_accepts_options_that_belong_to_product_and_respect_group_limits(): void
     {
-        $service = new CartService();
+        $service = new CartService;
         $restaurantProduct = $this->restaurantProductWithOptions(minOptions: 1, maxOptions: 2);
         $option = $restaurantProduct->product->optionGroups->first()->options->first();
 
@@ -64,7 +64,7 @@ class CartServiceValidationTest extends TestCase
     {
         $this->expectException(ValidationException::class);
 
-        $service = new CartService();
+        $service = new CartService;
         $restaurantProduct = $this->restaurantProductWithOptions(minOptions: 0, maxOptions: 1);
         $option = new ProductOption([
             'option_group_id' => 'group-other',
@@ -81,29 +81,51 @@ class CartServiceValidationTest extends TestCase
 
         $restaurantProduct = $this->restaurantProductWithOptions(minOptions: 1, maxOptions: 2);
 
-        $this->invoke(new CartService(), 'validateOptionsForProduct', $restaurantProduct, [], new Collection());
+        $this->invoke(new CartService, 'validateOptionsForProduct', $restaurantProduct, [], new Collection);
     }
 
-    private function restaurantProductWithOptions(int $minOptions, int $maxOptions): RestaurantProduct
+    public function test_rejects_option_selection_above_maximum(): void
     {
-        $option = new ProductOption([
-            'option_group_id' => 'group-1',
-            'extra_price' => 1.5,
-        ]);
-        $option->id = 'option-1';
+        $this->expectException(ValidationException::class);
+
+        $restaurantProduct = $this->restaurantProductWithOptions(minOptions: 0, maxOptions: 1, optionCount: 2);
+        $options = $restaurantProduct->product->optionGroups->first()->options;
+
+        $this->invoke(
+            new CartService,
+            'validateOptionsForProduct',
+            $restaurantProduct,
+            $options->pluck('id')->all(),
+            $options
+        );
+    }
+
+    private function restaurantProductWithOptions(int $minOptions, int $maxOptions, int $optionCount = 1): RestaurantProduct
+    {
+        $options = collect(range(1, $optionCount))
+            ->map(function (int $index): ProductOption {
+                $option = new ProductOption([
+                    'option_group_id' => 'group-1',
+                    'extra_price' => 1.5,
+                ]);
+                $option->id = "option-{$index}";
+
+                return $option;
+            });
+
         $group = new ProductOptionGroup([
             'name' => 'Extras',
             'min_options' => $minOptions,
             'max_options' => $maxOptions,
         ]);
         $group->id = 'group-1';
-        $group->setRelation('options', new Collection([$option]));
+        $group->setRelation('options', new Collection($options));
 
-        $product = new Product();
+        $product = new Product;
         $product->id = 'product-1';
         $product->setRelation('optionGroups', new Collection([$group]));
 
-        $restaurantProduct = new RestaurantProduct();
+        $restaurantProduct = new RestaurantProduct;
         $restaurantProduct->id = 'rp-1';
         $restaurantProduct->setRelation('product', $product);
 
@@ -114,7 +136,6 @@ class CartServiceValidationTest extends TestCase
     {
         $reflection = new ReflectionClass($target);
         $reflectedMethod = $reflection->getMethod($method);
-
 
         return $reflectedMethod->invoke($target, ...$args);
     }

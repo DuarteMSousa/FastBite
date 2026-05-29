@@ -459,9 +459,13 @@ Referir que estes eventos servem tanto para auditoria como para sincronizacao re
 
 Falar de locais onde o projeto usa ideias funcionais:
 
-- funcoes puras para calculo de precos e descontos;
-- transformacoes de colecoes;
-- imutabilidade conceptual dos eventos;
+- funcoes puras para calculo de precos e descontos em `PricingCalculator`;
+- composicao de funcoes com `pipe`;
+- currying/aplicacao parcial com uma funcao que fixa a quantidade antes de calcular o total;
+- funcoes de ordem superior/callables para descontos, filtros de campanhas e scoring de estafetas;
+- transformacoes de colecoes com `map`, `filter`, `flatMap`, `groupBy`, `diff`, `sum` e `values`;
+- uso de `yield` para gerar descontos de promocoes de forma incremental;
+- imutabilidade conceptual dos eventos e DTOs readonly;
 - enums para representar estados;
 - componentes React baseados em composicao;
 - separacao entre calculo e efeitos colaterais.
@@ -469,7 +473,10 @@ Falar de locais onde o projeto usa ideias funcionais:
 Exemplos bons para mencionar:
 
 - `PricingCalculator`;
+- `CartService`, especialmente validacao de opcoes;
 - `OrderPricingService`;
+- `DeliveryService`, especialmente selecao funcional de candidatos;
+- `OrderPricingServiceFunctionalTest`;
 - formatadores de frontend, como labels de eventos/estado;
 - mapeamento de dados recebidos da API para componentes.
 
