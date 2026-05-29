@@ -404,7 +404,7 @@ export function RestaurantMenuCatalogScreen({ session }) {
         description="Escolha um produto da cadeia para acrescentar a este restaurante."
         confirmLabel="Adicionar"
         cancelLabel="Fechar"
-        cardClassName="rb-dialog-card-wide"
+        cardClassName="rb-dialog-card-wide rb-dialog-card-catalog"
         bodyClassName="rb-create-modal-body"
         loading={saving}
         onCancel={() => {
@@ -412,45 +412,16 @@ export function RestaurantMenuCatalogScreen({ session }) {
         }}
         onConfirm={handleAddFromCatalog}
       >
-        <div className="rb-login-form rb-create-product-modal-form">
-          <input
-            className="rb-search"
-            placeholder="Pesquisar no catálogo..."
-            value={catalogSearch}
-            onChange={(event) => setCatalogSearch(event.target.value)}
-          />
+        <div className="rb-login-form rb-create-product-modal-form rb-catalog-picker">
+          <div className="rb-catalog-picker-tools">
+            <input
+              className="rb-search"
+              placeholder="Pesquisar no catálogo..."
+              value={catalogSearch}
+              onChange={(event) => setCatalogSearch(event.target.value)}
+            />
 
-          <div className="rb-categories-list">
-            {catalogCandidates.length === 0 ? (
-              <small>
-                {chainCatalogProducts.length === 0
-                  ? 'Catálogo vazio.'
-                  : 'Sem produtos da cadeia que ainda não estejam no menu.'}
-              </small>
-            ) : null}
-            {catalogCandidates.map((product) => (
-              <label key={product.id} className="rb-category-row">
-                <input
-                  type="radio"
-                  name="catalog-pick"
-                  checked={pickerDraft.productId === product.id}
-                  onChange={() =>
-                    setPickerDraft((current) => ({
-                      ...current,
-                      productId: product.id,
-                      localPrice: current.localPrice === '' ? String(Number(product.price ?? 0).toFixed(2)) : current.localPrice,
-                    }))
-                  }
-                />
-                <strong>{product.name}</strong>
-                <span>{categoryLabel(product.category_name)}</span>
-                <span>{Number(product.price ?? 0).toFixed(2)} EUR</span>
-              </label>
-            ))}
-          </div>
-
-          {selectedCatalogProduct ? (
-            <>
+            <div className="rb-catalog-draft-grid">
               <label>
                 Preço local (EUR)
                 <input
@@ -458,10 +429,15 @@ export function RestaurantMenuCatalogScreen({ session }) {
                   min="0.01"
                   step="0.01"
                   value={pickerDraft.localPrice}
+                  disabled={!selectedCatalogProduct}
                   onChange={(event) =>
                     setPickerDraft((current) => ({ ...current, localPrice: event.target.value }))
                   }
-                  placeholder={`Preço base: ${Number(selectedCatalogProduct.price ?? 0).toFixed(2)}`}
+                  placeholder={
+                    selectedCatalogProduct
+                      ? `Preço base: ${Number(selectedCatalogProduct.price ?? 0).toFixed(2)}`
+                      : 'Escolha um produto'
+                  }
                 />
               </label>
               <label>
@@ -471,14 +447,60 @@ export function RestaurantMenuCatalogScreen({ session }) {
                   min="1"
                   step="1"
                   value={pickerDraft.prep}
+                  disabled={!selectedCatalogProduct}
                   onChange={(event) =>
                     setPickerDraft((current) => ({ ...current, prep: event.target.value }))
                   }
                   placeholder="Opcional"
                 />
               </label>
-            </>
-          ) : null}
+            </div>
+          </div>
+
+          <div className="rb-catalog-card-grid">
+            {catalogCandidates.length === 0 ? (
+              <small className="rb-catalog-empty">
+                {chainCatalogProducts.length === 0
+                  ? 'Catálogo vazio.'
+                  : 'Sem produtos da cadeia que ainda não estejam no menu.'}
+              </small>
+            ) : null}
+            {catalogCandidates.map((product) => {
+              const isSelected = pickerDraft.productId === product.id
+
+              return (
+                <label
+                  key={product.id}
+                  className={`rb-catalog-pick-card ${isSelected ? 'active' : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="catalog-pick"
+                    checked={isSelected}
+                    onChange={() =>
+                      setPickerDraft((current) => ({
+                        ...current,
+                        productId: product.id,
+                        localPrice:
+                          current.localPrice === ''
+                            ? String(Number(product.price ?? 0).toFixed(2))
+                            : current.localPrice,
+                      }))
+                    }
+                  />
+                  <div className="rb-catalog-card-info">
+                    <span className="rb-menu-tag">{categoryLabel(product.category_name)}</span>
+                    <strong>{product.name ?? 'Produto'}</strong>
+                    <p>{product.description || 'Sem descrição'}</p>
+                  </div>
+                  <span className="rb-catalog-card-price">
+                    {Number(product.price ?? 0).toFixed(2)} EUR
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+
           {errorText ? <p className="rb-chat-error">{errorText}</p> : null}
         </div>
       </ConfirmDialog>

@@ -1820,6 +1820,10 @@ body {
   max-width: 860px;
 }
 
+.rb-dialog-card-catalog {
+  max-width: 980px;
+}
+
 .rb-dialog-head {
   display: flex;
   align-items: center;
@@ -2211,6 +2215,162 @@ body {
 
   .rb-option-remove {
     width: 100%;
+  }
+}
+
+.rb-catalog-picker {
+  gap: 14px;
+}
+
+.rb-catalog-picker-tools {
+  display: grid;
+  gap: 12px;
+}
+
+.rb-catalog-picker-tools .rb-search {
+  width: 100%;
+  min-width: 0;
+}
+
+.rb-catalog-draft-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+
+.rb-catalog-draft-grid input:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.rb-catalog-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 2px 4px 2px 0;
+}
+
+.rb-catalog-card-grid::-webkit-scrollbar {
+  width: 8px;
+}
+
+.rb-catalog-card-grid::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 8px;
+}
+
+.rb-catalog-card-grid::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.rb-catalog-empty {
+  grid-column: 1 / -1;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  padding: 24px;
+  text-align: center;
+}
+
+.rb-login-form .rb-catalog-pick-card {
+  min-height: 176px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  justify-items: center;
+  gap: 10px;
+  padding: 12px;
+  text-align: center;
+  letter-spacing: 0;
+  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease, background 120ms ease;
+}
+
+.rb-login-form .rb-catalog-pick-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+.rb-login-form .rb-catalog-pick-card.active {
+  border-color: var(--accent);
+  background: #fffaf5;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.rb-catalog-pick-card > input[type='radio'] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  accent-color: var(--accent);
+}
+
+.rb-catalog-card-info {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 7px;
+}
+
+.rb-catalog-card-info .rb-menu-tag {
+  align-self: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rb-catalog-card-info strong {
+  max-width: 100%;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.rb-catalog-card-info p {
+  margin: 0;
+  min-height: 34px;
+  color: var(--muted);
+  display: -webkit-box;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.rb-catalog-card-price {
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+@media (max-width: 720px) {
+  .rb-catalog-draft-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rb-catalog-card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+    max-height: 340px;
+  }
+
+  .rb-login-form .rb-catalog-pick-card {
+    min-height: 168px;
+    padding: 10px;
   }
 }
 
