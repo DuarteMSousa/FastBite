@@ -140,7 +140,14 @@ export function RestaurantOrdersQueueScreen({
   async function handleAccept(orderId) {
     try {
       setBusyOrderId(orderId);
-      await acceptRestaurantOrder({ session, orderId });
+      const accepted = await acceptRestaurantOrder({ session, orderId });
+      setOrders((current) =>
+        current.map((order) =>
+          order.order_id === orderId
+            ? { ...order, order_status: accepted.status }
+            : order,
+        ),
+      );
       setInfoText("Encomenda aceite com sucesso.");
     } catch (error) {
       setErrorText(error.message);

@@ -1654,6 +1654,10 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           paymentId: result.payment_id,
           orderId: result.order_id,
           method: result.payment_method,
+          subtotal,
+          deliveryFee,
+          discountTotal,
+          discounts: checkoutPreview?.discounts ?? [],
           total: result.total,
           createdAtMs: Date.now(),
         })
@@ -2439,6 +2443,27 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
             </View>
 
             <View style={styles.confirmSummary}>
+              <SummaryLine
+                label="Subtotal"
+                value={`EUR ${Number(pendingPayment?.subtotal ?? 0).toFixed(2)}`}
+              />
+              <SummaryLine
+                label="Taxa de entrega"
+                value={`EUR ${Number(pendingPayment?.deliveryFee ?? 0).toFixed(2)}`}
+              />
+              {(pendingPayment?.discounts ?? []).map((discount, index) => (
+                <SummaryLine
+                  key={`${discount.name}-${index}`}
+                  label={discount.name}
+                  value={`- EUR ${Number(discount.amount ?? 0).toFixed(2)}`}
+                />
+              ))}
+              {Number(pendingPayment?.discountTotal ?? 0) > 0 ? (
+                <SummaryLine
+                  label="Desconto total"
+                  value={`- EUR ${Number(pendingPayment.discountTotal).toFixed(2)}`}
+                />
+              ) : null}
               <SummaryLine
                 label="Total"
                 value={`EUR ${Number(pendingPayment?.total ?? 0).toFixed(2)}`}

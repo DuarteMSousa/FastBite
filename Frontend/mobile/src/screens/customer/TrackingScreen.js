@@ -6,9 +6,6 @@ import { ICON, eventTypeLabel, formatCurrency, orderItemStatusChipStyle, orderIt
 export function TrackingScreen({
   tracking,
   checkout,
-  realtimeState,
-  realtimeUpdateCount = 0,
-  realtimeLastUpdateMs = null,
   isOnline,
   onBack,
   onRefresh,
@@ -17,21 +14,6 @@ export function TrackingScreen({
   chatLoading,
 }) {
   const events = tracking?.events ?? []
-  const realtimeLabel =
-    realtimeState === 'live'
-      ? 'Ao vivo'
-      : realtimeState === 'connecting'
-        ? 'A ligar'
-        : realtimeState === 'error'
-          ? 'Erro'
-          : 'Offline'
-  const lastUpdateLabel = (() => {
-    if (!realtimeLastUpdateMs) return '-'
-    const secondsAgo = Math.max(0, Math.floor((Date.now() - realtimeLastUpdateMs) / 1000))
-    if (secondsAgo < 60) return `há ${secondsAgo}s`
-    const minutesAgo = Math.floor(secondsAgo / 60)
-    return `há ${minutesAgo}min`
-  })()
   const hasCourierPosition = Boolean(tracking?.latest_position)
   const courierAssigned = Boolean(tracking?.courier_id)
 
@@ -94,12 +76,8 @@ export function TrackingScreen({
           <Text style={styles.trackSummaryTitle}>Estado atual</Text>
           <Text style={styles.trackSummarySub}>{statusLabel(tracking?.order_status)}</Text>
           <Text style={styles.trackSummarySub}>Entrega: {statusLabel(tracking?.delivery_status)}</Text>
-          <Text style={styles.trackSummarySub}>Realtime: {realtimeLabel}</Text>
           <Text style={styles.trackSummarySub}>
-            Posição do estafeta: {hasCourierPosition ? `atualizada ${lastUpdateLabel}` : courierAssigned ? 'a aguardar a primeira posição...' : 'sem estafeta atribuído'}
-          </Text>
-          <Text style={styles.trackSummarySub}>
-            Atualizações recebidas: {realtimeUpdateCount}
+            Posição do estafeta: {hasCourierPosition ? 'disponível no mapa' : courierAssigned ? 'a aguardar a primeira posição...' : 'sem estafeta atribuído'}
           </Text>
           <Text style={styles.trackSummarySub}>
             Distância restante: {tracking?.distance_km_remaining ?? '-'} km
@@ -114,9 +92,9 @@ export function TrackingScreen({
           title="Mapa da entrega"
           subtitle={
             hasCourierPosition
-              ? `Posição do estafeta atualizada ${lastUpdateLabel} (${realtimeLabel})`
+              ? 'Posição atual do estafeta'
               : courierAssigned
-                ? `A aguardar a posição do estafeta (${realtimeLabel})`
+                ? 'A aguardar a posição do estafeta'
                 : 'Estafeta ainda não atribuído'
           }
           pickup={
