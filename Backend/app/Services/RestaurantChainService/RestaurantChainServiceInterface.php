@@ -18,7 +18,5 @@ interface RestaurantChainServiceInterface
 
     public function updateRestaurantChain(string $id, UpdateRestaurantChainDTO $data): ?RestaurantChain;
 
-    public function deleteRestaurantChain(string $id): bool;
-
     public function assignChainManager(string $userId, string $chainId): ChainManager;
 }

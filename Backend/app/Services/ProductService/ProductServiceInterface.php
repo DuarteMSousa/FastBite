@@ -7,8 +7,6 @@ use App\DTOs\Product\UpdateProductDTO;
 
 interface ProductServiceInterface
 {
-    public function getProductById(string $id);
-
     public function getProductsByCategoryId(string $categoryId);
 
     public function getProductOptionGroups(string $productId);

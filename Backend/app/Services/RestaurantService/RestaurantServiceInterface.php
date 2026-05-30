@@ -18,13 +18,9 @@ interface RestaurantServiceInterface
 
     public function updateRestaurant(string $id, UpdateRestaurantDTO $data): ?Restaurant;
 
-    public function deleteRestaurant(string $id): bool;
-
     public function getRestaurantsByChainId(string $chainId);
 
     public function getRestaurantByLocalManagerUserId(string $userId): ?Restaurant;
-
-    public function getRestaurantByManagerUserId(string $userId): ?Restaurant;
 
     public function getRestaurantsByManagerUserId(string $userId);
 

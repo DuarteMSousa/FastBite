@@ -13,8 +13,6 @@ interface CourierRepositoryInterface
 
     public function getByUserIdOrFail(string $userId);
 
-    public function countAvailable(): int;
-
     public function getAvailableExceptUserIds(array $excludedUserIds);
 
     public function hasActiveDelivery(string $userId): bool;

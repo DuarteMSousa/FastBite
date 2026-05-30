@@ -43,11 +43,6 @@ class UserMutations
         ));
     }
 
-    public function deleteUser($_, array $args): bool
-    {
-        return $this->userService->deleteUser($args['id']);
-    }
-
     public function createUserAddress($_, array $args)
     {
         return $this->userAddressService->createUserAddress($args['user_id'], CreateUserAddressDTO::from($args['input']));

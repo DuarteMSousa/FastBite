@@ -26,13 +26,6 @@ class CourierRepository implements CourierRepositoryInterface
         return Courier::query()->findOrFail($userId);
     }
 
-    public function countAvailable(): int
-    {
-        return Courier::query()
-            ->where('status', CourierStatus::AVAILABLE->value)
-            ->count();
-    }
-
     public function getAvailableExceptUserIds(array $excludedUserIds)
     {
         return Courier::query()

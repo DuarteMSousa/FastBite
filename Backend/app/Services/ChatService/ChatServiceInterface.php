@@ -11,8 +11,6 @@ interface ChatServiceInterface
 {
     public function getChatsByOrderId(string $orderId);
 
-    public function getChatById(string $id): ?Chat;
-
     public function getMessagesByChatId(string $chatId, int $page, int $perPage);
 
     public function getParticipantsByChatId(string $chatId);

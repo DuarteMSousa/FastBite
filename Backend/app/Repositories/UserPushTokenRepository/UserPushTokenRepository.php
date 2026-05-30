@@ -36,14 +36,6 @@ class UserPushTokenRepository implements UserPushTokenRepositoryInterface
         );
     }
 
-    public function deactivateByUserIdAndToken(string $userId, string $token): int
-    {
-        return UserPushToken::query()
-            ->where('user_id', $userId)
-            ->where('token', $token)
-            ->update(['is_active' => false]);
-    }
-
     public function deactivate(UserPushToken $pushToken): UserPushToken
     {
         $pushToken->update(['is_active' => false]);

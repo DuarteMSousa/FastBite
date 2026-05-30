@@ -12,8 +12,6 @@ interface CouponServiceInterface
 
     public function getCouponByCode(string $code): ?Coupon;
 
-    public function getCouponById(string $id): ?Coupon;
-
     public function createCoupon(CreateCouponDTO $data): Coupon;
 
     public function updateCoupon(string $id, UpdateCouponDTO $data): ?Coupon;

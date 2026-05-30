@@ -46,8 +46,6 @@ extend type Query {
     @field(resolver: "App\\GraphQL\\Queries\\TrackingQueries@orderTracking")
   deliveryTracking(delivery_id: ID!): DeliveryTracking!
     @field(resolver: "App\\GraphQL\\Queries\\TrackingQueries@deliveryTracking")
-  courierLastPosition(courier_id: ID!): CourierPosition
-    @field(resolver: "App\\GraphQL\\Queries\\TrackingQueries@courierLastPosition")
 }
 
 extend type Mutation {

@@ -47,13 +47,4 @@ class RestaurantChainRepository implements RestaurantChainRepositoryInterface
         return null;
     }
 
-    public function deleteRestaurantChain(string $id)
-    {
-        $restaurantChain = RestaurantChain::find($id);
-        if ($restaurantChain) {
-            $restaurantChain->delete();
-            return true;
-        }
-        return false;
-    }
 }

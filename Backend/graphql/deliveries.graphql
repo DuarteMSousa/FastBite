@@ -1,16 +1,8 @@
 extend type Query {
-  countAvailableCouriers: Int!
-    @field(resolver: "App\\GraphQL\\Queries\\DeliveryQueries@countAvailableCouriers")
   getCourierByUserId(user_id: ID!): Courier
     @field(resolver: "App\\GraphQL\\Queries\\DeliveryQueries@getCourierByUserId")
-  getActiveDeliveryByCourierId(courier_id: ID!): Delivery
-    @field(resolver: "App\\GraphQL\\Queries\\DeliveryQueries@getActiveDeliveryByCourierId")
   getDeliveriesByCourierId(courier_id: ID!, statuses: [DeliveryStatus!]): [Delivery!]!
     @field(resolver: "App\\GraphQL\\Queries\\DeliveryQueries@getDeliveriesByCourierId")
-  getDeliveryById(id: ID!): Delivery
-    @field(resolver: "App\\GraphQL\\Queries\\DeliveryQueries@getDeliveryById")
-  getDeliveryByOrderId(order_id: ID!): Delivery
-    @field(resolver: "App\\GraphQL\\Queries\\DeliveryQueries@getDeliveryByOrderId")
   getDeliveryOffersByCourierId(courier_id: ID!): [DeliveryOffer!]!
     @field(resolver: "App\\GraphQL\\Queries\\DeliveryQueries@getDeliveryOffersByCourierId")
 }

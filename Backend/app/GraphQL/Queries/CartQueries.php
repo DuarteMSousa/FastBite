@@ -13,8 +13,4 @@ class CartQueries
         return $this->cartService->getCartByUserId($args['user_id']);
     }
 
-    public function getCartByUserIdAndCartId($_, array $args)
-    {
-        return $this->cartService->getCartByUserIdAndCartId($args['user_id'], $args['cart_id']);
-    }
 }

@@ -7,12 +7,6 @@ use App\Models\DeliveryOffer;
 
 interface DeliveryServiceInterface
 {
-    public function getDeliveryById(string $id): ?Delivery;
-
-    public function getDeliveryByOrderId(string $orderId): ?Delivery;
-
-    public function getActiveDeliveryByCourierId(string $courierId): ?Delivery;
-
     public function getDeliveriesByCourierId(string $courierId, ?array $statuses = null);
 
     public function getDeliveryOffersByCourierId(string $courierId);

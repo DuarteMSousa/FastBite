@@ -61,11 +61,6 @@ class TrackingService implements TrackingServiceInterface
         ];
     }
 
-    public function courierLastPosition(string $courierId): ?CourierPositionHistory
-    {
-        return $this->trackingRepository->findLastPositionForCourier($courierId);
-    }
-
     #[Transactional]
     public function updateCourierLocation(UpdateCourierLocationDTO $data): array
     {

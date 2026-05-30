@@ -10,8 +10,6 @@ interface CartServiceInterface
 {
     public function getCartByUserId(string $userId): Cart;
 
-    public function getCartByUserIdAndCartId(string $userId, string $cartId): ?Cart;
-
     public function addCartItem(string $clientUserId, AddCartItemDTO $data): Cart;
 
     public function updateCartItem(string $clientUserId, string $cartItemId, UpdateCartItemDTO $data): Cart;

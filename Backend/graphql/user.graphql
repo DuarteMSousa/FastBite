@@ -46,9 +46,6 @@ extend type Mutation {
     updateUser(id: ID!, input: UpdateUserInput!): User! 
         @field(resolver: "App\\GraphQL\\Mutations\\UserMutations@updateUser")
 
-    deleteUser(id: ID!): Boolean! 
-        @field(resolver: "App\\GraphQL\\Mutations\\UserMutations@deleteUser")
-
     createUserAddress(user_id: ID!, input: CreateUserAddressInput!): UserAddress!
         @field(resolver: "App\\GraphQL\\Mutations\\UserMutations@createUserAddress")
 

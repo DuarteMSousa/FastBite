@@ -15,8 +15,6 @@ interface PaymentRepositoryInterface
 
     public function getByIdOrFail(string $id, bool $lock = false): Payment;
 
-    public function getEvents(string $paymentId);
-
     public function createPayment(CreatePaymentDTO $data): Payment;
 
     public function updatePayment(Payment $payment, UpdatePaymentDTO $data): Payment;

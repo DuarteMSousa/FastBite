@@ -14,8 +14,6 @@ input UpdateCartItemInput {
 extend type Query {
   getCartByUserId(user_id: ID!): Cart
     @field(resolver: "App\\GraphQL\\Queries\\CartQueries@getCartByUserId")
-  getCartByUserIdAndCartId(user_id: ID!, cart_id: ID!): Cart
-    @field(resolver: "App\\GraphQL\\Queries\\CartQueries@getCartByUserIdAndCartId")
 }
 
 extend type Mutation {

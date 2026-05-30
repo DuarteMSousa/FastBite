@@ -13,8 +13,6 @@ input SendMessageInput {
 extend type Query {
   getChatsByOrderId(order_id: ID!): [Chat!]!
     @field(resolver: "App\\GraphQL\\Queries\\ChatQueries@getChatsByOrderId")
-  getChatById(id: ID!): Chat
-    @field(resolver: "App\\GraphQL\\Queries\\ChatQueries@getChatById")
   getMessagesByChatId(chat_id: ID!, page: Int = 1, per_page: Int = 50): [Message!]!
     @field(resolver: "App\\GraphQL\\Queries\\ChatQueries@getMessagesByChatId")
   getParticipantsByChatId(chat_id: ID!): [ChatParticipant!]!

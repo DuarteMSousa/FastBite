@@ -57,14 +57,8 @@ input ProductOptionInput {
 extend type Query {
   getRestaurantMenu(restaurant_id: ID!): RestaurantMenu!
     @field(resolver: "App\\GraphQL\\Queries\\MenuQueries@getRestaurantMenu")
-  getRestaurantCategoriesByRestaurantId(restaurant_id: ID!): [Category!]!
-    @field(resolver: "App\\GraphQL\\Queries\\MenuQueries@getRestaurantCategoriesByRestaurantId")
   getCategoriesByChainId(chain_id: ID!): [Category!]!
     @field(resolver: "App\\GraphQL\\Queries\\MenuQueries@getCategoriesByChainId")
-  getProductById(id: ID!): Product
-    @field(resolver: "App\\GraphQL\\Queries\\MenuQueries@getProductById")
-  getRestaurantProductById(id: ID!): RestaurantProduct
-    @field(resolver: "App\\GraphQL\\Queries\\MenuQueries@getRestaurantProductById")
   getProductOptionGroups(product_id: ID!): [ProductOptionGroup!]!
     @field(resolver: "App\\GraphQL\\Queries\\MenuQueries@getProductOptionGroups")
 }

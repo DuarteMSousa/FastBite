@@ -64,8 +64,6 @@ extend type Query {
     @field(resolver: "App\\GraphQL\\Queries\\RestaurantQueries@getRestaurantsByChainId")
   getRestaurantByLocalManagerUserId(user_id: ID!): Restaurant
     @field(resolver: "App\\GraphQL\\Queries\\RestaurantQueries@getRestaurantByLocalManagerUserId")
-  getRestaurantByManagerUserId(user_id: ID!): Restaurant
-    @field(resolver: "App\\GraphQL\\Queries\\RestaurantQueries@getRestaurantByManagerUserId")
   getRestaurantsByManagerUserId(user_id: ID!): [Restaurant!]!
     @field(resolver: "App\\GraphQL\\Queries\\RestaurantQueries@getRestaurantsByManagerUserId")
   getRestaurantChainByManagerUserId(user_id: ID!): RestaurantChain
@@ -77,15 +75,11 @@ extend type Mutation {
     @field(resolver: "App\\GraphQL\\Mutations\\RestaurantMutations@createRestaurantChain")
   updateRestaurantChain(id: ID!, input: UpdateRestaurantChainInput!): RestaurantChain!
     @field(resolver: "App\\GraphQL\\Mutations\\RestaurantMutations@updateRestaurantChain")
-  deleteRestaurantChain(id: ID!): Boolean!
-    @field(resolver: "App\\GraphQL\\Mutations\\RestaurantMutations@deleteRestaurantChain")
 
   createRestaurant(input: CreateRestaurantInput!): Restaurant!
     @field(resolver: "App\\GraphQL\\Mutations\\RestaurantMutations@createRestaurant")
   updateRestaurant(id: ID!, input: UpdateRestaurantInput!): Restaurant!
     @field(resolver: "App\\GraphQL\\Mutations\\RestaurantMutations@updateRestaurant")
-  deleteRestaurant(id: ID!): Boolean!
-    @field(resolver: "App\\GraphQL\\Mutations\\RestaurantMutations@deleteRestaurant")
 
   assignChainManager(user_id: ID!, chain_id: ID!): ChainManager!
     @field(resolver: "App\\GraphQL\\Mutations\\RestaurantMutations@assignChainManager")

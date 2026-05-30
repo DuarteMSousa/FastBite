@@ -12,34 +12,14 @@ class DeliveryQueries
         private DeliveryServiceInterface $deliveryService,
     ) {}
 
-    public function countAvailableCouriers()
-    {
-        return $this->courierService->countAvailableCouriers();
-    }
-
     public function getCourierByUserId($_, array $args)
     {
         return $this->courierService->getCourierByUserId($args['user_id']);
     }
 
-    public function getActiveDeliveryByCourierId($_, array $args)
-    {
-        return $this->deliveryService->getActiveDeliveryByCourierId($args['courier_id']);
-    }
-
     public function getDeliveriesByCourierId($_, array $args)
     {
         return $this->deliveryService->getDeliveriesByCourierId($args['courier_id'], $args['statuses'] ?? null);
-    }
-
-    public function getDeliveryById($_, array $args)
-    {
-        return $this->deliveryService->getDeliveryById($args['id']);
-    }
-
-    public function getDeliveryByOrderId($_, array $args)
-    {
-        return $this->deliveryService->getDeliveryByOrderId($args['order_id']);
     }
 
     public function getDeliveryOffersByCourierId($_, array $args)

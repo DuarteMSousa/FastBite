@@ -18,8 +18,4 @@ class TrackingQueries
         return $this->trackingService->deliveryTracking($args['delivery_id']);
     }
 
-    public function courierLastPosition($_, array $args)
-    {
-        return $this->trackingService->courierLastPosition($args['courier_id']);
-    }
 }

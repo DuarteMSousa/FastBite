@@ -31,11 +31,6 @@ class PaymentService implements PaymentServiceInterface
         return $this->paymentRepository->getByOrderId($orderId);
     }
 
-    public function getPaymentEvents(string $paymentId)
-    {
-        return $this->paymentRepository->getEvents($paymentId);
-    }
-
     #[Transactional]
     public function createPayment(CreatePaymentDTO $data): Payment
     {
@@ -60,14 +55,6 @@ class PaymentService implements PaymentServiceInterface
     public function cancelPayment(string $paymentId, ?string $reason, bool $cascadeToOrder = true): Payment
     {
         return $this->transitionPaymentStatus($paymentId, PaymentStatus::CANCELLED, PaymentEventType::PAYMENT_CANCELLED, [
-            'reason' => $reason,
-        ], $cascadeToOrder);
-    }
-
-    #[Transactional]
-    public function failPayment(string $paymentId, ?string $reason, bool $cascadeToOrder = true): Payment
-    {
-        return $this->transitionPaymentStatus($paymentId, PaymentStatus::FAILED, PaymentEventType::PAYMENT_FAILED, [
             'reason' => $reason,
         ], $cascadeToOrder);
     }

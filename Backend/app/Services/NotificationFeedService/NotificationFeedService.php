@@ -62,11 +62,4 @@ class NotificationFeedService implements NotificationFeedServiceInterface
         ];
     }
 
-    #[Transactional]
-    public function unregisterPushToken(string $userId, string $token): array
-    {
-        $this->userPushTokenRepository->deactivateByUserIdAndToken($userId, $token);
-
-        return ['ok' => true];
-    }
 }

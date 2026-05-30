@@ -8,11 +8,7 @@ use App\Models\RestaurantProduct;
 
 interface RestaurantProductServiceInterface
 {
-    public function getRestaurantProductById(string $id): ?RestaurantProduct;
-
     public function getRestaurantProductsByRestaurantId(string $restaurantId);
-
-    public function getRestaurantCategoriesByRestaurantId(string $restaurantId);
 
     public function getRestaurantMenu(string $restaurantId): array;
 

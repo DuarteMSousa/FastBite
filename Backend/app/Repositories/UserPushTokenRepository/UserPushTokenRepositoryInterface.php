@@ -13,8 +13,6 @@ interface UserPushTokenRepositoryInterface
 
     public function upsertByUserId(string $userId, RegisterPushTokenDTO $data): UserPushToken;
 
-    public function deactivateByUserIdAndToken(string $userId, string $token): int;
-
     public function deactivate(UserPushToken $pushToken): UserPushToken;
 
     public function markUsed(UserPushToken $pushToken): UserPushToken;

@@ -10,8 +10,6 @@ interface PromotionServiceInterface
 {
     public function getPromotionsByChainId(string $chainId);
 
-    public function getPromotionById(string $id): ?Promotion;
-
     public function createPromotion(CreatePromotionDTO $data): Promotion;
 
     public function updatePromotion(string $promotionId, UpdatePromotionDTO $data): Promotion;

@@ -23,11 +23,6 @@ class ProductService implements ProductServiceInterface
         $this->categoryRepository = $categoryRepository ?? app(CategoryRepositoryInterface::class);
     }
 
-    public function getProductById(string $id)
-    {
-        return $this->productRepository->findById($id);
-    }
-
     public function getProductsByCategoryId(string $categoryId)
     {
         return $this->productRepository->findByCategoryId($categoryId);

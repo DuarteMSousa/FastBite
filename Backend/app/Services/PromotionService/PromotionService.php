@@ -25,11 +25,6 @@ class PromotionService implements PromotionServiceInterface
         return $this->promotionRepository->getByChainId($chainId);
     }
 
-    public function getPromotionById(string $id): ?Promotion
-    {
-        return $this->promotionRepository->getById($id);
-    }
-
     #[Transactional]
     public function createPromotion(CreatePromotionDTO $data): Promotion
     {

@@ -31,11 +31,6 @@ class CourierService implements CourierServiceInterface
         return $this->courierRepository->getByUserIdWithUser($userId);
     }
 
-    public function countAvailableCouriers(): int
-    {
-        return $this->courierRepository->countAvailable();
-    }
-
     #[Transactional]
     public function ensureCourierProfile(string $userId): Courier
     {

@@ -40,12 +40,4 @@ class UserRepository implements UserRepositoryInterface
         return null;
     }
 
-    public function deleteUser(string $id){
-        $user = User::find($id);
-        if ($user) {
-            $user->delete();
-            return true;
-        }
-        return false;
-    }
 }

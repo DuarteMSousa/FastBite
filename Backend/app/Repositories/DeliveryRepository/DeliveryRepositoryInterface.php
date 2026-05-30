@@ -10,10 +10,6 @@ interface DeliveryRepositoryInterface
 {
     public function getById(string $id): ?Delivery;
 
-    public function getByOrderId(string $orderId): ?Delivery;
-
-    public function getActiveByCourierId(string $courierId): ?Delivery;
-
     public function getByCourierId(string $courierId, ?array $statuses);
 
     public function getAssignmentCandidate(string $id): ?Delivery;

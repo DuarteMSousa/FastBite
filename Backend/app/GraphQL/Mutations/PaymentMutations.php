@@ -12,19 +12,4 @@ class PaymentMutations
     {
         return $this->paymentService->confirmPayment($args['payment_id'], $args['transaction_id'] ?? null);
     }
-
-    public function cancelPayment($_, array $args)
-    {
-        return $this->paymentService->cancelPayment($args['payment_id'], $args['reason'] ?? null);
-    }
-
-    public function failPayment($_, array $args)
-    {
-        return $this->paymentService->failPayment($args['payment_id'], $args['reason'] ?? null);
-    }
-
-    public function refundPayment($_, array $args)
-    {
-        return $this->paymentService->refundPayment($args['payment_id'], $args['reason'] ?? null);
-    }
 }

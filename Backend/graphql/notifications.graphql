@@ -25,14 +25,6 @@ type RegisterPushTokenPayload {
   is_active: Boolean!
 }
 
-input UnregisterPushTokenInput {
-  token: String!
-}
-
-type UnregisterPushTokenPayload {
-  ok: Boolean!
-}
-
 type UserNotificationPage {
   items: [UserNotification!]!
   current_page: Int!
@@ -55,7 +47,4 @@ extend type Mutation {
 
   registerPushToken(user_id: ID!, input: RegisterPushTokenInput!): RegisterPushTokenPayload!
     @field(resolver: "App\\GraphQL\\Mutations\\NotificationMutations@registerPushToken")
-
-  unregisterPushToken(user_id: ID!, input: UnregisterPushTokenInput!): UnregisterPushTokenPayload!
-    @field(resolver: "App\\GraphQL\\Mutations\\NotificationMutations@unregisterPushToken")
 }

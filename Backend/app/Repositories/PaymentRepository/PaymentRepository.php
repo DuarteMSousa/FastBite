@@ -30,11 +30,6 @@ class PaymentRepository implements PaymentRepositoryInterface
         return $query->findOrFail($id);
     }
 
-    public function getEvents(string $paymentId)
-    {
-        return Payment::query()->findOrFail($paymentId)->events()->orderBy('timestamp')->get();
-    }
-
     public function createPayment(CreatePaymentDTO $data): Payment
     {
         return Payment::query()->create([

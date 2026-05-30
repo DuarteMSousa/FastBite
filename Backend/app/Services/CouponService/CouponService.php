@@ -47,11 +47,6 @@ class CouponService implements CouponServiceInterface
         return $this->couponRepository->findByCode($code);
     }
 
-    public function getCouponById(string $id): ?Coupon
-    {
-        return $this->couponRepository->findById($id);
-    }
-
     #[Transactional]
     public function createCoupon(CreateCouponDTO $data): Coupon
     {

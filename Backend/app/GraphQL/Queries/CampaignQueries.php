@@ -17,19 +17,9 @@ class CampaignQueries
         return $this->promotionService->getPromotionsByChainId($args['chain_id']);
     }
 
-    public function getPromotionById($_, array $args)
-    {
-        return $this->promotionService->getPromotionById($args['id']);
-    }
-
     public function getCouponsByChainId($_, array $args)
     {
         return $this->couponService->getCouponsByChainId($args['chain_id']);
-    }
-
-    public function getCouponById($_, array $args)
-    {
-        return $this->couponService->getCouponById($args['id']);
     }
 
     public function getCouponByCode($_, array $args)

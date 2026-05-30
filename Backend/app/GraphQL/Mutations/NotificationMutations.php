@@ -23,9 +23,4 @@ class NotificationMutations
     {
         return $this->notificationFeedService->registerPushToken($args['user_id'], RegisterPushTokenDTO::from($args['input']));
     }
-
-    public function unregisterPushToken($_, array $args): array
-    {
-        return $this->notificationFeedService->unregisterPushToken($args['user_id'], $args['input']['token']);
-    }
 }

@@ -19,24 +19,9 @@ class MenuQueries
         return $this->restaurantProductService->getRestaurantMenu($args['restaurant_id']);
     }
 
-    public function getRestaurantCategoriesByRestaurantId($_, array $args)
-    {
-        return $this->restaurantProductService->getRestaurantCategoriesByRestaurantId($args['restaurant_id']);
-    }
-
     public function getCategoriesByChainId($_, array $args)
     {
         return $this->categoryService->getCategoriesByChainId($args['chain_id']);
-    }
-
-    public function getProductById($_, array $args)
-    {
-        return $this->productService->getProductById($args['id']);
-    }
-
-    public function getRestaurantProductById($_, array $args)
-    {
-        return $this->restaurantProductService->getRestaurantProductById($args['id']);
     }
 
     public function getProductOptionGroups($_, array $args)

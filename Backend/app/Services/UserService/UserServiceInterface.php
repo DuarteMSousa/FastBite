@@ -13,6 +13,4 @@ interface UserServiceInterface
     public function createUser(CreateUserDTO $data);
 
     public function updateUser(string $id, UpdateUserDTO $data);
-
-    public function deleteUser(string $id);
 }

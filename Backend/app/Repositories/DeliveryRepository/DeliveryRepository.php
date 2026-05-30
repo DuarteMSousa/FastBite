@@ -26,20 +26,6 @@ class DeliveryRepository implements DeliveryRepositoryInterface
         return Delivery::query()->with($this->deliveryDetails)->find($id);
     }
 
-    public function getByOrderId(string $orderId): ?Delivery
-    {
-        return Delivery::query()->with($this->deliveryDetails)->where('order_id', $orderId)->first();
-    }
-
-    public function getActiveByCourierId(string $courierId): ?Delivery
-    {
-        return Delivery::query()
-            ->with($this->deliveryDetails)
-            ->where('courier_id', $courierId)
-            ->whereNotIn('status', [DeliveryStatus::DELIVERED->value, DeliveryStatus::FAILED->value])
-            ->first();
-    }
-
     public function getByCourierId(string $courierId, ?array $statuses)
     {
         $query = Delivery::query()->with($this->deliveryDetails)->where('courier_id', $courierId);

@@ -62,7 +62,7 @@ class UserServiceTest extends TestCase
         $this->assertSame($createdUser, $result);
     }
 
-    public function test_update_and_delete_delegate_to_repository(): void
+    public function test_update_delegates_to_repository(): void
     {
         $repository = Mockery::mock(UserRepositoryInterface::class);
         $update = new UpdateUserDTO(name: 'Ana');
@@ -72,14 +72,8 @@ class UserServiceTest extends TestCase
             ->with('user-1', $update)
             ->andReturn(['id' => 'user-1', 'name' => 'Ana']);
 
-        $repository->shouldReceive('deleteUser')
-            ->once()
-            ->with('user-1')
-            ->andReturn(true);
-
         $service = new UserService($repository);
 
         $this->assertSame(['id' => 'user-1', 'name' => 'Ana'], $service->updateUser('user-1', $update));
-        $this->assertTrue($service->deleteUser('user-1'));
     }
 }

@@ -37,11 +37,6 @@ class CartService implements CartServiceInterface
         return $this->cartRepository->findOrCreateByUserId($userId);
     }
 
-    public function getCartByUserIdAndCartId(string $userId, string $cartId): ?Cart
-    {
-        return $this->cartRepository->findByUserIdAndCartId($userId, $cartId);
-    }
-
     #[Transactional]
     public function addCartItem(string $clientUserId, AddCartItemDTO $data): Cart
     {

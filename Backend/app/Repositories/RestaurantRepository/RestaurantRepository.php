@@ -139,13 +139,4 @@ class RestaurantRepository implements RestaurantRepositoryInterface
         return null;
     }
 
-    public function deleteRestaurant(string $id)
-    {
-        $restaurant = Restaurant::find($id);
-        if ($restaurant) {
-            $restaurant->delete();
-            return true;
-        }
-        return false;
-    }
 }

@@ -64,12 +64,6 @@ class RestaurantChainService implements RestaurantChainServiceInterface
     }
 
     #[Transactional]
-    public function deleteRestaurantChain(string $id): bool
-    {
-        return $this->restaurantChainRepository->deleteRestaurantChain($id);
-    }
-
-    #[Transactional]
     public function assignChainManager(string $userId, string $chainId): ChainManager
     {
         if (! $this->userRepository->exists($userId)) {

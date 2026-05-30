@@ -51,9 +51,4 @@ class UserService implements UserServiceInterface
         return $this->userRepository->updateUser($id, $data);
     }
 
-    #[Transactional]
-    public function deleteUser(string $id)
-    {
-        return $this->userRepository->deleteUser($id);
-    }
 }

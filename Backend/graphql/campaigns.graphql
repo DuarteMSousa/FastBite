@@ -50,12 +50,8 @@ input UpdateCouponInput {
 extend type Query {
   getPromotionsByChainId(chain_id: ID!): [Promotion!]!
     @field(resolver: "App\\GraphQL\\Queries\\CampaignQueries@getPromotionsByChainId")
-  getPromotionById(id: ID!): Promotion
-    @field(resolver: "App\\GraphQL\\Queries\\CampaignQueries@getPromotionById")
   getCouponsByChainId(chain_id: ID!): [Coupon!]!
     @field(resolver: "App\\GraphQL\\Queries\\CampaignQueries@getCouponsByChainId")
-  getCouponById(id: ID!): Coupon
-    @field(resolver: "App\\GraphQL\\Queries\\CampaignQueries@getCouponById")
   getCouponByCode(code: String!): Coupon
     @field(resolver: "App\\GraphQL\\Queries\\CampaignQueries@getCouponByCode")
 }

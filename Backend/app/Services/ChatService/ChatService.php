@@ -38,11 +38,6 @@ class ChatService implements ChatServiceInterface
         return $this->chatRepository->findByOrderId($orderId);
     }
 
-    public function getChatById(string $id): ?Chat
-    {
-        return $this->chatRepository->findById($id);
-    }
-
     public function getMessagesByChatId(string $chatId, int $page, int $perPage)
     {
         return $this->chatRepository->findMessages($chatId, $page, $perPage);

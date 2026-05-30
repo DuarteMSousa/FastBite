@@ -1,19 +1,9 @@
 extend type Query {
-  getPaymentById(id: ID!): Payment
-    @field(resolver: "App\\GraphQL\\Queries\\PaymentQueries@getPaymentById")
   getPaymentByOrderId(order_id: ID!): Payment
     @field(resolver: "App\\GraphQL\\Queries\\PaymentQueries@getPaymentByOrderId")
-  getPaymentEvents(payment_id: ID!): [PaymentEvent!]!
-    @field(resolver: "App\\GraphQL\\Queries\\PaymentQueries@getPaymentEvents")
 }
 
 extend type Mutation {
   confirmPayment(payment_id: ID!, transaction_id: String): Payment!
     @field(resolver: "App\\GraphQL\\Mutations\\PaymentMutations@confirmPayment")
-  cancelPayment(payment_id: ID!, reason: String): Payment!
-    @field(resolver: "App\\GraphQL\\Mutations\\PaymentMutations@cancelPayment")
-  failPayment(payment_id: ID!, reason: String): Payment!
-    @field(resolver: "App\\GraphQL\\Mutations\\PaymentMutations@failPayment")
-  refundPayment(payment_id: ID!, reason: String): Payment!
-    @field(resolver: "App\\GraphQL\\Mutations\\PaymentMutations@refundPayment")
 }

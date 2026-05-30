@@ -91,12 +91,6 @@ class RestaurantService implements RestaurantServiceInterface
         return $restaurant->load($this->with);
     }
 
-    #[Transactional]
-    public function deleteRestaurant(string $id): bool
-    {
-        return $this->restaurantRepository->deleteRestaurant($id);
-    }
-
     public function getRestaurantsByChainId(string $chainId)
     {
         return $this->restaurantRepository->findByChainId($chainId);
@@ -107,11 +101,6 @@ class RestaurantService implements RestaurantServiceInterface
         $manager = $this->localManagerRepository->findByUserId($userId);
 
         return $manager?->restaurant;
-    }
-
-    public function getRestaurantByManagerUserId(string $userId): ?Restaurant
-    {
-        return $this->getRestaurantsByManagerUserId($userId)->first();
     }
 
     public function getRestaurantsByManagerUserId(string $userId)

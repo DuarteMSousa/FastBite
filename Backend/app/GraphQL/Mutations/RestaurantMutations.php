@@ -26,11 +26,6 @@ class RestaurantMutations
         return $this->restaurantChainService->updateRestaurantChain($args['id'], UpdateRestaurantChainDTO::from($args['input']));
     }
 
-    public function deleteRestaurantChain($_, array $args): bool
-    {
-        return $this->restaurantChainService->deleteRestaurantChain($args['id']);
-    }
-
     public function createRestaurant($_, array $args)
     {
         return $this->restaurantService->createRestaurant(CreateRestaurantDTO::from($args['input']));
@@ -39,11 +34,6 @@ class RestaurantMutations
     public function updateRestaurant($_, array $args)
     {
         return $this->restaurantService->updateRestaurant($args['id'], UpdateRestaurantDTO::from($args['input']));
-    }
-
-    public function deleteRestaurant($_, array $args): bool
-    {
-        return $this->restaurantService->deleteRestaurant($args['id']);
     }
 
     public function assignChainManager($_, array $args)

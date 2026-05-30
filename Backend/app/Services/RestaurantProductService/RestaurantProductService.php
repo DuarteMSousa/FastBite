@@ -34,19 +34,9 @@ class RestaurantProductService implements RestaurantProductServiceInterface
         $this->categoryRepository = $categoryRepository ?? app(CategoryRepositoryInterface::class);
     }
 
-    public function getRestaurantProductById(string $id): ?RestaurantProduct
-    {
-        return $this->restaurantProductRepository->findById($id);
-    }
-
     public function getRestaurantProductsByRestaurantId(string $restaurantId)
     {
         return $this->restaurantProductRepository->findByRestaurantId($restaurantId);
-    }
-
-    public function getRestaurantCategoriesByRestaurantId(string $restaurantId)
-    {
-        return $this->getRestaurantMenu($restaurantId)['categories'];
     }
 
     public function getRestaurantMenu(string $restaurantId): array

@@ -40,21 +40,6 @@ class DeliveryService implements DeliveryServiceInterface
         private CourierRepositoryInterface $courierRepository,
     ) {}
 
-    public function getDeliveryById(string $id): ?Delivery
-    {
-        return $this->deliveryRepository->getById($id);
-    }
-
-    public function getDeliveryByOrderId(string $orderId): ?Delivery
-    {
-        return $this->deliveryRepository->getByOrderId($orderId);
-    }
-
-    public function getActiveDeliveryByCourierId(string $courierId): ?Delivery
-    {
-        return $this->deliveryRepository->getActiveByCourierId($courierId);
-    }
-
     public function getDeliveriesByCourierId(string $courierId, ?array $statuses = null)
     {
         return $this->deliveryRepository->getByCourierId($courierId, $statuses);

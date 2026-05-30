@@ -13,6 +13,4 @@ interface NotificationFeedServiceInterface
     public function markAllNotificationsAsRead(string $userId): array;
 
     public function registerPushToken(string $userId, RegisterPushTokenDTO $data): array;
-
-    public function unregisterPushToken(string $userId, string $token): array;
 }
