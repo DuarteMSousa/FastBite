@@ -13,7 +13,8 @@ class NotificationQueries
         return $this->notificationFeedService->getNotificationsByUserId(
             $args['user_id'],
             $args['unread_only'] ?? false,
-            $args['limit'] ?? 50
+            $args['page'] ?? 1,
+            $args['per_page'] ?? 50,
         );
     }
 }

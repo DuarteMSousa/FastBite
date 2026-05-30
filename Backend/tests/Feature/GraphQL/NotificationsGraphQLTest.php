@@ -56,12 +56,18 @@ class NotificationsGraphQLTest extends TestCase
         ]);
 
         $query = <<<'GRAPHQL'
-query Notifications($unreadOnly: Boolean!, $limit: Int!) {
-  getNotificationsByUserId(user_id: "%s", unread_only: $unreadOnly, limit: $limit) {
-    id
-    type
-    title
-    read_at
+query Notifications($unreadOnly: Boolean!, $page: Int!, $perPage: Int!) {
+  getNotificationsByUserId(user_id: "%s", unread_only: $unreadOnly, page: $page, per_page: $perPage) {
+    items {
+      id
+      type
+      title
+      read_at
+    }
+    current_page
+    per_page
+    total
+    last_page
   }
 }
 GRAPHQL;
@@ -73,13 +79,15 @@ GRAPHQL;
                 'query' => $query,
                 'variables' => [
                     'unreadOnly' => false,
-                    'limit' => 10,
+                    'page' => 1,
+                    'perPage' => 10,
                 ],
             ]);
 
         $allResponse
             ->assertOk()
-            ->assertJsonCount(2, 'data.getNotificationsByUserId');
+            ->assertJsonCount(2, 'data.getNotificationsByUserId.items')
+            ->assertJsonPath('data.getNotificationsByUserId.total', 2);
 
         $unreadResponse = $this
             ->actingAs($user)
@@ -87,16 +95,17 @@ GRAPHQL;
                 'query' => $query,
                 'variables' => [
                     'unreadOnly' => true,
-                    'limit' => 10,
+                    'page' => 1,
+                    'perPage' => 10,
                 ],
             ]);
 
         $unreadResponse
             ->assertOk()
-            ->assertJsonCount(1, 'data.getNotificationsByUserId')
-            ->assertJsonPath('data.getNotificationsByUserId.0.type', 'ORDER_UPDATE')
-            ->assertJsonPath('data.getNotificationsByUserId.0.title', 'Pedido confirmado')
-            ->assertJsonPath('data.getNotificationsByUserId.0.read_at', null);
+            ->assertJsonCount(1, 'data.getNotificationsByUserId.items')
+            ->assertJsonPath('data.getNotificationsByUserId.items.0.type', 'ORDER_UPDATE')
+            ->assertJsonPath('data.getNotificationsByUserId.items.0.title', 'Pedido confirmado')
+            ->assertJsonPath('data.getNotificationsByUserId.items.0.read_at', null);
     }
 
     public function test_user_can_mark_single_notification_as_read(): void

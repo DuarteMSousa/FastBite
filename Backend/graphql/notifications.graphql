@@ -33,8 +33,16 @@ type UnregisterPushTokenPayload {
   ok: Boolean!
 }
 
+type UserNotificationPage {
+  items: [UserNotification!]!
+  current_page: Int!
+  per_page: Int!
+  total: Int!
+  last_page: Int!
+}
+
 extend type Query {
-  getNotificationsByUserId(user_id: ID!, unread_only: Boolean = false, limit: Int = 50): [UserNotification!]!
+  getNotificationsByUserId(user_id: ID!, unread_only: Boolean = false, page: Int = 1, per_page: Int = 50): UserNotificationPage!
     @field(resolver: "App\\GraphQL\\Queries\\NotificationQueries@getNotificationsByUserId")
 }
 

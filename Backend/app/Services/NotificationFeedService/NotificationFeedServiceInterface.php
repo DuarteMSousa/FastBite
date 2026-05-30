@@ -6,7 +6,7 @@ use App\DTOs\Notification\RegisterPushTokenDTO;
 
 interface NotificationFeedServiceInterface
 {
-    public function getNotificationsByUserId(string $userId, bool $unreadOnly = false, int $limit = 50);
+    public function getNotificationsByUserId(string $userId, bool $unreadOnly = false, int $page = 1, int $perPage = 50): array;
 
     public function markNotificationAsRead(string $userId, string $notificationId): array;
 

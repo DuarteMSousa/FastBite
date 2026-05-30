@@ -12,18 +12,17 @@ class NotificationRepository implements NotificationRepositoryInterface
         return Notification::query()->with('user')->whereKey($id)->first();
     }
 
-    public function getByUserId(string $userId, bool $unreadOnly, int $limit)
+    public function getByUserId(string $userId, bool $unreadOnly, int $page, int $perPage)
     {
         $query = Notification::query()
             ->where('user_id', $userId)
-            ->orderByDesc('sent_at')
-            ->limit($limit);
+            ->orderByDesc('sent_at');
 
         if ($unreadOnly) {
             $query->whereNull('read_at');
         }
 
-        return $query->get();
+        return $query->paginate($perPage, ['*'], 'page', $page);
     }
 
     public function createNotification(CreateNotificationDTO $data): Notification

@@ -14,9 +14,17 @@ class NotificationFeedService implements NotificationFeedServiceInterface
         private UserPushTokenRepositoryInterface $userPushTokenRepository,
     ) {}
 
-    public function getNotificationsByUserId(string $userId, bool $unreadOnly = false, int $limit = 50)
+    public function getNotificationsByUserId(string $userId, bool $unreadOnly = false, int $page = 1, int $perPage = 50): array
     {
-        return $this->notificationRepository->getByUserId($userId, $unreadOnly, $limit);
+        $notifications = $this->notificationRepository->getByUserId($userId, $unreadOnly, $page, $perPage);
+
+        return [
+            'items' => $notifications->items(),
+            'current_page' => $notifications->currentPage(),
+            'per_page' => $notifications->perPage(),
+            'total' => $notifications->total(),
+            'last_page' => $notifications->lastPage(),
+        ];
     }
 
     #[Transactional]

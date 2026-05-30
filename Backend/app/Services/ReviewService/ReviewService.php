@@ -66,8 +66,8 @@ class ReviewService implements ReviewServiceInterface
     public function createReview(CreateReviewDTO $data): Review
     {
         $this->validateInput($data->toArray());
-        $this->assertUserCanReviewTarget($data);
-        $this->assertNotDuplicate($data);
+        $this->validateUserCanReviewTarget($data);
+        $this->validateReviewIsNotDuplicate($data);
 
         $review = $this->reviewRepository->createReview($data);
 
@@ -78,7 +78,7 @@ class ReviewService implements ReviewServiceInterface
         return $review;
     }
 
-    private function assertUserCanReviewTarget(CreateReviewDTO $data): void
+    private function validateUserCanReviewTarget(CreateReviewDTO $data): void
     {
         if (! $this->reviewRepository->userCanReviewTarget($data->user_id, $data->target_type->value, $data->target_id)) {
             throw ValidationException::withMessages([
@@ -87,7 +87,7 @@ class ReviewService implements ReviewServiceInterface
         }
     }
 
-    private function assertNotDuplicate(CreateReviewDTO $data): void
+    private function validateReviewIsNotDuplicate(CreateReviewDTO $data): void
     {
         if ($this->reviewRepository->existsForTarget($data->user_id, $data->target_type->value, $data->target_id)) {
             throw ValidationException::withMessages([

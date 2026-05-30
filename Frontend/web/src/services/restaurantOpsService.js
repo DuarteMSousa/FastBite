@@ -671,14 +671,20 @@ const SET_RESTAURANT_PRODUCT_AVAILABILITY_MUTATION = `
 `
 
 const CLIENT_NOTIFICATIONS_QUERY = `
-  query GetNotificationsByUserId($userId: ID!, $unreadOnly: Boolean!, $limit: Int!) {
-    getNotificationsByUserId(user_id: $userId, unread_only: $unreadOnly, limit: $limit) {
-      id
-      type
-      title
-      message
-      sent_at
-      read_at
+  query GetNotificationsByUserId($userId: ID!, $unreadOnly: Boolean!, $page: Int!, $perPage: Int!) {
+    getNotificationsByUserId(user_id: $userId, unread_only: $unreadOnly, page: $page, per_page: $perPage) {
+      items {
+        id
+        type
+        title
+        message
+        sent_at
+        read_at
+      }
+      current_page
+      per_page
+      total
+      last_page
     }
   }
 `
@@ -1638,19 +1644,26 @@ export async function fetchProductOptionGroupsAdmin({ session, productId }) {
 export async function fetchOperatorNotifications({
   session,
   unreadOnly = false,
-  limit = 50,
+  page = 1,
+  perPage = 50,
 }) {
   const data = await graphqlRequest({
     query: CLIENT_NOTIFICATIONS_QUERY,
     variables: {
       userId: currentUserId(session),
       unreadOnly,
-      limit,
+      page,
+      perPage,
     },
     ...requestOptions(session),
   })
 
-  return (data.getNotificationsByUserId ?? []).map(mapNotification)
+  const pageData = data.getNotificationsByUserId ?? {}
+
+  return {
+    ...pageData,
+    items: (pageData.items ?? []).map(mapNotification),
+  }
 }
 
 export async function markOperatorNotificationRead({ session, notificationId }) {

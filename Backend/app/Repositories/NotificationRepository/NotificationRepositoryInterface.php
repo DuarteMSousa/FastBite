@@ -9,7 +9,7 @@ interface NotificationRepositoryInterface
 {
     public function getDispatchableById(string $id): ?Notification;
 
-    public function getByUserId(string $userId, bool $unreadOnly, int $limit);
+    public function getByUserId(string $userId, bool $unreadOnly, int $page, int $perPage);
 
     public function createNotification(CreateNotificationDTO $data): Notification;
 

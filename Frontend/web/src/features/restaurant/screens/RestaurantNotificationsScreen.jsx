@@ -94,9 +94,10 @@ export function RestaurantNotificationsScreen({ session }) {
       const data = await fetchOperatorNotifications({
         session,
         unreadOnly: false,
-        limit: MAX_ITEMS,
+        page: 1,
+        perPage: MAX_ITEMS,
       })
-      setItems(data)
+      setItems(data.items ?? [])
       setErrorText('')
     } catch (error) {
       setErrorText(error.message)

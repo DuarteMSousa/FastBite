@@ -11,6 +11,7 @@ use App\DTOs\Order\OrderAddress\CreateOrderAddressDTO;
 use App\DTOs\Order\OrderItem\CreateOrderItemDTO;
 use App\DTOs\Order\OrderItemOption\CreateOrderItemOptionDTO;
 use App\DTOs\Payment\CreatePaymentDTO;
+use App\DTOs\Payment\CreatePaymentEventDTO;
 use App\Enums\OrderEventType;
 use App\Enums\OrderItemStatus;
 use App\Enums\OrderStatus;
@@ -216,14 +217,14 @@ class OrderService implements OrderServiceInterface
             $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED);
         }
 
-        $this->paymentRepository->createEvent($payment, new \App\DTOs\Payment\CreatePaymentEventDTO(
+        $this->paymentRepository->createEvent($payment, new CreatePaymentEventDTO(
             PaymentEventType::PAYMENT_CREATED,
             now(),
             [],
         ));
 
         if ($paymentStatus === PaymentStatus::COMPLETED) {
-            $this->paymentRepository->createEvent($payment, new \App\DTOs\Payment\CreatePaymentEventDTO(
+            $this->paymentRepository->createEvent($payment, new CreatePaymentEventDTO(
                 PaymentEventType::PAYMENT_COMPLETED,
                 now(),
                 [],
