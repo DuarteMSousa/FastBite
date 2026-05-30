@@ -108,7 +108,7 @@ class OrderService implements OrderServiceInterface
         $cart = $this->checkoutCartForUser($clientUserId, $cartId);
 
         if ($cart->items->isEmpty()) {
-            return CheckoutPreviewDTO::empty();
+            return CheckoutPreviewDTO::default();
         }
 
         $restaurant = $cart->items->first()->restaurantProduct->restaurant()->firstOrFail();

@@ -20,7 +20,7 @@ class CheckoutPreviewDTO extends Data
     ) {
     }
 
-    public static function empty(): self
+    public static function default(): self
     {
         return new self(
             subtotal: 0.0,
