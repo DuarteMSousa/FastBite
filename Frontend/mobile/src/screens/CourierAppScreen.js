@@ -112,6 +112,10 @@ function pushStatusLabel(status) {
   return status || 'desconhecido'
 }
 
+function errorMessage(error) {
+  return String(error?.message ?? error ?? 'erro desconhecido')
+}
+
 function socketDeliveryId(payload) {
   return payload?.deliveryId ?? payload?.delivery_id ?? payload?.data?.delivery_id ?? null
 }
@@ -362,14 +366,16 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
               }
             }
           },
-          onError: () => {
+          onError: (error) => {
             if (cancelled) return
             setJobsRealtimeState('error')
+            setToast(`Falha ao ligar tempo real: ${errorMessage(error)}`)
             scheduleRetry()
           },
         })
-      } catch {
+      } catch (error) {
         setJobsRealtimeState('error')
+        setToast(`Falha ao ligar tempo real: ${errorMessage(error)}`)
         scheduleRetry()
       }
     }
@@ -456,12 +462,14 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             setReadyBanner(true)
           }
         },
-        onError: () => {
+        onError: (error) => {
           setTrackingRealtimeState('error')
+          setToast(`Falha ao ligar tempo real: ${errorMessage(error)}`)
         },
       })
-    } catch {
+    } catch (error) {
       setTrackingRealtimeState('error')
+      setToast(`Falha ao ligar tempo real: ${errorMessage(error)}`)
     }
 
     return () => {
@@ -491,7 +499,16 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           return
         }
 
-        const backgroundPermission = await Location.requestBackgroundPermissionsAsync()
+        const servicesEnabled = await Location.hasServicesEnabledAsync()
+        if (isStopped) return
+
+        if (!servicesEnabled) {
+          setToast('GPS desligado no dispositivo.')
+          return
+        }
+
+        try {
+          const backgroundPermission = await Location.requestBackgroundPermissionsAsync()
         if (isStopped) return
 
         setBackgroundLocationPermission(backgroundPermission.status)
@@ -503,8 +520,85 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             session,
             deliveryId: activeDelivery.delivery_id,
           }).catch((err) => {
-            setToast(`Background tracking falhou: ${err.message ?? err}`)
+            setToast(`Background tracking falhou: ${errorMessage(err)}`)
           })
+        }
+
+        } catch (error) {
+          setToast(`Background tracking indisponÃ­vel: ${errorMessage(error)}`)
+        }
+
+        async function handleLocation(location, forceSend = false) {
+          if (isStopped) {
+            return
+          }
+
+          const lat = Number(location?.coords?.latitude)
+          const lng = Number(location?.coords?.longitude)
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            return
+          }
+
+          const recordedAt = new Date(location.timestamp ?? Date.now()).toISOString()
+
+          const last = lastSentRef.current
+          const nowMs = Date.now()
+          const movedMeters =
+            last.lat !== null && last.lng !== null
+              ? distanceMeters({ lat: last.lat, lng: last.lng }, { lat, lng })
+              : null
+          const elapsedMs = nowMs - Number(last.timestamp || 0)
+          const shouldSend =
+            forceSend ||
+            last.lat === null ||
+            (movedMeters !== null && movedMeters >= 15) ||
+            elapsedMs >= 10000
+
+          setLivePosition({ lat, lng })
+
+          if (!shouldSend) {
+            return
+          }
+
+          lastSentRef.current = { lat, lng, timestamp: nowMs }
+
+          try {
+            await updateCourierLocation({
+              session,
+              deliveryId: activeDelivery.delivery_id,
+              lat,
+              lng,
+              recordedAt,
+            })
+
+            setTracking((state) => ({
+              ...(state ?? {}),
+              latest_position: {
+                lat,
+                lng,
+                recorded_at: recordedAt,
+              },
+              positions: [
+                {
+                  lat,
+                  lng,
+                  recorded_at: recordedAt,
+                },
+                ...((state?.positions ?? []).slice(0, 19)),
+              ],
+            }))
+          } catch (error) {
+            setToast(`Falha ao enviar localizaÃ§Ã£o: ${errorMessage(error)}`)
+          }
+        }
+
+        try {
+          const initialLocation = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          })
+          await handleLocation(initialLocation, true)
+        } catch (error) {
+          setToast(`Falha ao obter posiÃ§Ã£o inicial: ${errorMessage(error)}`)
         }
 
         subscription = await Location.watchPositionAsync(
@@ -513,75 +607,16 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             timeInterval: 8000,
             distanceInterval: 15,
           },
-          async (location) => {
-            if (isStopped) {
-              return
-            }
-
-            const lat = Number(location.coords.latitude)
-            const lng = Number(location.coords.longitude)
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-              return
-            }
-
-            const recordedAt = new Date(location.timestamp ?? Date.now()).toISOString()
-
-            const last = lastSentRef.current
-            const nowMs = Date.now()
-            const movedMeters =
-              last.lat !== null && last.lng !== null
-                ? distanceMeters({ lat: last.lat, lng: last.lng }, { lat, lng })
-                : null
-            const elapsedMs = nowMs - Number(last.timestamp || 0)
-            const shouldSend =
-              last.lat === null ||
-              (movedMeters !== null && movedMeters >= 15) ||
-              elapsedMs >= 10000
-
-            setLivePosition({ lat, lng })
-
-            if (!shouldSend) {
-              return
-            }
-
-            lastSentRef.current = { lat, lng, timestamp: nowMs }
-
-            try {
-              await updateCourierLocation({
-                session,
-                deliveryId: activeDelivery.delivery_id,
-                lat,
-                lng,
-                recordedAt,
-              })
-
-              setTracking((state) => ({
-                ...(state ?? {}),
-                latest_position: {
-                  lat,
-                  lng,
-                  recorded_at: recordedAt,
-                },
-                positions: [
-                  {
-                    lat,
-                    lng,
-                    recorded_at: recordedAt,
-                  },
-                  ...((state?.positions ?? []).slice(0, 19)),
-                ],
-              }))
-            } catch {
-              // Ignore intermittent send failures; next GPS callback retries naturally.
-            }
+          (location) => {
+            handleLocation(location)
           },
         )
         if (isStopped && subscription) {
           subscription.remove()
         }
-      } catch {
+      } catch (error) {
         if (!isStopped) {
-          setToast('Falha ao iniciar GPS em tempo real.')
+          setToast(`Falha ao iniciar GPS em tempo real: ${errorMessage(error)}`)
         }
       }
     }
