@@ -20,6 +20,6 @@ class CreateNotificationFromOutboxEventHandler
             return;
         }
 
-        $this->notifications->createFromEvent($eventType, $event->payload);
+        $this->notifications->createAllFromEvent($eventType, $event->payload);
     }
 }

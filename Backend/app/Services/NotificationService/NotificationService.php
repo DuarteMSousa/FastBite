@@ -60,6 +60,23 @@ class NotificationService implements NotificationServiceInterface
         return $dto ? $this->createFromDTO($dto) : null;
     }
 
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return Notification[]
+     */
+    #[Transactional]
+    public function createAllFromEvent(BackedEnum $eventType, array $payload): array
+    {
+        $dtos = $this->mapper->mapAll($eventType, $payload);
+        $notifications = [];
+
+        foreach ($dtos as $dto) {
+            $notifications[] = $this->createFromDTO($dto);
+        }
+
+        return $notifications;
+    }
+
     public function dispatchChannels(string $notificationId, array $payload): void
     {
         $notification = $this->notificationRepository->getDispatchableById($notificationId);

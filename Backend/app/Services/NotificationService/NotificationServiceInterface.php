@@ -26,6 +26,12 @@ interface NotificationServiceInterface
 
     /**
      * @param  array<string, mixed>  $payload
+     * @return Notification[]
+     */
+    public function createAllFromEvent(BackedEnum $eventType, array $payload): array;
+
+    /**
+     * @param  array<string, mixed>  $payload
      */
     public function dispatchChannels(string $notificationId, array $payload): void;
 

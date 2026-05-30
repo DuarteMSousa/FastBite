@@ -7,6 +7,7 @@ use App\Enums\DeliveryEventType;
 use App\Enums\DeliveryOfferEventType;
 use App\Enums\NotificationType;
 use App\Enums\OrderEventType;
+use App\Models\LocalManager;
 use BackedEnum;
 use Closure;
 
@@ -16,6 +17,11 @@ class OutboxNotificationMapper
      * @var array<string, Closure(array<string, mixed>): ?CreateNotificationDTO>
      */
     private array $notificationDelegates;
+
+    /**
+     * @var array<string, Closure(array<string, mixed>): ?CreateNotificationDTO>
+     */
+    private array $restaurantDelegates;
 
     public function __construct()
     {
@@ -61,10 +67,61 @@ class OutboxNotificationMapper
                 'teve uma falha na entrega e sera acompanhado pelo restaurante.'
             ),
         ];
+
+        $this->restaurantDelegates = [
+            OrderEventType::ORDER_CONFIRMED->value => $this->restaurantOrderDelegate(
+                'Nova encomenda recebida',
+                'tem uma nova encomenda paga e pronta para preparar.'
+            ),
+            OrderEventType::ORDER_COURIER_ASSIGNED->value => $this->restaurantOrderDelegate(
+                'Estafeta atribuido',
+                'ja tem estafeta atribuido para recolha.'
+            ),
+            OrderEventType::ORDER_DELIVERED->value => $this->restaurantOrderDelegate(
+                'Encomenda entregue',
+                'foi entregue ao cliente com sucesso.'
+            ),
+            OrderEventType::ORDER_CANCELLED->value => $this->restaurantOrderDelegate(
+                'Encomenda cancelada',
+                fn (array $payload): string => $this->cancelledOrderMessage($payload)
+            ),
+            DeliveryEventType::DELIVERY_FAILED->value => $this->restaurantOrderDelegate(
+                'Falha na entrega',
+                'teve uma falha na entrega. Necessita de atencao.'
+            ),
+        ];
     }
 
     /**
      * @param  array<string, mixed>  $payload
+     * @return CreateNotificationDTO[]
+     */
+    public function mapAll(BackedEnum $eventType, array $payload): array
+    {
+        $notifications = [];
+
+        $customerDelegate = $this->notificationDelegates[$eventType->value] ?? null;
+        if ($customerDelegate) {
+            $dto = $customerDelegate($payload);
+            if ($dto) {
+                $notifications[] = $dto;
+            }
+        }
+
+        $restaurantDelegate = $this->restaurantDelegates[$eventType->value] ?? null;
+        if ($restaurantDelegate) {
+            $dto = $restaurantDelegate($payload);
+            if ($dto) {
+                $notifications[] = $dto;
+            }
+        }
+
+        return $notifications;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @deprecated Use mapAll() instead
      */
     public function map(BackedEnum $eventType, array $payload): ?CreateNotificationDTO
     {
@@ -187,5 +244,53 @@ class OutboxNotificationMapper
                 'expires_at' => $payload['expiresAt'] ?? null,
             ],
         );
+    }
+
+    private function restaurantOrderDelegate(string $title, string|Closure $message): Closure
+    {
+        return function (array $payload) use ($title, $message): ?CreateNotificationDTO {
+            $resolvedMessage = $message instanceof Closure ? $message($payload) : $message;
+
+            return $this->restaurantOrderUpdate($payload, $title, $resolvedMessage);
+        };
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function restaurantOrderUpdate(array $payload, string $title, string $message): ?CreateNotificationDTO
+    {
+        $restaurantId = $payload['restaurantId'] ?? $payload['restaurant_id'] ?? null;
+
+        if (! $restaurantId) {
+            return null;
+        }
+
+        $managerId = $this->resolveRestaurantManagerId((string) $restaurantId);
+
+        if (! $managerId) {
+            return null;
+        }
+
+        return new CreateNotificationDTO(
+            userId: $managerId,
+            type: NotificationType::ORDER_UPDATE,
+            title: $title,
+            message: sprintf('O %s %s', $this->orderReference($payload), $message),
+            data: [
+                'order_id' => $payload['orderId'] ?? null,
+                'delivery_id' => $payload['deliveryId'] ?? null,
+                'event_name' => $payload['eventName'] ?? null,
+                'status' => $payload['status'] ?? null,
+                'restaurant_id' => $restaurantId,
+            ],
+        );
+    }
+
+    private function resolveRestaurantManagerId(string $restaurantId): ?string
+    {
+        $manager = LocalManager::where('restaurant_id', $restaurantId)->first(['user_id']);
+
+        return $manager?->user_id;
     }
 }
