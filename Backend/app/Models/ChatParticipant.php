@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ChatParticipant extends Model
 {
@@ -36,8 +35,4 @@ class ChatParticipant extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function messages(): HasMany
-    {
-        return $this->hasMany(Message::class, 'sender_participant_id');
-    }
 }

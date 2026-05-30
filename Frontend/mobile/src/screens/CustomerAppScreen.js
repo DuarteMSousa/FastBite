@@ -74,14 +74,10 @@ import {
 import { useAutoToast } from '../components/common/ToastProvider'
 
 function normalizeSocketChatMessage(payload) {
-  const senderUserId = payload?.sender_user_id ?? 'desconhecido'
-
   return {
     id: payload?.message_id ?? payload?.event_id ?? `${Date.now()}-${Math.random()}`,
     content: payload?.content ?? '',
-    sender_participant_id: senderUserId,
-    sender_user_id: senderUserId,
-    sender_participant_record_id: payload?.sender_participant_id ?? null,
+    user_id: payload?.user_id ?? 'desconhecido',
     timestamp: payload?.timestamp ?? new Date().toISOString(),
     source: 'socket',
   }
@@ -1113,8 +1109,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           id: ack.id,
           chat_id: ack.chat_id,
           content: draft,
-          sender_participant_id: userId,
-          sender_user_id: userId,
+          user_id: userId,
           timestamp: new Date().toISOString(),
           source: 'socket',
         }),
@@ -2350,7 +2345,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
                 </Pressable>
               ) : null}
               {chatModalState.messages.map((message) => {
-                const isMine = message.sender_participant_id === userId
+                const isMine = message.user_id === userId
                 return (
                   <View
                     key={message.id}

@@ -72,11 +72,11 @@ class ChatRepository implements ChatRepositoryInterface
         ]);
     }
 
-    public function createMessage(string $chatId, string $participantId, string $content): Message
+    public function createMessage(string $chatId, string $userId, string $content): Message
     {
         return Message::create([
             'chat_id' => $chatId,
-            'sender_participant_id' => $participantId,
+            'user_id' => $userId,
             'content' => $content,
             'timestamp' => now(),
         ]);

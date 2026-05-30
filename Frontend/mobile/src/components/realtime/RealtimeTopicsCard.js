@@ -55,7 +55,7 @@ export function RealtimeTopicsCard() {
             prependLimited(current, {
               id: payload?.event_id ?? `${Date.now()}-${Math.random()}`,
               title: payload?.content ?? 'Nova mensagem',
-              meta: `sender ${payload?.sender_user_id ?? 'desconhecido'}`,
+              meta: `user ${payload?.user_id ?? 'desconhecido'}`,
               at: resolveTimestamp(payload),
             }),
           )

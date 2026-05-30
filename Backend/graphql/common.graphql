@@ -454,7 +454,7 @@ type ChatParticipant {
 type Message {
   id: ID!
   chat_id: ID!
-  sender_participant_id: ID!
+  user_id: ID!
   content: String!
   timestamp: String!
   read_at: String

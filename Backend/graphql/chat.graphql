@@ -6,7 +6,7 @@ input CreateOrderChatInput {
 
 input SendMessageInput {
   chat_id: ID!
-  sender_user_id: ID!
+  user_id: ID!
   content: String!
 }
 

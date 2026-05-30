@@ -25,5 +25,5 @@ interface ChatRepositoryInterface
 
     public function addParticipant(string $chatId, string $userId): ChatParticipant;
 
-    public function createMessage(string $chatId, string $participantId, string $content): Message;
+    public function createMessage(string $chatId, string $userId, string $content): Message;
 }

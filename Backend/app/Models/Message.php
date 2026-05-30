@@ -14,7 +14,7 @@ class Message extends Model
 
     protected $fillable = [
         'chat_id',
-        'sender_participant_id',
+        'user_id',
         'content',
         'timestamp',
         'read_at',
@@ -33,8 +33,8 @@ class Message extends Model
         return $this->belongsTo(Chat::class);
     }
 
-    public function senderParticipant(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(ChatParticipant::class, 'sender_participant_id');
+        return $this->belongsTo(User::class);
     }
 }

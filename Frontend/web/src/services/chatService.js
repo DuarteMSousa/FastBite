@@ -14,7 +14,7 @@ const ORDER_CHATS_QUERY = `
       messages {
         id
         chat_id
-        sender_participant_id
+        user_id
         content
         timestamp
       }
@@ -36,7 +36,7 @@ const CREATE_ORDER_CHAT_MUTATION = `
       messages {
         id
         chat_id
-        sender_participant_id
+        user_id
         content
         timestamp
       }
@@ -49,7 +49,7 @@ const SEND_MESSAGE_MUTATION = `
     sendChatMessage(input: $input) {
       id
       chat_id
-      sender_participant_id
+      user_id
       content
       timestamp
     }
@@ -64,19 +64,13 @@ function requestHeaders(session) {
 }
 
 function mapChat(chat) {
-  const participantsById = new Map(
-    (chat.participants ?? []).map((participant) => [participant.id, participant]),
-  )
-
   const messages = (chat.messages ?? [])
     .map((message) => {
-      const senderParticipant = participantsById.get(message.sender_participant_id)
       return {
         id: message.id,
         chat_id: message.chat_id,
         content: message.content,
-        sender_participant_id: message.sender_participant_id,
-        sender_user_id: senderParticipant?.user_id ?? 'desconhecido',
+        user_id: message.user_id,
         timestamp: message.timestamp,
       }
     })
@@ -143,7 +137,7 @@ export async function sendChatMessage({ session, chatId, content }) {
     variables: {
       input: {
         chat_id: chatId,
-        sender_user_id: senderUserId,
+        user_id: senderUserId,
         content,
       },
     },
@@ -154,8 +148,7 @@ export async function sendChatMessage({ session, chatId, content }) {
     id: data.sendChatMessage.id,
     chat_id: data.sendChatMessage.chat_id,
     content: data.sendChatMessage.content,
-    sender_participant_id: data.sendChatMessage.sender_participant_id,
-    sender_user_id: senderUserId,
+    user_id: data.sendChatMessage.user_id,
     timestamp: data.sendChatMessage.timestamp,
   }
 }

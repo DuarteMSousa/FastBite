@@ -270,15 +270,20 @@ return new class extends Migration {
             $table->timestamp('joined_at')->nullable();
             $table->timestamp('last_read_at')->nullable();
             $table->timestamps();
+            $table->unique(['chat_id', 'user_id']);
         });
 
         Schema::create('messages', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('chat_id')->constrained('chats')->cascadeOnDelete();
-            $table->foreignUuid('sender_participant_id')->constrained('chat_participants')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->text('content');
             $table->timestamp('timestamp');
             $table->timestamp('read_at')->nullable();
+            $table->foreign(['chat_id', 'user_id'])
+                ->references(['chat_id', 'user_id'])
+                ->on('chat_participants')
+                ->cascadeOnDelete();
         });
 
         // addresses

@@ -50,8 +50,7 @@ class SendChatMessageClientEventHandler implements ClientEventHandler
                 'event_name' => OutboxEventType::CHAT_MESSAGE_SENT->value,
                 'chat_id' => $data->chat_id,
                 'message_id' => $chatMessage->id,
-                'sender_user_id' => $senderUserId,
-                'sender_participant_id' => $chatMessage->sender_participant_id,
+                'user_id' => $senderUserId,
                 'content' => $chatMessage->content,
                 'timestamp' => $chatMessage->timestamp?->toIso8601String(),
             ])

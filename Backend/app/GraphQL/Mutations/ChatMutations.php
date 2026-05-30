@@ -17,6 +17,6 @@ class ChatMutations
 
     public function sendChatMessage($_, array $args)
     {
-        return $this->chatService->sendChatMessage($args['input']['sender_user_id'], SendMessageDTO::from($args['input']));
+        return $this->chatService->sendChatMessage($args['input']['user_id'], SendMessageDTO::from($args['input']));
     }
 }

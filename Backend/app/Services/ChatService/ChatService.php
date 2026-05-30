@@ -94,35 +94,32 @@ class ChatService implements ChatServiceInterface
             ]);
         }
 
-        $participant = $this->chatRepository->findParticipant($data->chat_id, $senderUserId);
-
-        if (! $participant) {
+        if (! $this->chatRepository->findParticipant($data->chat_id, $senderUserId)) {
             $sender = $this->userRepository->findById($senderUserId);
 
             if (! $sender) {
                 throw ValidationException::withMessages([
-                    'sender_user_id' => 'User does not exist.',
+                    'user_id' => 'User does not exist.',
                 ]);
             }
 
             if (! $this->isAuthorizedManagerForChat($sender, $chat)) {
                 throw ValidationException::withMessages([
-                    'sender_user_id' => 'User is not a participant of this chat.',
+                    'user_id' => 'User is not a participant of this chat.',
                 ]);
             }
 
-            $participant = $this->chatRepository->addParticipant($data->chat_id, $sender->id);
+            $this->chatRepository->addParticipant($data->chat_id, $sender->id);
         }
 
-        $message = $this->chatRepository->createMessage($data->chat_id, $participant->id, $data->content);
+        $message = $this->chatRepository->createMessage($data->chat_id, $senderUserId, $data->content);
 
         app(OutboxService::class)->enqueue(OutboxAggregateType::CHAT, $chat->id, OutboxEventType::CHAT_MESSAGE_SENT, [
             'event_id' => (string) Str::uuid(),
             'event_name' => OutboxEventType::CHAT_MESSAGE_SENT->value,
             'chat_id' => $chat->id,
             'message_id' => $message->id,
-            'sender_user_id' => $senderUserId,
-            'sender_participant_id' => $participant->id,
+            'user_id' => $senderUserId,
             'content' => $message->content,
             'timestamp' => $message->timestamp?->toIso8601String(),
         ]);

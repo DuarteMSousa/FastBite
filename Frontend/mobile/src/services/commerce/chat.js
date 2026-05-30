@@ -10,7 +10,8 @@ const ORDER_CHATS_QUERY = `
       closed_at
       messages {
         id
-        sender_participant_id
+        chat_id
+        user_id
         content
         timestamp
         read_at
@@ -28,7 +29,7 @@ const CHAT_MESSAGES_QUERY = `
     getMessagesByChatId(chat_id: $chatId, per_page: $perPage) {
       id
       chat_id
-      sender_participant_id
+      user_id
       content
       timestamp
       read_at
@@ -49,7 +50,8 @@ const CREATE_ORDER_CHAT_MUTATION = `
       closed_at
       messages {
         id
-        sender_participant_id
+        chat_id
+        user_id
         content
         timestamp
       }
@@ -66,7 +68,7 @@ const SEND_MESSAGE_MUTATION = `
     sendChatMessage(input: $input) {
       id
       chat_id
-      sender_participant_id
+      user_id
       content
       timestamp
     }
@@ -74,25 +76,12 @@ const SEND_MESSAGE_MUTATION = `
 `
 
 function mapChat(chat) {
-  const participantsById = new Map(
-    (chat.participants ?? []).map((participant) => [participant.id, participant]),
-  )
-
   return {
     id: chat.id,
     order_id: chat.order_id,
     type: chat.type,
     closed_at: chat.closed_at,
-    messages: (chat.messages ?? []).map((message) => {
-      const senderUserId = participantsById.get(message.sender_participant_id)?.user_id
-
-      return {
-        ...message,
-        sender_participant_record_id: message.sender_participant_id,
-        sender_participant_id: senderUserId ?? message.sender_participant_id,
-        sender_user_id: senderUserId ?? null,
-      }
-    }),
+    messages: chat.messages ?? [],
     participants: chat.participants ?? [],
   }
 }
@@ -114,20 +103,7 @@ export async function fetchChatMessages({ session, chatId, limit = 50 }) {
     ...requestOptions(session),
   })
 
-  const participantsById = new Map(
-    (data.getParticipantsByChatId ?? []).map((participant) => [participant.id, participant]),
-  )
-
-  return (data.getMessagesByChatId ?? []).map((message) => {
-    const senderUserId = participantsById.get(message.sender_participant_id)?.user_id
-
-    return {
-      ...message,
-      sender_participant_record_id: message.sender_participant_id,
-      sender_participant_id: senderUserId ?? message.sender_participant_id,
-      sender_user_id: senderUserId ?? null,
-    }
-  })
+  return data.getMessagesByChatId ?? []
 }
 
 export async function createOrderChat({ session, orderId, type, participantUserIds }) {
@@ -157,7 +133,7 @@ export async function sendChatMessage({ session, chatId, content }) {
     variables: {
       input: {
         chat_id: chatId,
-        sender_user_id: sessionUserId(session),
+        user_id: sessionUserId(session),
         content: trimmed,
       },
     },

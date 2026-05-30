@@ -16,8 +16,7 @@ function normalizeEventMessage(payload) {
   return {
     id: payload?.message_id ?? payload?.event_id ?? `${Date.now()}-${Math.random()}`,
     content: payload?.content ?? 'Mensagem recebida',
-    sender_user_id: payload?.sender_user_id ?? 'desconhecido',
-    sender_participant_id: payload?.sender_participant_id ?? null,
+    user_id: payload?.user_id ?? 'desconhecido',
     timestamp: payload?.timestamp ?? new Date().toISOString(),
     source: 'socket',
   }
@@ -278,7 +277,7 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
           id: ack.id,
           chat_id: ack.chat_id,
           content,
-          sender_user_id: ownUserId,
+          user_id: ownUserId,
           timestamp: new Date().toISOString(),
           source: 'socket',
         }),
@@ -386,10 +385,10 @@ export function RestaurantChatScreen({ session, selectedOrderId, onSelectOrder }
                       <span>{group.day}</span>
                     </div>
                     {group.items.map((message, idx) => {
-                      const isOwn = message.sender_user_id === ownUserId
+                      const isOwn = message.user_id === ownUserId
                       const prev = group.items[idx - 1]
                       const showSenderTag =
-                        !isOwn && (!prev || prev.sender_user_id !== message.sender_user_id)
+                        !isOwn && (!prev || prev.user_id !== message.user_id)
                       return (
                         <div
                           className={`rb-chat-bubble-row ${isOwn ? 'own' : 'other'}`}
