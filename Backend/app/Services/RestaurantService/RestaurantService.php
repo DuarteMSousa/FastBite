@@ -25,26 +25,26 @@ class RestaurantService implements RestaurantServiceInterface
 
     private RestaurantRepositoryInterface $restaurantRepository;
 
-    private RestaurantChainRepositoryInterface $chains;
+    private RestaurantChainRepositoryInterface $restaurantChainRepository;
 
-    private ChainManagerRepositoryInterface $chainManagers;
+    private ChainManagerRepositoryInterface $chainManagerRepository;
 
-    private LocalManagerRepositoryInterface $localManagers;
+    private LocalManagerRepositoryInterface $localManagerRepository;
 
-    private UserRepositoryInterface $users;
+    private UserRepositoryInterface $userRepository;
 
     public function __construct(
         ?RestaurantRepositoryInterface $restaurantRepository = null,
-        ?RestaurantChainRepositoryInterface $chains = null,
-        ?ChainManagerRepositoryInterface $chainManagers = null,
-        ?LocalManagerRepositoryInterface $localManagers = null,
-        ?UserRepositoryInterface $users = null,
+        ?RestaurantChainRepositoryInterface $restaurantChainRepository = null,
+        ?ChainManagerRepositoryInterface $chainManagerRepository = null,
+        ?LocalManagerRepositoryInterface $localManagerRepository = null,
+        ?UserRepositoryInterface $userRepository = null,
     ) {
         $this->restaurantRepository = $restaurantRepository ?? app(RestaurantRepositoryInterface::class);
-        $this->chains = $chains ?? app(RestaurantChainRepositoryInterface::class);
-        $this->chainManagers = $chainManagers ?? app(ChainManagerRepositoryInterface::class);
-        $this->localManagers = $localManagers ?? app(LocalManagerRepositoryInterface::class);
-        $this->users = $users ?? app(UserRepositoryInterface::class);
+        $this->restaurantChainRepository = $restaurantChainRepository ?? app(RestaurantChainRepositoryInterface::class);
+        $this->chainManagerRepository = $chainManagerRepository ?? app(ChainManagerRepositoryInterface::class);
+        $this->localManagerRepository = $localManagerRepository ?? app(LocalManagerRepositoryInterface::class);
+        $this->userRepository = $userRepository ?? app(UserRepositoryInterface::class);
     }
 
     public function searchRestaurants(SearchRestaurantsDTO $filters)
@@ -104,7 +104,7 @@ class RestaurantService implements RestaurantServiceInterface
 
     public function getRestaurantByLocalManagerUserId(string $userId): ?Restaurant
     {
-        $manager = $this->localManagers->findByUserId($userId);
+        $manager = $this->localManagerRepository->findByUserId($userId);
 
         return $manager?->restaurant;
     }
@@ -116,13 +116,13 @@ class RestaurantService implements RestaurantServiceInterface
 
     public function getRestaurantsByManagerUserId(string $userId)
     {
-        $localManager = $this->localManagers->findByUserId($userId);
+        $localManager = $this->localManagerRepository->findByUserId($userId);
 
         if ($localManager?->restaurant) {
             return collect([$localManager->restaurant]);
         }
 
-        $chainManager = $this->chainManagers->findByUserId($userId);
+        $chainManager = $this->chainManagerRepository->findByUserId($userId);
 
         if (! $chainManager) {
             return collect();
@@ -133,13 +133,13 @@ class RestaurantService implements RestaurantServiceInterface
 
     public function getRestaurantChainByManagerUserId(string $userId): ?RestaurantChain
     {
-        return $this->chainManagers->findByUserId($userId)?->chain;
+        return $this->chainManagerRepository->findByUserId($userId)?->chain;
     }
 
     #[Transactional]
     public function assignLocalManager(string $userId, string $restaurantId): LocalManager
     {
-        if (! $this->users->exists($userId)) {
+        if (! $this->userRepository->exists($userId)) {
             throw ValidationException::withMessages([
                 'user_id' => ['User does not exist.'],
             ]);
@@ -151,7 +151,7 @@ class RestaurantService implements RestaurantServiceInterface
             ]);
         }
 
-        return $this->localManagers->updateOrCreate($userId, $restaurantId);
+        return $this->localManagerRepository->updateOrCreate($userId, $restaurantId);
     }
 
     private function validateInput(array $input, bool $isUpdate = false): void
@@ -164,7 +164,7 @@ class RestaurantService implements RestaurantServiceInterface
             }
         }
 
-        if (empty($input['chain_id']) || ! $this->chains->exists($input['chain_id'])) {
+        if (empty($input['chain_id']) || ! $this->restaurantChainRepository->exists($input['chain_id'])) {
             $errors['chain_id'][] = 'Restaurant chain does not exist.';
         }
 

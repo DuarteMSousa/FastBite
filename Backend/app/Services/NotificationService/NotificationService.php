@@ -24,8 +24,8 @@ class NotificationService implements NotificationServiceInterface
     public function __construct(
         private OutboxService $outboxService,
         private NotificationMapper $mapper,
-        private NotificationRepositoryInterface $notifications,
-        private UserPushTokenRepositoryInterface $pushTokens,
+        private NotificationRepositoryInterface $notificationRepository,
+        private UserPushTokenRepositoryInterface $userPushTokenRepository,
     ) {}
 
     /**
@@ -61,7 +61,7 @@ class NotificationService implements NotificationServiceInterface
 
     public function dispatchChannels(string $notificationId, array $payload): void
     {
-        $notification = $this->notifications->getDispatchableById($notificationId);
+        $notification = $this->notificationRepository->getDispatchableById($notificationId);
 
         if (! $notification) {
             return;
@@ -71,9 +71,9 @@ class NotificationService implements NotificationServiceInterface
             $notification->user->notify(new UserSystemNotification($payload));
         }
 
-        $pushTokens = $this->pushTokens->getActiveByUserId($notification->user_id);
+        $userPushTokenRepository = $this->userPushTokenRepository->getActiveByUserId($notification->user_id);
 
-        foreach ($pushTokens as $pushToken) {
+        foreach ($userPushTokenRepository as $pushToken) {
             SendPushNotificationJob::dispatch($pushToken->id, $payload);
         }
 
@@ -81,14 +81,14 @@ class NotificationService implements NotificationServiceInterface
             'notification_id' => $notification->id,
             'user_id' => $notification->user_id,
             'email' => (bool) $notification->user?->email,
-            'push_tokens' => $pushTokens->count(),
+            'push_tokens' => $userPushTokenRepository->count(),
             'type' => $notification->type->value,
         ]);
     }
 
     public function sendPushNotification(string $pushTokenId, array $payload): void
     {
-        $pushToken = $this->pushTokens->getById($pushTokenId);
+        $pushToken = $this->userPushTokenRepository->getById($pushTokenId);
 
         if (! $pushToken || ! $pushToken->is_active) {
             return;
@@ -117,7 +117,7 @@ class NotificationService implements NotificationServiceInterface
             ]);
 
         if ($this->responseMarksTokenInvalid($response->json())) {
-            $this->pushTokens->deactivate($pushToken);
+            $this->userPushTokenRepository->deactivate($pushToken);
 
             Log::warning('push.token.deactivated', [
                 'push_token_id' => $pushToken->id,
@@ -137,7 +137,7 @@ class NotificationService implements NotificationServiceInterface
             return;
         }
 
-        $this->pushTokens->markUsed($pushToken);
+        $this->userPushTokenRepository->markUsed($pushToken);
     }
 
     private function responseHasPushError(?array $body): bool
@@ -152,7 +152,7 @@ class NotificationService implements NotificationServiceInterface
 
     private function createFromDTO(CreateNotificationDTO $dto): Notification
     {
-        $notification = $this->notifications->createNotification($dto);
+        $notification = $this->notificationRepository->createNotification($dto);
         $sentAt = $notification->sent_at ?? now();
 
         $payload = [

@@ -18,18 +18,18 @@ use Illuminate\Validation\ValidationException;
 
 class TrackingService implements TrackingServiceInterface
 {
-    private TrackingRepositoryInterface $tracking;
+    private TrackingRepositoryInterface $trackingRepository;
     private RoutingService $routing;
 
-    public function __construct(?TrackingRepositoryInterface $tracking = null, ?RoutingService $routing = null)
+    public function __construct(?TrackingRepositoryInterface $trackingRepository = null, ?RoutingService $routing = null)
     {
-        $this->tracking = $tracking ?? app(TrackingRepositoryInterface::class);
+        $this->trackingRepository = $trackingRepository ?? app(TrackingRepositoryInterface::class);
         $this->routing = $routing ?? app(RoutingService::class);
     }
 
     public function orderTracking(string $userId, string $orderId): array
     {
-        $order = $this->tracking->findOrderForUserTracking($userId, $orderId);
+        $order = $this->trackingRepository->findOrderForUserTracking($userId, $orderId);
 
         if (! $order) {
             throw ValidationException::withMessages([
@@ -38,32 +38,32 @@ class TrackingService implements TrackingServiceInterface
         }
 
         $delivery = $order->delivery;
-        $lastPosition = $delivery ? $this->tracking->findLastPositionForDelivery($delivery->id) : null;
+        $lastPosition = $delivery ? $this->trackingRepository->findLastPositionForDelivery($delivery->id) : null;
 
         return [
             'order' => $order,
             'delivery' => $delivery,
             'courier' => $delivery?->courier,
             'last_position' => $lastPosition,
-            ...$this->trackingRoute($delivery, $lastPosition),
+            ...$this->trackingRepositoryRoute($delivery, $lastPosition),
         ];
     }
 
     public function deliveryTracking(string $deliveryId): array
     {
-        $delivery = $this->tracking->findDeliveryForTracking($deliveryId);
-        $lastPosition = $this->tracking->findLastPositionForDelivery($delivery->id);
+        $delivery = $this->trackingRepository->findDeliveryForTracking($deliveryId);
+        $lastPosition = $this->trackingRepository->findLastPositionForDelivery($delivery->id);
 
         return [
             'delivery' => $delivery,
             'last_position' => $lastPosition,
-            ...$this->trackingRoute($delivery, $lastPosition),
+            ...$this->trackingRepositoryRoute($delivery, $lastPosition),
         ];
     }
 
     public function courierLastPosition(string $courierId): ?CourierPositionHistory
     {
-        return $this->tracking->findLastPositionForCourier($courierId);
+        return $this->trackingRepository->findLastPositionForCourier($courierId);
     }
 
     #[Transactional]
@@ -75,7 +75,7 @@ class TrackingService implements TrackingServiceInterface
             ]);
         }
 
-        $delivery = $this->tracking->findDeliveryForCourierOrFail($data->courier_id, $data->delivery_id);
+        $delivery = $this->trackingRepository->findDeliveryForCourierOrFail($data->courier_id, $data->delivery_id);
 
         app(CourierServiceInterface::class)->updateCourierLocation(
             $data->courier_id,
@@ -84,8 +84,8 @@ class TrackingService implements TrackingServiceInterface
         );
 
         $timestamp = $data->recorded_at ?? now()->toIso8601String();
-        $this->tracking->createPosition($delivery->id, $data->latitude, $data->longitude, $timestamp);
-        $route = $this->trackingRoute($delivery, null, $data->latitude, $data->longitude);
+        $this->trackingRepository->createPosition($delivery->id, $data->latitude, $data->longitude, $timestamp);
+        $route = $this->trackingRepositoryRoute($delivery, null, $data->latitude, $data->longitude);
 
         app(OutboxService::class)->enqueue(OutboxAggregateType::DELIVERY, $delivery->id, OutboxEventType::COURIER_POSITION_UPDATED, [
             'eventId' => (string) Str::uuid(),

@@ -15,30 +15,30 @@ use Illuminate\Validation\ValidationException;
 
 class RestaurantChainService implements RestaurantChainServiceInterface
 {
-    private RestaurantChainRepositoryInterface $chains;
+    private RestaurantChainRepositoryInterface $restaurantChainRepository;
 
-    private ChainManagerRepositoryInterface $chainManagers;
+    private ChainManagerRepositoryInterface $chainManagerRepository;
 
-    private UserRepositoryInterface $users;
+    private UserRepositoryInterface $userRepository;
 
     public function __construct(
-        ?RestaurantChainRepositoryInterface $chains = null,
-        ?ChainManagerRepositoryInterface $chainManagers = null,
-        ?UserRepositoryInterface $users = null,
+        ?RestaurantChainRepositoryInterface $restaurantChainRepository = null,
+        ?ChainManagerRepositoryInterface $chainManagerRepository = null,
+        ?UserRepositoryInterface $userRepository = null,
     ) {
-        $this->chains = $chains ?? app(RestaurantChainRepositoryInterface::class);
-        $this->chainManagers = $chainManagers ?? app(ChainManagerRepositoryInterface::class);
-        $this->users = $users ?? app(UserRepositoryInterface::class);
+        $this->restaurantChainRepository = $restaurantChainRepository ?? app(RestaurantChainRepositoryInterface::class);
+        $this->chainManagerRepository = $chainManagerRepository ?? app(ChainManagerRepositoryInterface::class);
+        $this->userRepository = $userRepository ?? app(UserRepositoryInterface::class);
     }
 
     public function getRestaurantChainById(string $id): ?RestaurantChain
     {
-        return $this->chains->findById($id);
+        return $this->restaurantChainRepository->findById($id);
     }
 
     public function searchRestaurantChains(SearchRestaurantChainsDTO $filters)
     {
-        return $this->chains->searchRestaurantChains($filters)->items();
+        return $this->restaurantChainRepository->searchRestaurantChains($filters)->items();
     }
 
     #[Transactional]
@@ -46,13 +46,13 @@ class RestaurantChainService implements RestaurantChainServiceInterface
     {
         $this->validateInput($data->toArray());
 
-        return $this->chains->createRestaurantChain($data);
+        return $this->restaurantChainRepository->createRestaurantChain($data);
     }
 
     #[Transactional]
     public function updateRestaurantChain(string $id, UpdateRestaurantChainDTO $data): ?RestaurantChain
     {
-        $chain = $this->chains->findById($id);
+        $chain = $this->restaurantChainRepository->findById($id);
 
         if (! $chain) {
             return null;
@@ -60,31 +60,31 @@ class RestaurantChainService implements RestaurantChainServiceInterface
 
         $input = array_filter($data->toArray(), static fn ($value) => $value !== null);
         $this->validateInput([...$chain->toArray(), ...$input]);
-        return $this->chains->updateRestaurantChain($id, $data);
+        return $this->restaurantChainRepository->updateRestaurantChain($id, $data);
     }
 
     #[Transactional]
     public function deleteRestaurantChain(string $id): bool
     {
-        return $this->chains->deleteRestaurantChain($id);
+        return $this->restaurantChainRepository->deleteRestaurantChain($id);
     }
 
     #[Transactional]
     public function assignChainManager(string $userId, string $chainId): ChainManager
     {
-        if (! $this->users->exists($userId)) {
+        if (! $this->userRepository->exists($userId)) {
             throw ValidationException::withMessages([
                 'user_id' => ['User does not exist.'],
             ]);
         }
 
-        if (! $this->chains->exists($chainId)) {
+        if (! $this->restaurantChainRepository->exists($chainId)) {
             throw ValidationException::withMessages([
                 'chain_id' => ['Restaurant chain does not exist.'],
             ]);
         }
 
-        return $this->chainManagers->updateOrCreate($userId, $chainId);
+        return $this->chainManagerRepository->updateOrCreate($userId, $chainId);
     }
 
     private function validateInput(array $input): void

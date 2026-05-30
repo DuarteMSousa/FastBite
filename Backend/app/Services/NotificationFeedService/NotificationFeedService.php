@@ -10,19 +10,19 @@ use App\Repositories\UserPushTokenRepository\UserPushTokenRepositoryInterface;
 class NotificationFeedService implements NotificationFeedServiceInterface
 {
     public function __construct(
-        private NotificationRepositoryInterface $notifications,
-        private UserPushTokenRepositoryInterface $pushTokens,
+        private NotificationRepositoryInterface $notificationRepository,
+        private UserPushTokenRepositoryInterface $userPushTokenRepository,
     ) {}
 
     public function getNotificationsByUserId(string $userId, bool $unreadOnly = false, int $limit = 50)
     {
-        return $this->notifications->getByUserId($userId, $unreadOnly, $limit);
+        return $this->notificationRepository->getByUserId($userId, $unreadOnly, $limit);
     }
 
     #[Transactional]
     public function markNotificationAsRead(string $userId, string $notificationId): array
     {
-        $notification = $this->notifications->markAsReadByUserId($userId, $notificationId);
+        $notification = $this->notificationRepository->markAsReadByUserId($userId, $notificationId);
 
         return [
             'ok' => true,
@@ -34,7 +34,7 @@ class NotificationFeedService implements NotificationFeedServiceInterface
     #[Transactional]
     public function markAllNotificationsAsRead(string $userId): array
     {
-        $affected = $this->notifications->markAllAsReadByUserId($userId);
+        $affected = $this->notificationRepository->markAllAsReadByUserId($userId);
 
         return [
             'ok' => true,
@@ -45,7 +45,7 @@ class NotificationFeedService implements NotificationFeedServiceInterface
     #[Transactional]
     public function registerPushToken(string $userId, RegisterPushTokenDTO $data): array
     {
-        $token = $this->pushTokens->upsertByUserId($userId, $data);
+        $token = $this->userPushTokenRepository->upsertByUserId($userId, $data);
 
         return [
             'ok' => true,
@@ -57,7 +57,7 @@ class NotificationFeedService implements NotificationFeedServiceInterface
     #[Transactional]
     public function unregisterPushToken(string $userId, string $token): array
     {
-        $this->pushTokens->deactivateByUserIdAndToken($userId, $token);
+        $this->userPushTokenRepository->deactivateByUserIdAndToken($userId, $token);
 
         return ['ok' => true];
     }

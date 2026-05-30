@@ -14,34 +14,34 @@ use Illuminate\Validation\ValidationException;
 
 class RestaurantProductService implements RestaurantProductServiceInterface
 {
-    private RestaurantProductRepositoryInterface $restaurantProducts;
+    private RestaurantProductRepositoryInterface $restaurantProductRepository;
 
-    private RestaurantRepositoryInterface $restaurants;
+    private RestaurantRepositoryInterface $restaurantRepository;
 
-    private ProductRepositoryInterface $products;
+    private ProductRepositoryInterface $productRepository;
 
-    private CategoryRepositoryInterface $categories;
+    private CategoryRepositoryInterface $categoryRepository;
 
     public function __construct(
-        ?RestaurantProductRepositoryInterface $restaurantProducts = null,
-        ?RestaurantRepositoryInterface $restaurants = null,
-        ?ProductRepositoryInterface $products = null,
-        ?CategoryRepositoryInterface $categories = null,
+        ?RestaurantProductRepositoryInterface $restaurantProductRepository = null,
+        ?RestaurantRepositoryInterface $restaurantRepository = null,
+        ?ProductRepositoryInterface $productRepository = null,
+        ?CategoryRepositoryInterface $categoryRepository = null,
     ) {
-        $this->restaurantProducts = $restaurantProducts ?? app(RestaurantProductRepositoryInterface::class);
-        $this->restaurants = $restaurants ?? app(RestaurantRepositoryInterface::class);
-        $this->products = $products ?? app(ProductRepositoryInterface::class);
-        $this->categories = $categories ?? app(CategoryRepositoryInterface::class);
+        $this->restaurantProductRepository = $restaurantProductRepository ?? app(RestaurantProductRepositoryInterface::class);
+        $this->restaurantRepository = $restaurantRepository ?? app(RestaurantRepositoryInterface::class);
+        $this->productRepository = $productRepository ?? app(ProductRepositoryInterface::class);
+        $this->categoryRepository = $categoryRepository ?? app(CategoryRepositoryInterface::class);
     }
 
     public function getRestaurantProductById(string $id): ?RestaurantProduct
     {
-        return $this->restaurantProducts->findById($id);
+        return $this->restaurantProductRepository->findById($id);
     }
 
     public function getRestaurantProductsByRestaurantId(string $restaurantId)
     {
-        return $this->restaurantProducts->findByRestaurantId($restaurantId);
+        return $this->restaurantProductRepository->findByRestaurantId($restaurantId);
     }
 
     public function getRestaurantCategoriesByRestaurantId(string $restaurantId)
@@ -51,14 +51,14 @@ class RestaurantProductService implements RestaurantProductServiceInterface
 
     public function getRestaurantMenu(string $restaurantId): array
     {
-        $restaurant = $this->restaurants->findByIdOrFail($restaurantId);
-        $products = $this->getRestaurantProductsByRestaurantId($restaurantId);
-        $categories = $this->categories->findByRestaurantId($restaurantId);
+        $restaurant = $this->restaurantRepository->findByIdOrFail($restaurantId);
+        $productRepository = $this->getRestaurantProductsByRestaurantId($restaurantId);
+        $categoryRepository = $this->categoryRepository->findByRestaurantId($restaurantId);
 
         return [
             'restaurant' => $restaurant,
-            'categories' => $categories,
-            'products' => $products,
+            'categories' => $categoryRepository,
+            'products' => $productRepository,
         ];
     }
 
@@ -73,13 +73,13 @@ class RestaurantProductService implements RestaurantProductServiceInterface
     {
         $this->validateInput($data->toArray());
 
-        return $this->restaurantProducts->createRestaurantProduct($data);
+        return $this->restaurantProductRepository->createRestaurantProduct($data);
     }
 
     #[Transactional]
     public function updateRestaurantProduct(string $id, UpdateRestaurantProductDTO $data): ?RestaurantProduct
     {
-        $restaurantProduct = $this->restaurantProducts->findById($id);
+        $restaurantProduct = $this->restaurantProductRepository->findById($id);
 
         if (! $restaurantProduct) {
             return null;
@@ -87,18 +87,18 @@ class RestaurantProductService implements RestaurantProductServiceInterface
 
         $input = array_filter($data->toArray(), static fn ($value) => $value !== null);
         $this->validateInput([...$restaurantProduct->toArray(), ...$input]);
-        return $this->restaurantProducts->updateRestaurantProduct($id, $data);
+        return $this->restaurantProductRepository->updateRestaurantProduct($id, $data);
     }
 
     private function validateInput(array $input): void
     {
         $errors = [];
 
-        if (empty($input['restaurant_id']) || ! $this->restaurants->exists($input['restaurant_id'])) {
+        if (empty($input['restaurant_id']) || ! $this->restaurantRepository->exists($input['restaurant_id'])) {
             $errors['restaurant_id'][] = 'Restaurant does not exist.';
         }
 
-        if (empty($input['product_id']) || ! $this->products->exists($input['product_id'])) {
+        if (empty($input['product_id']) || ! $this->productRepository->exists($input['product_id'])) {
             $errors['product_id'][] = 'Product does not exist.';
         }
 

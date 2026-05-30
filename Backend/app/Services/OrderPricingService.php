@@ -27,16 +27,16 @@ class OrderPricingService
 
     private const DELIVERY_MAX_FEE = 6.00;
 
-    private PromotionRepositoryInterface $promotions;
+    private PromotionRepositoryInterface $promotionRepository;
 
-    private CouponRepositoryInterface $coupons;
+    private CouponRepositoryInterface $couponRepository;
 
     public function __construct(
-        ?PromotionRepositoryInterface $promotions = null,
-        ?CouponRepositoryInterface $coupons = null,
+        ?PromotionRepositoryInterface $promotionRepository = null,
+        ?CouponRepositoryInterface $couponRepository = null,
     ) {
-        $this->promotions = $promotions ?? app(PromotionRepositoryInterface::class);
-        $this->coupons = $coupons ?? app(CouponRepositoryInterface::class);
+        $this->promotionRepository = $promotionRepository ?? app(PromotionRepositoryInterface::class);
+        $this->couponRepository = $couponRepository ?? app(CouponRepositoryInterface::class);
     }
 
     /**
@@ -114,7 +114,7 @@ class OrderPricingService
 
     private function activePromotions(string $chainId)
     {
-        return $this->promotions->getActiveByChainId($chainId);
+        return $this->promotionRepository->getActiveByChainId($chainId);
     }
 
     /**
@@ -162,7 +162,7 @@ class OrderPricingService
 
     private function validCoupon(string $chainId, string $code, float $subtotal): Coupon
     {
-        $coupon = $this->coupons->findByChainIdAndCode($chainId, $code);
+        $coupon = $this->couponRepository->findByChainIdAndCode($chainId, $code);
 
         if (! $coupon) {
             throw ValidationException::withMessages(['coupon_code' => 'Coupon not found.']);

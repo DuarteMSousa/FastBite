@@ -17,39 +17,39 @@ use Illuminate\Validation\ValidationException;
 
 class CouponService implements CouponServiceInterface
 {
-    private CouponRepositoryInterface $coupons;
+    private CouponRepositoryInterface $couponRepository;
 
-    private RestaurantChainRepositoryInterface $chains;
+    private RestaurantChainRepositoryInterface $restaurantChainRepository;
 
-    private CategoryRepositoryInterface $categories;
+    private CategoryRepositoryInterface $categoryRepository;
 
-    private ProductRepositoryInterface $products;
+    private ProductRepositoryInterface $productRepository;
 
     public function __construct(
-        ?CouponRepositoryInterface $coupons = null,
-        ?RestaurantChainRepositoryInterface $chains = null,
-        ?CategoryRepositoryInterface $categories = null,
-        ?ProductRepositoryInterface $products = null,
+        ?CouponRepositoryInterface $couponRepository = null,
+        ?RestaurantChainRepositoryInterface $restaurantChainRepository = null,
+        ?CategoryRepositoryInterface $categoryRepository = null,
+        ?ProductRepositoryInterface $productRepository = null,
     ) {
-        $this->coupons = $coupons ?? app(CouponRepositoryInterface::class);
-        $this->chains = $chains ?? app(RestaurantChainRepositoryInterface::class);
-        $this->categories = $categories ?? app(CategoryRepositoryInterface::class);
-        $this->products = $products ?? app(ProductRepositoryInterface::class);
+        $this->couponRepository = $couponRepository ?? app(CouponRepositoryInterface::class);
+        $this->restaurantChainRepository = $restaurantChainRepository ?? app(RestaurantChainRepositoryInterface::class);
+        $this->categoryRepository = $categoryRepository ?? app(CategoryRepositoryInterface::class);
+        $this->productRepository = $productRepository ?? app(ProductRepositoryInterface::class);
     }
 
     public function getCouponsByChainId(string $chainId)
     {
-        return $this->coupons->findByChainId($chainId);
+        return $this->couponRepository->findByChainId($chainId);
     }
 
     public function getCouponByCode(string $code): ?Coupon
     {
-        return $this->coupons->findByCode($code);
+        return $this->couponRepository->findByCode($code);
     }
 
     public function getCouponById(string $id): ?Coupon
     {
-        return $this->coupons->findById($id);
+        return $this->couponRepository->findById($id);
     }
 
     #[Transactional]
@@ -58,16 +58,16 @@ class CouponService implements CouponServiceInterface
         $items = $data->items?->toArray() ?? [];
         $this->validateCoupon($data->chain_id, $data->target, $data->discount, $items, $data->expiry_date);
 
-        $coupon = $this->coupons->createCoupon($data);
-        $this->coupons->replaceItems($coupon->id, $items);
+        $coupon = $this->couponRepository->createCoupon($data);
+        $this->couponRepository->replaceItems($coupon->id, $items);
 
-        return $this->coupons->findById($coupon->id);
+        return $this->couponRepository->findById($coupon->id);
     }
 
     #[Transactional]
     public function updateCoupon(string $id, UpdateCouponDTO $data): ?Coupon
     {
-        $coupon = $this->coupons->findById($id);
+        $coupon = $this->couponRepository->findById($id);
 
         if (! $coupon) {
             return null;
@@ -92,28 +92,28 @@ class CouponService implements CouponServiceInterface
             $data->expiry_date ?? $coupon->expiry_date,
         );
 
-        $this->coupons->updateCoupon($id, $data);
+        $this->couponRepository->updateCoupon($id, $data);
 
         if (in_array($target, [DiscountTarget::ORDER, DiscountTarget::DELIVERY], true)) {
-            $this->coupons->replaceItems($id, []);
+            $this->couponRepository->replaceItems($id, []);
         } elseif ($items !== null) {
-            $this->coupons->replaceItems($id, $items);
+            $this->couponRepository->replaceItems($id, $items);
         }
 
-        return $this->coupons->findById($id);
+        return $this->couponRepository->findById($id);
     }
 
     #[Transactional]
     public function deleteCoupon(string $id): bool
     {
-        return $this->coupons->deleteCoupon($id);
+        return $this->couponRepository->deleteCoupon($id);
     }
 
     private function validateCoupon(string $chainId, DiscountTarget $target, ?float $discount, array $items, mixed $expiryDate): void
     {
         $errors = [];
 
-        if (! $this->chains->exists($chainId)) {
+        if (! $this->restaurantChainRepository->exists($chainId)) {
             $errors['chain_id'][] = 'Restaurant chain does not exist.';
         }
 
@@ -152,12 +152,12 @@ class CouponService implements CouponServiceInterface
                 continue;
             }
 
-            if ($target === DiscountTarget::CATEGORY && ! $this->categories->belongsToChain($itemId, $chainId)) {
+            if ($target === DiscountTarget::CATEGORY && ! $this->categoryRepository->belongsToChain($itemId, $chainId)) {
                 $errors["items.{$index}.item_id"][] = 'Category does not belong to coupon chain.';
             }
 
             if ($target === DiscountTarget::PRODUCT) {
-                if (! $this->products->belongsToChain($itemId, $chainId)) {
+                if (! $this->productRepository->belongsToChain($itemId, $chainId)) {
                     $errors["items.{$index}.item_id"][] = 'Product does not belong to coupon chain.';
                 }
             }

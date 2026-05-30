@@ -14,39 +14,39 @@ use Illuminate\Validation\ValidationException;
 
 class CourierService implements CourierServiceInterface
 {
-    private CourierRepositoryInterface $couriers;
+    private CourierRepositoryInterface $courierRepository;
 
-    private UserRepositoryInterface $users;
+    private UserRepositoryInterface $userRepository;
 
     public function __construct(
-        ?CourierRepositoryInterface $couriers = null,
-        ?UserRepositoryInterface $users = null,
+        ?CourierRepositoryInterface $courierRepository = null,
+        ?UserRepositoryInterface $userRepository = null,
     ) {
-        $this->couriers = $couriers ?? app(CourierRepositoryInterface::class);
-        $this->users = $users ?? app(UserRepositoryInterface::class);
+        $this->courierRepository = $courierRepository ?? app(CourierRepositoryInterface::class);
+        $this->userRepository = $userRepository ?? app(UserRepositoryInterface::class);
     }
 
     public function getCourierByUserId(string $userId): ?Courier
     {
-        return $this->couriers->getByUserIdWithUser($userId);
+        return $this->courierRepository->getByUserIdWithUser($userId);
     }
 
     public function countAvailableCouriers(): int
     {
-        return $this->couriers->countAvailable();
+        return $this->courierRepository->countAvailable();
     }
 
     #[Transactional]
     public function ensureCourierProfile(string $userId): Courier
     {
-        if (! $this->users->exists($userId)) {
+        if (! $this->userRepository->exists($userId)) {
             throw ValidationException::withMessages([
                 'user_id' => ['User does not exist.'],
             ]);
         }
 
-        $courier = $this->couriers->findByUserId($userId)
-            ?? $this->couriers->createCourier(new CreateCourierDTO(user_id: $userId));
+        $courier = $this->courierRepository->findByUserId($userId)
+            ?? $this->courierRepository->createCourier(new CreateCourierDTO(user_id: $userId));
 
         return $courier->load('user');
     }
@@ -54,7 +54,7 @@ class CourierService implements CourierServiceInterface
     #[Transactional]
     public function updateCourierStatus(string $userId, string $status): Courier
     {
-        $courier = $this->couriers->getByUserIdOrFail($userId);
+        $courier = $this->courierRepository->getByUserIdOrFail($userId);
 
         if (! CourierStatus::tryFrom($status)) {
             throw ValidationException::withMessages([
@@ -68,7 +68,7 @@ class CourierService implements CourierServiceInterface
             ]);
         }
 
-        $this->couriers->updateCourier($userId, new UpdateCourierDTO(status: $status));
+        $this->courierRepository->updateCourier($userId, new UpdateCourierDTO(status: $status));
 
         if ($status === CourierStatus::AVAILABLE->value) {
             app(DeliveryServiceInterface::class)->dispatchPendingCourierAssignments();
@@ -79,13 +79,13 @@ class CourierService implements CourierServiceInterface
 
     private function courierHasActiveDelivery(string $courierId): bool
     {
-        return $this->couriers->hasActiveDelivery($courierId);
+        return $this->courierRepository->hasActiveDelivery($courierId);
     }
 
     #[Transactional]
     public function updateCourierLocation(string $courierId, float $latitude, float $longitude): Courier
     {
-        $courier = $this->couriers->updateCourier($courierId, new UpdateCourierDTO(
+        $courier = $this->courierRepository->updateCourier($courierId, new UpdateCourierDTO(
             latitude: $latitude,
             longitude: $longitude,
             lastLocationUpdate: now(),

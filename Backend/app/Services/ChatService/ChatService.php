@@ -21,36 +21,36 @@ use Illuminate\Validation\ValidationException;
 
 class ChatService implements ChatServiceInterface
 {
-    private ChatRepositoryInterface $chats;
+    private ChatRepositoryInterface $chatRepository;
 
-    private UserRepositoryInterface $users;
+    private UserRepositoryInterface $userRepository;
 
     public function __construct(
-        ?ChatRepositoryInterface $chats = null,
-        ?UserRepositoryInterface $users = null,
+        ?ChatRepositoryInterface $chatRepository = null,
+        ?UserRepositoryInterface $userRepository = null,
     ) {
-        $this->chats = $chats ?? app(ChatRepositoryInterface::class);
-        $this->users = $users ?? app(UserRepositoryInterface::class);
+        $this->chatRepository = $chatRepository ?? app(ChatRepositoryInterface::class);
+        $this->userRepository = $userRepository ?? app(UserRepositoryInterface::class);
     }
 
     public function getChatsByOrderId(string $orderId)
     {
-        return $this->chats->findByOrderId($orderId);
+        return $this->chatRepository->findByOrderId($orderId);
     }
 
     public function getChatById(string $id): ?Chat
     {
-        return $this->chats->findById($id);
+        return $this->chatRepository->findById($id);
     }
 
     public function getMessagesByChatId(string $chatId, int $page, int $perPage)
     {
-        return $this->chats->findMessages($chatId, $page, $perPage);
+        return $this->chatRepository->findMessages($chatId, $page, $perPage);
     }
 
     public function getParticipantsByChatId(string $chatId)
     {
-        return $this->chats->findParticipants($chatId);
+        return $this->chatRepository->findParticipants($chatId);
     }
 
     #[Transactional]
@@ -59,7 +59,7 @@ class ChatService implements ChatServiceInterface
         $participantUserIds = $this->resolveOrderChatParticipants($data);
 
         foreach ($participantUserIds as $userId) {
-            $this->users->findById($userId) ?? throw ValidationException::withMessages([
+            $this->userRepository->findById($userId) ?? throw ValidationException::withMessages([
                 'participant_user_ids' => 'One or more users do not exist.',
             ]);
         }
@@ -70,7 +70,7 @@ class ChatService implements ChatServiceInterface
             ]);
         }
 
-        return $this->chats->createOrderChat(new CreateOrderChatDTO(
+        return $this->chatRepository->createOrderChat(new CreateOrderChatDTO(
             order_id: $data->order_id,
             type: $data->type,
             participant_user_ids: $participantUserIds,
@@ -80,7 +80,7 @@ class ChatService implements ChatServiceInterface
     #[Transactional]
     public function sendChatMessage(string $senderUserId, SendMessageDTO $data): Message
     {
-        $chat = $this->chats->findByIdOrFail($data->chat_id);
+        $chat = $this->chatRepository->findByIdOrFail($data->chat_id);
 
         if ($chat->closed_at !== null) {
             throw ValidationException::withMessages([
@@ -94,10 +94,10 @@ class ChatService implements ChatServiceInterface
             ]);
         }
 
-        $participant = $this->chats->findParticipant($data->chat_id, $senderUserId);
+        $participant = $this->chatRepository->findParticipant($data->chat_id, $senderUserId);
 
         if (! $participant) {
-            $sender = $this->users->findById($senderUserId);
+            $sender = $this->userRepository->findById($senderUserId);
 
             if (! $sender) {
                 throw ValidationException::withMessages([
@@ -111,10 +111,10 @@ class ChatService implements ChatServiceInterface
                 ]);
             }
 
-            $participant = $this->chats->addParticipant($data->chat_id, $sender->id);
+            $participant = $this->chatRepository->addParticipant($data->chat_id, $sender->id);
         }
 
-        $message = $this->chats->createMessage($data->chat_id, $participant->id, $data->content);
+        $message = $this->chatRepository->createMessage($data->chat_id, $participant->id, $data->content);
 
         app(OutboxService::class)->enqueue(OutboxAggregateType::CHAT, $chat->id, OutboxEventType::CHAT_MESSAGE_SENT, [
             'event_id' => (string) Str::uuid(),

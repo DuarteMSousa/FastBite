@@ -13,14 +13,14 @@ class ProductService implements ProductServiceInterface
 {
     private ProductRepositoryInterface $productRepository;
 
-    private CategoryRepositoryInterface $categories;
+    private CategoryRepositoryInterface $categoryRepository;
 
     public function __construct(
         ?ProductRepositoryInterface $productRepository = null,
-        ?CategoryRepositoryInterface $categories = null,
+        ?CategoryRepositoryInterface $categoryRepository = null,
     ) {
         $this->productRepository = $productRepository ?? app(ProductRepositoryInterface::class);
-        $this->categories = $categories ?? app(CategoryRepositoryInterface::class);
+        $this->categoryRepository = $categoryRepository ?? app(CategoryRepositoryInterface::class);
     }
 
     public function getProductById(string $id)
@@ -64,7 +64,7 @@ class ProductService implements ProductServiceInterface
     {
         $errors = [];
 
-        if (! $this->categories->exists($data->category_id)) {
+        if (! $this->categoryRepository->exists($data->category_id)) {
             $errors['category_id'][] = 'Category does not exist.';
         }
 

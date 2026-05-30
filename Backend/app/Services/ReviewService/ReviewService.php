@@ -21,31 +21,31 @@ class ReviewService implements ReviewServiceInterface
     private const RATING_LOW_THRESHOLD = 3.0;
     private const RATING_HIGH_THRESHOLD = 4.5;
 
-    private ReviewRepositoryInterface $reviews;
-    private RestaurantRepositoryInterface $restaurants;
+    private ReviewRepositoryInterface $reviewRepository;
+    private RestaurantRepositoryInterface $restaurantRepository;
 
     public function __construct(
-        ?ReviewRepositoryInterface $reviews = null,
-        ?RestaurantRepositoryInterface $restaurants = null,
+        ?ReviewRepositoryInterface $reviewRepository = null,
+        ?RestaurantRepositoryInterface $restaurantRepository = null,
     ) {
-        $this->reviews = $reviews ?? app(ReviewRepositoryInterface::class);
-        $this->restaurants = $restaurants ?? app(RestaurantRepositoryInterface::class);
+        $this->reviewRepository = $reviewRepository ?? app(ReviewRepositoryInterface::class);
+        $this->restaurantRepository = $restaurantRepository ?? app(RestaurantRepositoryInterface::class);
     }
 
     public function getReviewsByUserId(string $userId, int $page, int $perPage)
     {
-        return $this->reviews->findByUserId($userId, $page, $perPage)->items();
+        return $this->reviewRepository->findByUserId($userId, $page, $perPage)->items();
     }
 
     public function getReviewsByTarget(string $targetType, string $targetId, int $page, int $perPage)
     {
-        return $this->reviews->findByTargetEntity($targetId, $targetType, $page, $perPage)->items();
+        return $this->reviewRepository->findByTargetEntity($targetId, $targetType, $page, $perPage)->items();
     }
 
     #[Transactional]
     public function updateReview(string $userId, string $reviewId, UpdateReviewDTO $data): ?Review
     {
-        $review = $this->reviews->findByUserIdAndId($userId, $reviewId);
+        $review = $this->reviewRepository->findByUserIdAndId($userId, $reviewId);
 
         if (! $review) {
             return null;
@@ -53,13 +53,13 @@ class ReviewService implements ReviewServiceInterface
 
         $input = array_filter($data->toArray(), static fn ($value) => $value !== null);
         $this->validateInput([...$review->toArray(), ...$input]);
-        return $this->reviews->updateReview($reviewId, $data);
+        return $this->reviewRepository->updateReview($reviewId, $data);
     }
 
     #[Transactional]
     public function deleteReview(string $userId, string $reviewId): bool
     {
-        return $this->reviews->deleteReviewByUserId($userId, $reviewId);
+        return $this->reviewRepository->deleteReviewByUserId($userId, $reviewId);
     }
 
     #[Transactional]
@@ -69,7 +69,7 @@ class ReviewService implements ReviewServiceInterface
         $this->assertUserCanReviewTarget($data);
         $this->assertNotDuplicate($data);
 
-        $review = $this->reviews->createReview($data);
+        $review = $this->reviewRepository->createReview($data);
 
         if ($data->target_type === ReviewTargetType::RESTAURANT) {
             $this->updateRestaurantRatingAndCheckThreshold($data->target_id, $data->rating);
@@ -80,7 +80,7 @@ class ReviewService implements ReviewServiceInterface
 
     private function assertUserCanReviewTarget(CreateReviewDTO $data): void
     {
-        if (! $this->reviews->userCanReviewTarget($data->user_id, $data->target_type->value, $data->target_id)) {
+        if (! $this->reviewRepository->userCanReviewTarget($data->user_id, $data->target_type->value, $data->target_id)) {
             throw ValidationException::withMessages([
                 'target_id' => 'You can only review after a delivered order with this target.',
             ]);
@@ -89,7 +89,7 @@ class ReviewService implements ReviewServiceInterface
 
     private function assertNotDuplicate(CreateReviewDTO $data): void
     {
-        if ($this->reviews->existsForTarget($data->user_id, $data->target_type->value, $data->target_id)) {
+        if ($this->reviewRepository->existsForTarget($data->user_id, $data->target_type->value, $data->target_id)) {
             throw ValidationException::withMessages([
                 'target_id' => 'You have already reviewed this target.',
             ]);
@@ -130,7 +130,7 @@ class ReviewService implements ReviewServiceInterface
 
     private function updateRestaurantRatingAndCheckThreshold(string $restaurantId, int $newRating): void
     {
-        $restaurant = $this->restaurants->findByIdOrFail($restaurantId);
+        $restaurant = $this->restaurantRepository->findByIdOrFail($restaurantId);
 
         $previousRatingCount = (int) $restaurant->rating_count;
         $previousRatingSum = (float) $restaurant->rating_sum;
@@ -141,7 +141,7 @@ class ReviewService implements ReviewServiceInterface
         $newRatingSum = $previousRatingSum + $newRating;
         $newRatingCount = $previousRatingCount + 1;
 
-        $this->restaurants->updateRating($restaurantId, $newRatingSum, $newRatingCount);
+        $this->restaurantRepository->updateRating($restaurantId, $newRatingSum, $newRatingCount);
 
         $newAverage = $newRatingSum / $newRatingCount;
 

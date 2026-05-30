@@ -19,32 +19,32 @@ use Illuminate\Support\Str;
 
 class PaymentService implements PaymentServiceInterface
 {
-    public function __construct(private PaymentRepositoryInterface $payments) {}
+    public function __construct(private PaymentRepositoryInterface $paymentRepository) {}
 
     public function getPaymentById(string $id): ?Payment
     {
-        return $this->payments->getById($id);
+        return $this->paymentRepository->getById($id);
     }
 
     public function getPaymentByOrderId(string $orderId): ?Payment
     {
-        return $this->payments->getByOrderId($orderId);
+        return $this->paymentRepository->getByOrderId($orderId);
     }
 
     public function getPaymentEvents(string $paymentId)
     {
-        return $this->payments->getEvents($paymentId);
+        return $this->paymentRepository->getEvents($paymentId);
     }
 
     #[Transactional]
     public function createPayment(CreatePaymentDTO $data): Payment
     {
-        $payment = $this->payments->createPayment($data);
+        $payment = $this->paymentRepository->createPayment($data);
 
         $payment->load('order');
         $this->recordEvent($payment, PaymentEventType::PAYMENT_CREATED, []);
 
-        return $this->payments->reload($payment);
+        return $this->paymentRepository->reload($payment);
     }
 
     #[Transactional]
@@ -91,13 +91,13 @@ class PaymentService implements PaymentServiceInterface
 
     private function transitionPaymentStatus(string $paymentId, PaymentStatus $status, ?PaymentEventType $eventType, array $payload, bool $cascadeToOrder = true): Payment
     {
-        $payment = $this->payments->getByIdOrFail($paymentId, lock: true);
+        $payment = $this->paymentRepository->getByIdOrFail($paymentId, lock: true);
         $payment->load('order');
         PaymentStateFactory::from($payment->status)->transition($payment, $status, [
             'transaction_id' => $payload['transaction_id'] ?? $payment->transaction_id,
             'paid_at' => $payload['paid_at'] ?? $payment->paid_at,
         ]);
-        $this->payments->updatePayment($payment, new UpdatePaymentDTO(
+        $this->paymentRepository->updatePayment($payment, new UpdatePaymentDTO(
             status: $status,
             transactionId: $payload['transaction_id'] ?? $payment->transaction_id,
             paidAt: $payload['paid_at'] ?? $payment->paid_at,
@@ -119,7 +119,7 @@ class PaymentService implements PaymentServiceInterface
             );
         }
 
-        return $this->payments->reload($payment);
+        return $this->paymentRepository->reload($payment);
     }
 
     private function recordEvent(Payment $payment, PaymentEventType $eventType, array $payload): void
@@ -137,7 +137,7 @@ class PaymentService implements PaymentServiceInterface
             'data' => $payload,
         ];
 
-        $this->payments->createEvent($payment, new CreatePaymentEventDTO(
+        $this->paymentRepository->createEvent($payment, new CreatePaymentEventDTO(
             eventType: $eventType,
             timestamp: $occurredAt,
             payload: $eventPayload,

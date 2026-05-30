@@ -11,16 +11,16 @@ use Illuminate\Validation\ValidationException;
 
 class UserAddressService implements UserAddressServiceInterface
 {
-    private UserAddressRepositoryInterface $addresses;
+    private UserAddressRepositoryInterface $userAddressRepository;
 
-    public function __construct(?UserAddressRepositoryInterface $addresses = null)
+    public function __construct(?UserAddressRepositoryInterface $userAddressRepository = null)
     {
-        $this->addresses = $addresses ?? app(UserAddressRepositoryInterface::class);
+        $this->userAddressRepository = $userAddressRepository ?? app(UserAddressRepositoryInterface::class);
     }
 
     public function getUserAddressesByUserId(string $userId)
     {
-        return $this->addresses->findByUserId($userId);
+        return $this->userAddressRepository->findByUserId($userId);
     }
 
     #[Transactional]
@@ -32,13 +32,13 @@ class UserAddressService implements UserAddressServiceInterface
 
         $this->createPayload($data);
 
-        return $this->addresses->createForUser($userId, $data);
+        return $this->userAddressRepository->createForUser($userId, $data);
     }
 
     #[Transactional]
     public function updateUserAddress(string $userId, string $addressId, UpdateUserAddressDTO $data): ?UserAddress
     {
-        $address = $this->addresses->findByUserIdAndId($userId, $addressId);
+        $address = $this->userAddressRepository->findByUserIdAndId($userId, $addressId);
 
         if (! $address) {
             return null;
@@ -49,31 +49,31 @@ class UserAddressService implements UserAddressServiceInterface
         }
 
         $this->validateInput([...$address->toArray(), ...array_filter($data->toArray(), static fn ($value) => $value !== null)]);
-        return $this->addresses->updateForUser($userId, $addressId, $data);
+        return $this->userAddressRepository->updateForUser($userId, $addressId, $data);
     }
 
     #[Transactional]
     public function deleteUserAddress(string $userId, string $addressId): bool
     {
-        return $this->addresses->deleteForUser($userId, $addressId);
+        return $this->userAddressRepository->deleteForUser($userId, $addressId);
     }
 
     #[Transactional]
     public function setDefaultUserAddress(string $userId, string $addressId): ?UserAddress
     {
-        $address = $this->addresses->findByUserIdAndId($userId, $addressId);
+        $address = $this->userAddressRepository->findByUserIdAndId($userId, $addressId);
 
         if (! $address) {
             return null;
         }
 
         $this->clearDefault($userId);
-        return $this->addresses->setDefault($userId, $addressId);
+        return $this->userAddressRepository->setDefault($userId, $addressId);
     }
 
     private function clearDefault(string $userId): void
     {
-        $this->addresses->clearDefault($userId);
+        $this->userAddressRepository->clearDefault($userId);
     }
 
     private function createPayload(CreateUserAddressDTO $data): array

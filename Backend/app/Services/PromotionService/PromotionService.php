@@ -15,19 +15,19 @@ use Illuminate\Validation\ValidationException;
 class PromotionService implements PromotionServiceInterface
 {
     public function __construct(
-        private PromotionRepositoryInterface $promotions,
-        private CategoryRepositoryInterface $categories,
-        private ProductRepositoryInterface $products,
+        private PromotionRepositoryInterface $promotionRepository,
+        private CategoryRepositoryInterface $categoryRepository,
+        private ProductRepositoryInterface $productRepository,
     ) {}
 
     public function getPromotionsByChainId(string $chainId)
     {
-        return $this->promotions->getByChainId($chainId);
+        return $this->promotionRepository->getByChainId($chainId);
     }
 
     public function getPromotionById(string $id): ?Promotion
     {
-        return $this->promotions->getById($id);
+        return $this->promotionRepository->getById($id);
     }
 
     #[Transactional]
@@ -36,17 +36,17 @@ class PromotionService implements PromotionServiceInterface
         $items = $data->items?->toArray() ?? [];
         $this->validatePromotion($data->chain_id, $data->target, $data->discount, $data->start_date, $data->end_date, $items);
 
-        $promotion = $this->promotions->createPromotion($data);
+        $promotion = $this->promotionRepository->createPromotion($data);
 
-        $this->promotions->replaceItems($promotion->id, $items);
+        $this->promotionRepository->replaceItems($promotion->id, $items);
 
-        return $this->promotions->getByIdOrFail($promotion->id);
+        return $this->promotionRepository->getByIdOrFail($promotion->id);
     }
 
     #[Transactional]
     public function updatePromotion(string $promotionId, UpdatePromotionDTO $data): Promotion
     {
-        $promotion = $this->promotions->getByIdOrFail($promotionId);
+        $promotion = $this->promotionRepository->getByIdOrFail($promotionId);
         $startDate = $data->start_date ?? $promotion->start_date;
         $endDate = $data->end_date ?? $promotion->end_date;
         $target = $data->target ?? DiscountTarget::from($promotion->target);
@@ -63,21 +63,21 @@ class PromotionService implements PromotionServiceInterface
 
         $this->validatePromotion($promotion->chain_id, $target, $discount, $startDate, $endDate, $itemsForValidation);
 
-        $this->promotions->updatePromotion($promotion->id, $data);
+        $this->promotionRepository->updatePromotion($promotion->id, $data);
 
         if (in_array($target, [DiscountTarget::ORDER, DiscountTarget::DELIVERY], true)) {
-            $this->promotions->replaceItems($promotion->id, []);
+            $this->promotionRepository->replaceItems($promotion->id, []);
         } elseif ($items !== null) {
-            $this->promotions->replaceItems($promotion->id, $items);
+            $this->promotionRepository->replaceItems($promotion->id, $items);
         }
 
-        return $this->promotions->getByIdOrFail($promotion->id);
+        return $this->promotionRepository->getByIdOrFail($promotion->id);
     }
 
     #[Transactional]
     public function deletePromotion(string $id): bool
     {
-        return (bool) $this->promotions->deletePromotion($id);
+        return (bool) $this->promotionRepository->deletePromotion($id);
     }
 
     private function validatePromotion(string $chainId, DiscountTarget $target, ?float $discount, $startDate, $endDate, array $items): void
@@ -109,12 +109,12 @@ class PromotionService implements PromotionServiceInterface
                 continue;
             }
 
-            if ($target === DiscountTarget::CATEGORY && ! $this->categories->belongsToChain($itemId, $chainId)) {
+            if ($target === DiscountTarget::CATEGORY && ! $this->categoryRepository->belongsToChain($itemId, $chainId)) {
                 $errors["items.{$index}.item_id"][] = 'Category does not belong to promotion chain.';
             }
 
             if ($target === DiscountTarget::PRODUCT) {
-                $belongsToChain = $this->products->belongsToChain($itemId, $chainId);
+                $belongsToChain = $this->productRepository->belongsToChain($itemId, $chainId);
 
                 if (! $belongsToChain) {
                     $errors["items.{$index}.item_id"][] = 'Product does not belong to promotion chain.';

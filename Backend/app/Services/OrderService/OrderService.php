@@ -51,54 +51,54 @@ class OrderService implements OrderServiceInterface
         'delivery.events',
     ];
 
-    private OrderRepositoryInterface $orders;
+    private OrderRepositoryInterface $orderRepository;
 
-    private CartRepositoryInterface $carts;
+    private CartRepositoryInterface $cartRepository;
 
-    private PaymentRepositoryInterface $payments;
+    private PaymentRepositoryInterface $paymentRepository;
 
-    private UserAddressRepositoryInterface $addresses;
+    private UserAddressRepositoryInterface $userAddressRepository;
 
     public function __construct(
-        ?OrderRepositoryInterface $orders = null,
-        ?CartRepositoryInterface $carts = null,
-        ?PaymentRepositoryInterface $payments = null,
-        ?UserAddressRepositoryInterface $addresses = null,
+        ?OrderRepositoryInterface $orderRepository = null,
+        ?CartRepositoryInterface $cartRepository = null,
+        ?PaymentRepositoryInterface $paymentRepository = null,
+        ?UserAddressRepositoryInterface $userAddressRepository = null,
     ) {
-        $this->orders = $orders ?? app(OrderRepositoryInterface::class);
-        $this->carts = $carts ?? app(CartRepositoryInterface::class);
-        $this->payments = $payments ?? app(PaymentRepositoryInterface::class);
-        $this->addresses = $addresses ?? app(UserAddressRepositoryInterface::class);
+        $this->orderRepository = $orderRepository ?? app(OrderRepositoryInterface::class);
+        $this->cartRepository = $cartRepository ?? app(CartRepositoryInterface::class);
+        $this->paymentRepository = $paymentRepository ?? app(PaymentRepositoryInterface::class);
+        $this->userAddressRepository = $userAddressRepository ?? app(UserAddressRepositoryInterface::class);
     }
 
     public function getClientOrders(string $userId, ?array $statuses = null, int $page = 1, int $perPage = 20)
     {
-        return $this->orders->findByUserIdFiltered($userId, $statuses, $page, $perPage)->items();
+        return $this->orderRepository->findByUserIdFiltered($userId, $statuses, $page, $perPage)->items();
     }
 
     public function getClientOrder(string $userId, string $orderId): ?Order
     {
-        return $this->orders->findByUserIdAndId($userId, $orderId);
+        return $this->orderRepository->findByUserIdAndId($userId, $orderId);
     }
 
     public function getRestaurantOrders(string $restaurantId, ?array $statuses = null, int $page = 1, int $perPage = 20)
     {
-        return $this->orders->findByRestaurantIdFiltered($restaurantId, $statuses, $page, $perPage)->items();
+        return $this->orderRepository->findByRestaurantIdFiltered($restaurantId, $statuses, $page, $perPage)->items();
     }
 
     public function getActiveRestaurantOrders(string $restaurantId)
     {
-        return $this->orders->findActiveByRestaurantId($restaurantId);
+        return $this->orderRepository->findActiveByRestaurantId($restaurantId);
     }
 
     public function getRestaurantOrder(string $restaurantId, string $orderId): ?Order
     {
-        return $this->orders->findByRestaurantIdAndId($restaurantId, $orderId);
+        return $this->orderRepository->findByRestaurantIdAndId($restaurantId, $orderId);
     }
 
     public function getOrderEvents(string $orderId)
     {
-        return $this->orders->getEvents($orderId);
+        return $this->orderRepository->getEvents($orderId);
     }
 
     /**
@@ -106,7 +106,7 @@ class OrderService implements OrderServiceInterface
      */
     public function previewCheckout(string $clientUserId, ?string $cartId, ?string $addressId, ?string $couponCode): array
     {
-        $cart = $this->carts->findCheckoutCart($clientUserId, $cartId);
+        $cart = $this->cartRepository->findCheckoutCart($clientUserId, $cartId);
 
         if ($cart->items->isEmpty()) {
             return [
@@ -125,7 +125,7 @@ class OrderService implements OrderServiceInterface
         $address = null;
         if ($addressId !== null && trim($addressId) !== '') {
             try {
-                $address = $this->addresses->findByUserIdAndIdOrFail($clientUserId, $addressId);
+                $address = $this->userAddressRepository->findByUserIdAndIdOrFail($clientUserId, $addressId);
             } catch (\Throwable) {
                 $address = null;
             }
@@ -164,7 +164,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function checkoutOrder(string $clientUserId, CheckoutDTO $data): array
     {
-        $cart = $this->carts->findCheckoutCart($clientUserId, $data->cart_id);
+        $cart = $this->cartRepository->findCheckoutCart($clientUserId, $data->cart_id);
 
         if ($cart->items->isEmpty()) {
             throw new \RuntimeException('Cart is empty.');
@@ -180,13 +180,13 @@ class OrderService implements OrderServiceInterface
         $paymentStatus = $method === PaymentMethod::CASH ? PaymentStatus::COMPLETED : PaymentStatus::PENDING;
         $orderStatus = OrderStatus::PENDING;
 
-        $order = $this->orders->createOrder(
+        $order = $this->orderRepository->createOrder(
             $this->checkoutCreateOrderDTO($clientUserId, $restaurant, $address, $cart, $pricing, $orderStatus)
         );
         $cartItemToOrderItem = $this->mapCartItemsToOrderItems($cart, $order);
 
         foreach ($pricing['discounts'] as $discount) {
-            $this->orders->addDiscount($order, [
+            $this->orderRepository->addDiscount($order, [
                 'name_snapshot' => $discount['name_snapshot'],
                 'description_snapshot' => $discount['description_snapshot'] ?? null,
                 'discount_amount' => $discount['discount_amount'],
@@ -200,7 +200,7 @@ class OrderService implements OrderServiceInterface
             ]);
         }
 
-        $payment = $this->payments->createPayment(new CreatePaymentDTO(
+        $payment = $this->paymentRepository->createPayment(new CreatePaymentDTO(
             order_id: $order->id,
             method: $method,
             amount: $pricing['total'],
@@ -216,14 +216,14 @@ class OrderService implements OrderServiceInterface
             $this->recordEvent($order, OrderEventType::ORDER_PAYMENT_COMPLETED);
         }
 
-        $this->payments->createEvent($payment, new \App\DTOs\Payment\CreatePaymentEventDTO(
+        $this->paymentRepository->createEvent($payment, new \App\DTOs\Payment\CreatePaymentEventDTO(
             PaymentEventType::PAYMENT_CREATED,
             now(),
             [],
         ));
 
         if ($paymentStatus === PaymentStatus::COMPLETED) {
-            $this->payments->createEvent($payment, new \App\DTOs\Payment\CreatePaymentEventDTO(
+            $this->paymentRepository->createEvent($payment, new \App\DTOs\Payment\CreatePaymentEventDTO(
                 PaymentEventType::PAYMENT_COMPLETED,
                 now(),
                 [],
@@ -234,7 +234,7 @@ class OrderService implements OrderServiceInterface
                 ->delay($payment->expired_at)
                 ->afterCommit();
         }
-        $this->carts->clearCart($cart->id);
+        $this->cartRepository->clearCart($cart->id);
 
         return [
             'order' => $order->load($this->with),
@@ -245,7 +245,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function cancelOrderByClient(string $userId, string $orderId, ?string $reason): Order
     {
-        $order = $this->orders->findByUserIdAndIdOrFail($userId, $orderId);
+        $order = $this->orderRepository->findByUserIdAndIdOrFail($userId, $orderId);
 
         if ($order->status === OrderStatus::CANCELLED) {
             return $order->load($this->with);
@@ -260,7 +260,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function cancelOrderBySystem(string $orderId, string $reason): Order
     {
-        $order = $this->orders->findByIdOrFail($orderId);
+        $order = $this->orderRepository->findByIdOrFail($orderId);
 
         if (in_array($order->status, [OrderStatus::DELIVERED, OrderStatus::CANCELLED], true)) {
             return $order->load($this->with);
@@ -277,7 +277,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function acceptOrderByRestaurant(string $orderId): Order
     {
-        $order = $this->orders->findByIdOrFail($orderId);
+        $order = $this->orderRepository->findByIdOrFail($orderId);
 
         $this->ensureOrderHasAssignedCourier($order);
         $order = $this->transition($order, OrderStatus::CONFIRMED, OrderEventType::ORDER_CONFIRMED);
@@ -288,7 +288,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function rejectOrderByRestaurant(string $orderId, ?string $reason): Order
     {
-        $order = $this->orders->findByIdOrFail($orderId);
+        $order = $this->orderRepository->findByIdOrFail($orderId);
 
         $this->ensureOrderHasAssignedCourier($order);
         $this->recordEvent($order, OrderEventType::ORDER_REJECTED, ['reason' => $reason]);
@@ -301,7 +301,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function startPreparingOrder(string $orderId): Order
     {
-        $order = $this->orders->findByIdOrFail($orderId);
+        $order = $this->orderRepository->findByIdOrFail($orderId);
 
         $this->ensureOrderHasAssignedCourier($order);
         $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
@@ -312,7 +312,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function updateOrderItemStatus(string $orderItemId, string $status): Order
     {
-        $item = $this->orders->updateOrderItemStatus($orderItemId, $status);
+        $item = $this->orderRepository->updateOrderItemStatus($orderItemId, $status);
         $order = $item->order->refresh()->load('items');
 
         $itemValue = static fn ($entry) => $entry->status instanceof BackedEnum
@@ -345,7 +345,7 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function markOrderReady(string $orderId): Order
     {
-        $order = $this->orders->findByIdOrFail($orderId);
+        $order = $this->orderRepository->findByIdOrFail($orderId);
 
         $this->ensureOrderHasAssignedCourier($order);
 
@@ -355,12 +355,12 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function repeatClientOrder(string $userId, string $orderId): Cart
     {
-        $order = $this->orders->findByUserIdAndIdOrFail($userId, $orderId);
+        $order = $this->orderRepository->findByUserIdAndIdOrFail($userId, $orderId);
         $cart = app(CartServiceInterface::class)->getCartByUserId($userId);
-        $this->carts->clearCart($cart->id);
+        $this->cartRepository->clearCart($cart->id);
 
         foreach ($order->items as $item) {
-            $cartItem = $this->carts->createCartItem(
+            $cartItem = $this->cartRepository->createCartItem(
                 $cart->id,
                 $item->restaurant_product_id,
                 (int) $item->quantity,
@@ -369,7 +369,7 @@ class OrderService implements OrderServiceInterface
             );
 
             foreach ($item->options as $option) {
-                $this->carts->createCartItemOption($cartItem->id, $option->product_option_id, (float) $option->extra_price);
+                $this->cartRepository->createCartItemOption($cartItem->id, $option->product_option_id, (float) $option->extra_price);
             }
         }
 
@@ -430,7 +430,7 @@ class OrderService implements OrderServiceInterface
 
     private function transition(Order $order, OrderStatus $status, OrderEventType $eventType, array $payload = []): Order
     {
-        $order = $this->orders->findByIdOrFail($order->id, lock: true);
+        $order = $this->orderRepository->findByIdOrFail($order->id, lock: true);
         OrderStateFactory::from($order->status)->transition($order, $status);
         $this->recordEvent($order, $eventType, $payload);
 
@@ -477,7 +477,7 @@ class OrderService implements OrderServiceInterface
             ]);
         }
 
-        return $this->addresses->findByUserIdAndIdOrFail($clientUserId, $addressId);
+        return $this->userAddressRepository->findByUserIdAndIdOrFail($clientUserId, $addressId);
     }
 
     private function validateCheckoutCart(Cart $cart, string $restaurantId, UserAddress $address): void
@@ -592,7 +592,7 @@ class OrderService implements OrderServiceInterface
 
     private function cancelPaymentForOrder(string $orderId, string $reason): void
     {
-        $payment = $this->payments->getByOrderId($orderId);
+        $payment = $this->paymentRepository->getByOrderId($orderId);
 
         if (! $payment) {
             return;
@@ -649,7 +649,7 @@ class OrderService implements OrderServiceInterface
             'data' => $payload,
         ];
 
-        $this->orders->addEvent($order, $eventType->value, $occurredAt, $eventPayload);
+        $this->orderRepository->addEvent($order, $eventType->value, $occurredAt, $eventPayload);
 
         $broadcastPayload = [
             ...$eventPayload,
@@ -775,7 +775,7 @@ class OrderService implements OrderServiceInterface
     {
         $userId = $order->user_id;
 
-        $totalDelivered = $this->orders->countByUserIdAndStatus($userId, OrderStatus::DELIVERED);
+        $totalDelivered = $this->orderRepository->countByUserIdAndStatus($userId, OrderStatus::DELIVERED);
 
         if (! in_array($totalDelivered, self::ORDER_MILESTONES, true)) {
             return;

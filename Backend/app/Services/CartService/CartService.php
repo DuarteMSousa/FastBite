@@ -16,40 +16,40 @@ use Illuminate\Validation\ValidationException;
 
 class CartService implements CartServiceInterface
 {
-    private CartRepositoryInterface $carts;
+    private CartRepositoryInterface $cartRepository;
 
-    private RestaurantProductRepositoryInterface $restaurantProducts;
+    private RestaurantProductRepositoryInterface $restaurantProductRepository;
 
-    private ProductOptionRepositoryInterface $productOptions;
+    private ProductOptionRepositoryInterface $productOptionRepository;
 
     public function __construct(
-        ?CartRepositoryInterface $carts = null,
-        ?RestaurantProductRepositoryInterface $restaurantProducts = null,
-        ?ProductOptionRepositoryInterface $productOptions = null,
+        ?CartRepositoryInterface $cartRepository = null,
+        ?RestaurantProductRepositoryInterface $restaurantProductRepository = null,
+        ?ProductOptionRepositoryInterface $productOptionRepository = null,
     ) {
-        $this->carts = $carts ?? app(CartRepositoryInterface::class);
-        $this->restaurantProducts = $restaurantProducts ?? app(RestaurantProductRepositoryInterface::class);
-        $this->productOptions = $productOptions ?? app(ProductOptionRepositoryInterface::class);
+        $this->cartRepository = $cartRepository ?? app(CartRepositoryInterface::class);
+        $this->restaurantProductRepository = $restaurantProductRepository ?? app(RestaurantProductRepositoryInterface::class);
+        $this->productOptionRepository = $productOptionRepository ?? app(ProductOptionRepositoryInterface::class);
     }
 
     public function getCartByUserId(string $userId): Cart
     {
-        return $this->carts->findOrCreateByUserId($userId);
+        return $this->cartRepository->findOrCreateByUserId($userId);
     }
 
     public function getCartByUserIdAndCartId(string $userId, string $cartId): ?Cart
     {
-        return $this->carts->findByUserIdAndCartId($userId, $cartId);
+        return $this->cartRepository->findByUserIdAndCartId($userId, $cartId);
     }
 
     #[Transactional]
     public function addCartItem(string $clientUserId, AddCartItemDTO $data): Cart
     {
         $cart = $this->getCartByUserId($clientUserId);
-        $restaurantProduct = $this->restaurantProducts->findByIdOrFail($data->restaurant_product_id);
+        $restaurantProduct = $this->restaurantProductRepository->findByIdOrFail($data->restaurant_product_id);
 
         $optionIds = $data->option_ids;
-        $options = $this->productOptions->findByIds($optionIds);
+        $options = $this->productOptionRepository->findByIds($optionIds);
         $this->validateRestaurantProductCanBeAdded($cart, $restaurantProduct);
         $this->validateOptionsForProduct($restaurantProduct, $optionIds, $options);
 
@@ -61,8 +61,8 @@ class CartService implements CartServiceInterface
             $quantity
         );
 
-        $item = $this->carts->createCartItem($cart->id, $restaurantProduct->id, $quantity, (float) $unitPrice, $lineTotal);
-        $this->carts->replaceCartItemOptions($item->id, $options);
+        $item = $this->cartRepository->createCartItem($cart->id, $restaurantProduct->id, $quantity, (float) $unitPrice, $lineTotal);
+        $this->cartRepository->replaceCartItemOptions($item->id, $options);
 
         return $this->recalculateCartTotal($cart->id);
     }
@@ -70,12 +70,12 @@ class CartService implements CartServiceInterface
     #[Transactional]
     public function updateCartItem(string $clientUserId, string $cartItemId, UpdateCartItemDTO $data): Cart
     {
-        $item = $this->carts->findItemByUserIdOrFail($clientUserId, $cartItemId);
+        $item = $this->cartRepository->findItemByUserIdOrFail($clientUserId, $cartItemId);
 
         if ($data->option_ids !== null) {
-            $options = $this->productOptions->findByIds($data->option_ids);
+            $options = $this->productOptionRepository->findByIds($data->option_ids);
             $this->validateOptionsForProduct($item->restaurantProduct, $data->option_ids, $options);
-            $this->carts->replaceCartItemOptions($item->id, $options);
+            $this->cartRepository->replaceCartItemOptions($item->id, $options);
         } else {
             $options = $item->options;
         }
@@ -86,7 +86,7 @@ class CartService implements CartServiceInterface
             $options->pluck('extra_price'),
             $quantity
         );
-        $this->carts->updateCartItemTotals($item->id, $quantity, $lineTotal);
+        $this->cartRepository->updateCartItemTotals($item->id, $quantity, $lineTotal);
 
         return $this->recalculateCartTotal($item->cart_id);
     }
@@ -94,9 +94,9 @@ class CartService implements CartServiceInterface
     #[Transactional]
     public function removeCartItem(string $userId, string $cartItemId): Cart
     {
-        $item = $this->carts->findItemByUserIdOrFail($userId, $cartItemId);
+        $item = $this->cartRepository->findItemByUserIdOrFail($userId, $cartItemId);
         $cartId = $item->cart_id;
-        $this->carts->deleteCartItem($item->id);
+        $this->cartRepository->deleteCartItem($item->id);
 
         return $this->recalculateCartTotal($cartId);
     }
@@ -105,7 +105,7 @@ class CartService implements CartServiceInterface
     public function clearCart(string $userId): bool
     {
         $cart = $this->getCartByUserId($userId);
-        $this->carts->clearCart($cart->id);
+        $this->cartRepository->clearCart($cart->id);
 
         return true;
     }
@@ -113,9 +113,9 @@ class CartService implements CartServiceInterface
     #[Transactional]
     public function recalculateCartTotal(string $cartId): Cart
     {
-        $cart = $this->carts->findById($cartId);
+        $cart = $this->cartRepository->findById($cartId);
 
-        return $this->carts->updateTotal($cartId, PricingCalculator::calculateSubtotal($cart->items->pluck('total_price')));
+        return $this->cartRepository->updateTotal($cartId, PricingCalculator::calculateSubtotal($cart->items->pluck('total_price')));
     }
 
     private function validateRestaurantProductCanBeAdded(Cart $cart, RestaurantProduct $restaurantProduct): void

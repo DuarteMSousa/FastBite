@@ -11,7 +11,7 @@ use App\Repositories\OutboxRepository\OutboxRepositoryInterface;
 
 class OutboxService
 {
-    public function __construct(private OutboxRepositoryInterface $outboxEvents) {}
+    public function __construct(private OutboxRepositoryInterface $outboxRepository) {}
 
     /**
      * @param  array<string, mixed>  $payload
@@ -23,7 +23,7 @@ class OutboxService
         array $payload,
         bool $dispatchNow = true
     ): OutboxEvent {
-        $outbox = $this->outboxEvents->createOutboxEvent(new CreateOutboxEventDTO(
+        $outbox = $this->outboxRepository->createOutboxEvent(new CreateOutboxEventDTO(
             aggregateType: $aggregateType,
             aggregateId: $aggregateId,
             eventType: $eventType,

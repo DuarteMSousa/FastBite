@@ -12,26 +12,26 @@ use Illuminate\Validation\ValidationException;
 
 class CategoryService implements CategoryServiceInterface
 {
-    private CategoryRepositoryInterface $categories;
+    private CategoryRepositoryInterface $categoryRepository;
 
-    private RestaurantChainRepositoryInterface $chains;
+    private RestaurantChainRepositoryInterface $restaurantChainRepository;
 
     public function __construct(
-        ?CategoryRepositoryInterface $categories = null,
-        ?RestaurantChainRepositoryInterface $chains = null,
+        ?CategoryRepositoryInterface $categoryRepository = null,
+        ?RestaurantChainRepositoryInterface $restaurantChainRepository = null,
     ) {
-        $this->categories = $categories ?? app(CategoryRepositoryInterface::class);
-        $this->chains = $chains ?? app(RestaurantChainRepositoryInterface::class);
+        $this->categoryRepository = $categoryRepository ?? app(CategoryRepositoryInterface::class);
+        $this->restaurantChainRepository = $restaurantChainRepository ?? app(RestaurantChainRepositoryInterface::class);
     }
 
     public function getCategoriesByChainId(string $chainId)
     {
-        return $this->categories->findByRestaurantChainId($chainId);
+        return $this->categoryRepository->findByRestaurantChainId($chainId);
     }
 
     public function getCategoryById(string $id): ?Category
     {
-        return $this->categories->findById($id);
+        return $this->categoryRepository->findById($id);
     }
 
     #[Transactional]
@@ -39,13 +39,13 @@ class CategoryService implements CategoryServiceInterface
     {
         $this->validateInput($data->toArray());
 
-        return $this->categories->createCategory($data);
+        return $this->categoryRepository->createCategory($data);
     }
 
     #[Transactional]
     public function updateCategory(string $id, UpdateCategoryDTO $data): ?Category
     {
-        $category = $this->categories->findById($id);
+        $category = $this->categoryRepository->findById($id);
 
         if (! $category) {
             return null;
@@ -53,13 +53,13 @@ class CategoryService implements CategoryServiceInterface
 
         $input = array_filter($data->toArray(), static fn ($value) => $value !== null);
         $this->validateInput([...$category->toArray(), ...$input], $id);
-        return $this->categories->updateCategory($id, $data);
+        return $this->categoryRepository->updateCategory($id, $data);
     }
 
     #[Transactional]
     public function deleteCategory(string $id): bool
     {
-        return $this->categories->deleteCategory($id);
+        return $this->categoryRepository->deleteCategory($id);
     }
 
     private function validateInput(array $input, ?string $ignoreId = null): void
@@ -70,7 +70,7 @@ class CategoryService implements CategoryServiceInterface
             $errors['name'][] = 'Category name is required.';
         }
 
-        if (empty($input['chain_id']) || ! $this->chains->exists($input['chain_id'])) {
+        if (empty($input['chain_id']) || ! $this->restaurantChainRepository->exists($input['chain_id'])) {
             $errors['chain_id'][] = 'Restaurant chain does not exist.';
         }
 
