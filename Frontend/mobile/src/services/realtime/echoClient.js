@@ -290,16 +290,18 @@ function connectGatewaySocket() {
 
 function ensureConnection(devUserId, courierId) {
   const resolvedUserId = String(devUserId || DEV_BROADCAST_USER_ID || '').trim()
-  const resolvedCourierId = String(courierId || '').trim()
+  const hasCourierId = courierId !== undefined && courierId !== null && String(courierId).trim() !== ''
+  const resolvedCourierId = hasCourierId ? String(courierId).trim() : (currentCourierId || '')
 
   if (!resolvedUserId) {
     throw new Error('Missing user id for GatewayWorker hello message.')
   }
 
-  if (
-    currentUserId &&
-    (currentUserId !== resolvedUserId || currentCourierId !== resolvedCourierId)
-  ) {
+  if (currentUserId && currentUserId !== resolvedUserId) {
+    disconnectEchoClient()
+  }
+
+  if (currentUserId && hasCourierId && currentCourierId !== resolvedCourierId) {
     disconnectEchoClient()
   }
 
