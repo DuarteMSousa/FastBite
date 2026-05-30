@@ -52,13 +52,6 @@ class TrackingRepository implements TrackingRepositoryInterface
             ->first();
     }
 
-    public function findLastPositionForCourier(string $courierId)
-    {
-        return CourierPositionHistory::whereHas('delivery', fn ($query) => $query->where('courier_id', $courierId))
-            ->orderByDesc('timestamp')
-            ->first();
-    }
-
     public function createPosition(string $deliveryId, float $latitude, float $longitude, string $timestamp): void
     {
         CourierPositionHistory::create([

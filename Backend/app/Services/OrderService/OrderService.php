@@ -143,7 +143,7 @@ class OrderService implements OrderServiceInterface
         $cart = $this->checkoutCartForUser($clientUserId, $data->cart_id);
 
         if ($cart->items->isEmpty()) {
-            throw new \RuntimeException('Cart is empty.');
+            throw new ValidationException('Cart is empty.');
         }
 
         $firstRestaurantProduct = $cart->items->first()->restaurantProduct;

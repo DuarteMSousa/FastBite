@@ -12,7 +12,5 @@ interface TrackingRepositoryInterface
 
     public function findLastPositionForDelivery(string $deliveryId);
 
-    public function findLastPositionForCourier(string $courierId);
-
     public function createPosition(string $deliveryId, float $latitude, float $longitude, string $timestamp): void;
 }

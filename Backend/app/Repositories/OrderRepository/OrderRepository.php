@@ -36,6 +36,12 @@ class OrderRepository implements OrderRepositoryInterface
         return $query->findOrFail($id);
     }
 
+    public function findForChatParticipantsOrFail(string $id): Order
+    {
+        return Order::with(['restaurant.localManager', 'restaurant.chain.chainManagers', 'delivery'])
+            ->findOrFail($id);
+    }
+
     public function findByUserIdAndId(string $userId, string $orderId)
     {
         return Order::with($this->defaultRelations)
@@ -58,27 +64,11 @@ class OrderRepository implements OrderRepositoryInterface
             ->find($orderId);
     }
 
-    public function findByUserId(string $userId, int $pageNumber, int $pageSize)
-    {
-        return Order::with($this->defaultRelations)
-            ->where('user_id', $userId)
-            ->orderByDesc('created_at')
-            ->paginate($pageSize, ['*'], 'page', $pageNumber);
-    }
-
     public function findByUserIdFiltered(string $userId, ?array $statuses, int $pageNumber, int $pageSize)
     {
         return Order::with($this->defaultRelations)
             ->where('user_id', $userId)
             ->when($statuses, fn ($query) => $query->whereIn('status', $statuses))
-            ->orderByDesc('created_at')
-            ->paginate($pageSize, ['*'], 'page', $pageNumber);
-    }
-
-    public function findByRestaurantId(string $restaurantId, int $pageNumber, int $pageSize)
-    {
-        return Order::with($this->defaultRelations)
-            ->where('restaurant_id', $restaurantId)
             ->orderByDesc('created_at')
             ->paginate($pageSize, ['*'], 'page', $pageNumber);
     }
@@ -108,11 +98,6 @@ class OrderRepository implements OrderRepositoryInterface
         return OrderEvent::where('order_id', $orderId)
             ->orderBy('timestamp')
             ->get();
-    }
-
-    public function findOrderItemOrFail(string $orderItemId)
-    {
-        return OrderItem::with('order.items')->findOrFail($orderItemId);
     }
 
     public function updateOrderItemStatus(string $orderItemId, string $status)

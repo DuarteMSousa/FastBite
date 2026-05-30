@@ -9,8 +9,6 @@ interface CourierRepositoryInterface
 {
     public function findByUserId(string $userId);
 
-    public function getByUserIdWithUser(string $userId);
-
     public function getByUserIdOrFail(string $userId);
 
     public function getAvailableExceptUserIds(array $excludedUserIds);

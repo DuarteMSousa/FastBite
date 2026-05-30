@@ -81,7 +81,11 @@ class CartService implements CartServiceInterface
             $options->pluck('extra_price'),
             $quantity
         );
-        $this->cartRepository->updateCartItemTotals($item->id, $quantity, $lineTotal);
+        $this->cartRepository->updateCartItem(
+            $item->id,
+            new UpdateCartItemDTO(quantity: $quantity),
+            $lineTotal,
+        );
 
         return $this->recalculateCartTotal($item->cart_id);
     }

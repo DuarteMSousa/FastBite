@@ -2,8 +2,6 @@
 
 namespace App\Repositories\CartRepository;
 
-use App\DTOs\Cart\AddCartItemDTO;
-use App\DTOs\Cart\CartItemOptionDTO;
 use App\DTOs\Cart\CreateCartDTO;
 use App\DTOs\Cart\UpdateCartItemDTO;
 use App\Models\Cart;
@@ -62,17 +60,6 @@ class CartRepository implements CartRepositoryInterface
         return Cart::create($data->toArray());
     }
 
-    public function addCartItem(string $cartId, AddCartItemDTO $data, float $unitPrice, float $totalPrice)
-    {
-        return CartItem::create([
-            'cart_id' => $cartId,
-            'restaurant_product_id' => $data->restaurant_product_id,
-            'quantity' => $data->quantity,
-            'unit_price' => $unitPrice,
-            'total_price' => $totalPrice,
-        ]);
-    }
-
     public function createCartItem(string $cartId, string $restaurantProductId, int $quantity, float $unitPrice, float $totalPrice)
     {
         return CartItem::create([
@@ -109,17 +96,6 @@ class CartRepository implements CartRepositoryInterface
         return $cartItem;
     }
 
-    public function updateCartItemTotals(string $cartItemId, int $quantity, float $totalPrice)
-    {
-        $cartItem = CartItem::findOrFail($cartItemId);
-        $cartItem->update([
-            'quantity' => $quantity,
-            'total_price' => $totalPrice,
-        ]);
-
-        return $cartItem;
-    }
-
     public function clearCart(string $cartId): void
     {
         $cart = Cart::findOrFail($cartId);
@@ -133,14 +109,6 @@ class CartRepository implements CartRepositoryInterface
         $cart->update(['total' => $total]);
 
         return $cart->refresh()->load(['items.restaurantProduct.product', 'items.options.productOption']);
-    }
-
-    public function addCartItemOption(CartItemOptionDTO $data)
-    {
-        return CartItemOption::create([
-            'cart_item_id' => $data->cart_item_id,
-            'product_option_id' => $data->option_id,
-        ]);
     }
 
     public function deleteCartItem(string $cartItemId)

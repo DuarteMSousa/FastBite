@@ -16,11 +16,6 @@ class CourierRepository implements CourierRepositoryInterface
         return Courier::where('user_id', $userId)->first();
     }
 
-    public function getByUserIdWithUser(string $userId)
-    {
-        return Courier::query()->with('user')->find($userId);
-    }
-
     public function getByUserIdOrFail(string $userId)
     {
         return Courier::query()->findOrFail($userId);

@@ -11,9 +11,9 @@ use App\Enums\OutboxAggregateType;
 use App\Enums\OutboxEventType;
 use App\Models\Chat;
 use App\Models\Message;
-use App\Models\Order;
 use App\Models\User;
 use App\Repositories\ChatRepository\ChatRepositoryInterface;
+use App\Repositories\OrderRepository\OrderRepositoryInterface;
 use App\Repositories\UserRepository\UserRepositoryInterface;
 use App\Services\OutboxService;
 use Illuminate\Support\Str;
@@ -25,12 +25,16 @@ class ChatService implements ChatServiceInterface
 
     private UserRepositoryInterface $userRepository;
 
+    private OrderRepositoryInterface $orderRepository;
+
     public function __construct(
         ?ChatRepositoryInterface $chatRepository = null,
         ?UserRepositoryInterface $userRepository = null,
+        ?OrderRepositoryInterface $orderRepository = null,
     ) {
         $this->chatRepository = $chatRepository ?? app(ChatRepositoryInterface::class);
         $this->userRepository = $userRepository ?? app(UserRepositoryInterface::class);
+        $this->orderRepository = $orderRepository ?? app(OrderRepositoryInterface::class);
     }
 
     public function getChatsByOrderId(string $orderId)
@@ -127,9 +131,7 @@ class ChatService implements ChatServiceInterface
      */
     private function resolveOrderChatParticipants(CreateOrderChatDTO $data): array
     {
-        $order = Order::query()
-            ->with(['restaurant.localManager', 'restaurant.chain.chainManagers', 'delivery'])
-            ->findOrFail($data->order_id);
+        $order = $this->orderRepository->findForChatParticipantsOrFail($data->order_id);
 
         $participantUserIds = collect($data->participant_user_ids)
             ->push($order->user_id);

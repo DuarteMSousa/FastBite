@@ -28,7 +28,7 @@ class CourierService implements CourierServiceInterface
 
     public function getCourierByUserId(string $userId): ?Courier
     {
-        return $this->courierRepository->getByUserIdWithUser($userId);
+        return $this->courierRepository->findByUserId($userId)?->load('user');
     }
 
     #[Transactional]
