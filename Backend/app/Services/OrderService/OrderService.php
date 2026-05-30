@@ -289,6 +289,7 @@ class OrderService implements OrderServiceInterface
     {
         $order = $this->orders->findByIdOrFail($orderId);
 
+        $this->ensureOrderHasAssignedCourier($order);
         $this->recordEvent($order, OrderEventType::ORDER_REJECTED, ['reason' => $reason]);
         $order = $this->transition($order, OrderStatus::CANCELLED, OrderEventType::ORDER_CANCELLED, ['reason' => $reason]);
         $this->cancelPaymentForOrder($order->id, $reason ?? 'order rejected by restaurant');
@@ -459,7 +460,7 @@ class OrderService implements OrderServiceInterface
         }
 
         throw ValidationException::withMessages([
-            'delivery_id' => 'A encomenda só pode ser preparada depois de existir estafeta atribuído.',
+            'delivery_id' => 'A encomenda so pode ser gerida pelo restaurante depois de existir estafeta atribuido.',
         ]);
     }
 

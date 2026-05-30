@@ -43,12 +43,26 @@ class OrderStatusUpdatedSocketHandler implements SocketEventHandler
             );
         }
 
-        if ($restaurantId) {
+        if ($restaurantId && $this->hasAssignedCourier($event->payload)) {
             $this->pusher->sendToGroup(
                 "restaurant.{$restaurantId}.orders",
                 OutboxEventType::ORDER_STATUS_UPDATED->value,
                 $event->payload
             );
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function hasAssignedCourier(array $payload): bool
+    {
+        $courierId = $payload['courierId']
+            ?? $payload['courier_id']
+            ?? $payload['delivery']['courier_id']
+            ?? $payload['order']['delivery']['courier_id']
+            ?? null;
+
+        return $courierId !== null && trim((string) $courierId) !== '';
     }
 }

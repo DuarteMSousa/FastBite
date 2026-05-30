@@ -59,6 +59,9 @@ function playKitchenBeep(ref) {
 
 function reconcileActiveOrderList(current, order) {
   if (!order?.order_id) return current
+  if (!order.courier_id) {
+    return current.filter((entry) => entry.order_id !== order.order_id)
+  }
   if (['CANCELLED', 'DELIVERED'].includes(order.order_status)) {
     return current.filter((entry) => entry.order_id !== order.order_id)
   }
@@ -134,7 +137,7 @@ export function RestaurantVirtualKitchenScreen({ session, onSelectOrder, onNavig
           if (realtimeOrder) {
             setOrders((current) => reconcileActiveOrderList(current, realtimeOrder))
           }
-          if (domainEventName === 'ORDER_COURIER_ASSIGNED' || domainEventName === 'ORDER_CREATED') {
+          if (domainEventName === 'ORDER_COURIER_ASSIGNED') {
             playKitchenBeep(beepRef)
             setPendingAlerts((current) => {
               if (!orderId || current.includes(orderId)) return current

@@ -78,6 +78,15 @@ class DeliveryAssignmentTest extends TestCase
         app(OrderServiceInterface::class)->startPreparingOrder($delivery->order_id);
     }
 
+    public function test_restaurant_cannot_reject_before_courier_is_assigned(): void
+    {
+        [$delivery] = $this->createPendingDeliveryAndCourier(createCourier: false, orderStatus: 'PENDING');
+
+        $this->expectException(ValidationException::class);
+
+        app(OrderServiceInterface::class)->rejectOrderByRestaurant($delivery->order_id, 'sem stock');
+    }
+
     public function test_restaurant_can_start_preparing_after_courier_accepts_offer(): void
     {
         [$delivery] = $this->createPendingDeliveryAndCourier(orderStatus: 'PENDING');

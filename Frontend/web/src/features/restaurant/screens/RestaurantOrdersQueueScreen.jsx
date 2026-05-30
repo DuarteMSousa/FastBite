@@ -14,7 +14,7 @@ function statusLabel(status) {
 }
 
 function statusTone(status) {
-  if (status === "PENDING") return "pending";
+  if (status === "PENDING" || status === "COURIER_ASSIGNED") return "pending";
   if (status === "CONFIRMED" || status === "PREPARING") return "prep";
   if (status === "READY" || status === "OUT_FOR_DELIVERY") return "done";
   return "off";
@@ -22,6 +22,9 @@ function statusTone(status) {
 
 function reconcileActiveOrderList(current, order) {
   if (!order?.order_id) return current;
+  if (!order.courier_id) {
+    return current.filter((entry) => entry.order_id !== order.order_id);
+  }
   if (["CANCELLED", "DELIVERED"].includes(order.order_status)) {
     return current.filter((entry) => entry.order_id !== order.order_id);
   }
@@ -116,8 +119,6 @@ export function RestaurantOrdersQueueScreen({
           }
           if (domainEventName === "ORDER_COURIER_ASSIGNED") {
             setInfoText("Novo pedido com estafeta atribuído.");
-          } else if (domainEventName === "ORDER_CREATED") {
-            setInfoText("Novo pedido recebido.");
           }
         },
         onError: () => {
@@ -186,7 +187,7 @@ export function RestaurantOrdersQueueScreen({
 
   const stats = useMemo(() => {
     const pending = orders.filter(
-      (order) => order.order_status === "PENDING",
+      (order) => order.order_status === "COURIER_ASSIGNED",
     ).length;
     const preparing = orders.filter(
       (order) => order.order_status === "PREPARING",
@@ -307,7 +308,7 @@ export function RestaurantOrdersQueueScreen({
                       : "-"}
                   </td>
                   <td>
-                    {order.order_status === "PENDING" ? (
+                    {order.order_status === "COURIER_ASSIGNED" ? (
                       <div className="rb-table-actions">
                         <button
                           type="button"

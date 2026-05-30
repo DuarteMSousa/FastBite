@@ -113,7 +113,7 @@ GRAPHQL;
             ->assertJsonPath('data.getActiveRestaurantOrders.0.status', 'COURIER_ASSIGNED');
     }
 
-    public function test_local_manager_can_accept_and_reject_pending_orders(): void
+    public function test_local_manager_can_accept_and_reject_orders_after_courier_assignment(): void
     {
         Queue::fake();
 
@@ -192,9 +192,16 @@ GRAPHQL;
         $orderToReject = Order::query()->create([
             'user_id' => $customer->id,
             'restaurant_id' => $restaurant->id,
-            'status' => 'PENDING',
+            'status' => 'COURIER_ASSIGNED',
             'total' => 11,
             'restaurant_name_snapshot' => 'Urban Grill',
+        ]);
+
+        Delivery::query()->create([
+            'order_id' => $orderToReject->id,
+            'courier_id' => $courierUser->id,
+            'status' => 'PENDING',
+            'delivery_fee' => 2.5,
         ]);
 
         $acceptMutation = <<<'GRAPHQL'
