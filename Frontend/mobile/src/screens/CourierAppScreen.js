@@ -482,6 +482,8 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
     async function startWatcher() {
       try {
         const permission = await Location.requestForegroundPermissionsAsync()
+        if (isStopped) return
+
         setLocationPermission(permission.status)
 
         if (permission.status !== 'granted') {
@@ -490,6 +492,8 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
         }
 
         const backgroundPermission = await Location.requestBackgroundPermissionsAsync()
+        if (isStopped) return
+
         setBackgroundLocationPermission(backgroundPermission.status)
 
         if (backgroundPermission.status !== 'granted') {
@@ -516,6 +520,10 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
 
             const lat = Number(location.coords.latitude)
             const lng = Number(location.coords.longitude)
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+              return
+            }
+
             const recordedAt = new Date(location.timestamp ?? Date.now()).toISOString()
 
             const last = lastSentRef.current
@@ -568,8 +576,13 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
             }
           },
         )
+        if (isStopped && subscription) {
+          subscription.remove()
+        }
       } catch {
-        setToast('Falha ao iniciar GPS em tempo real.')
+        if (!isStopped) {
+          setToast('Falha ao iniciar GPS em tempo real.')
+        }
       }
     }
 

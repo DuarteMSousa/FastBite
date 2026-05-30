@@ -638,13 +638,20 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
           }
         },
         onPositionUpdated: (payload) => {
+          const lat = Number(payload?.lat)
+          const lng = Number(payload?.lng)
+
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            return
+          }
+
           setRealtimeState('live')
           setTrackingUpdateCount((value) => value + 1)
           setTrackingLastUpdateMs(Date.now())
           setTracking((current) => {
             const latest = {
-              lat: Number(payload?.lat),
-              lng: Number(payload?.lng),
+              lat,
+              lng,
               recorded_at: payload?.recordedAt ?? new Date().toISOString(),
             }
 

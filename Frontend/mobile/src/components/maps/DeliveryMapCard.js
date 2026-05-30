@@ -5,7 +5,22 @@ function clamp(value, min, max) {
 }
 
 function normalizePoints(points) {
-  const valid = points.filter((point) => point && point.lat !== null && point.lng !== null)
+  const valid = points
+    .map((point) => {
+      if (!point || point.lat === null || point.lat === undefined || point.lng === null || point.lng === undefined) {
+        return null
+      }
+
+      const lat = Number(point.lat)
+      const lng = Number(point.lng)
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return null
+      }
+
+      return { ...point, lat, lng }
+    })
+    .filter(Boolean)
 
   if (valid.length === 0) {
     return []

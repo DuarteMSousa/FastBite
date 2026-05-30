@@ -2,7 +2,11 @@ import { StyleSheet, View } from 'react-native'
 import MapView, { Marker, Polyline } from 'react-native-maps'
 
 function resolveRegion(points) {
-  const valid = points.filter((point) => point && point.latitude !== null && point.longitude !== null)
+  const valid = points.filter((point) => (
+    point &&
+    Number.isFinite(point.latitude) &&
+    Number.isFinite(point.longitude)
+  ))
 
   if (valid.length === 0) {
     return {
@@ -35,36 +39,39 @@ function resolveRegion(points) {
 }
 
 export function NativeDeliveryMapCard({ pickup, dropoff, courier, routePoints = [], positions = [] }) {
+  function toCoord(point) {
+    if (!point || point.lat === null || point.lat === undefined || point.lng === null || point.lng === undefined) {
+      return null
+    }
+
+    const latitude = Number(point.lat)
+    const longitude = Number(point.lng)
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return null
+    }
+
+    return { latitude, longitude }
+  }
+
   const pickupCoord =
-    pickup && pickup.lat !== null && pickup.lng !== null
-      ? { latitude: Number(pickup.lat), longitude: Number(pickup.lng) }
-      : null
+    pickup ? toCoord(pickup) : null
 
   const dropoffCoord =
-    dropoff && dropoff.lat !== null && dropoff.lng !== null
-      ? { latitude: Number(dropoff.lat), longitude: Number(dropoff.lng) }
-      : null
+    dropoff ? toCoord(dropoff) : null
 
   const courierCoord =
-    courier && courier.lat !== null && courier.lng !== null
-      ? { latitude: Number(courier.lat), longitude: Number(courier.lng) }
-      : null
+    courier ? toCoord(courier) : null
 
   const region = resolveRegion([pickupCoord, dropoffCoord, courierCoord])
 
   const routeCoords = routePoints
-    .filter((point) => point && point.lat !== null && point.lng !== null)
-    .map((point) => ({
-      latitude: Number(point.lat),
-      longitude: Number(point.lng),
-    }))
+    .map(toCoord)
+    .filter(Boolean)
 
   const trackedPath = positions
-    .filter((point) => point && point.lat !== null && point.lng !== null)
-    .map((point) => ({
-      latitude: Number(point.lat),
-      longitude: Number(point.lng),
-    }))
+    .map(toCoord)
+    .filter(Boolean)
 
   const routeLine = [pickupCoord, dropoffCoord].filter(Boolean)
   const courierLine = trackedPath.length < 2 ? [courierCoord, dropoffCoord].filter(Boolean) : []
