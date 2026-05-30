@@ -21,6 +21,7 @@ use App\Jobs\ExpireDeliveryOfferJob;
 use App\Models\Delivery;
 use App\Models\DeliveryOffer;
 use App\Repositories\CourierRepository\CourierRepositoryInterface;
+use App\Repositories\DeliveryOfferRepository\DeliveryOfferRepositoryInterface;
 use App\Repositories\DeliveryRepository\DeliveryRepositoryInterface;
 use App\Services\CourierService\CourierServiceInterface;
 use App\Services\OrderService\OrderServiceInterface;
@@ -35,6 +36,7 @@ class DeliveryService implements DeliveryServiceInterface
 
     public function __construct(
         private DeliveryRepositoryInterface $deliveries,
+        private DeliveryOfferRepositoryInterface $offers,
         private CourierRepositoryInterface $couriers,
     ) {}
 
@@ -60,7 +62,7 @@ class DeliveryService implements DeliveryServiceInterface
 
     public function getDeliveryOffersByCourierId(string $courierId)
     {
-        return $this->deliveries->getPendingOffersByCourierId($courierId);
+        return $this->offers->getPendingByCourierId($courierId);
     }
 
     #[Transactional]
@@ -74,7 +76,7 @@ class DeliveryService implements DeliveryServiceInterface
     #[Transactional]
     public function createDeliveryOfferForCourier(string $deliveryId, string $courierId, int $ttlSeconds = 30): DeliveryOffer
     {
-        $offer = $this->deliveries->createOffer(new CreateDeliveryOfferDTO(
+        $offer = $this->offers->createOffer(new CreateDeliveryOfferDTO(
             deliveryId: $deliveryId,
             courierId: $courierId,
             status: DeliveryOfferStatus::PENDING,
@@ -138,13 +140,13 @@ class DeliveryService implements DeliveryServiceInterface
     #[Transactional]
     public function expireOfferByJob(string $offerId): void
     {
-        $offer = $this->deliveries->getOfferById($offerId);
+        $offer = $this->offers->getById($offerId);
 
         if (! $offer || $offer->status !== DeliveryOfferStatus::PENDING || $offer->expires_at->isFuture()) {
             return;
         }
 
-        $this->deliveries->updateOffer($offer, new UpdateDeliveryOfferDTO(status: DeliveryOfferStatus::EXPIRED));
+        $this->offers->updateOffer($offer, new UpdateDeliveryOfferDTO(status: DeliveryOfferStatus::EXPIRED));
         $this->broadcastJobEvent(DeliveryOfferEventType::JOB_EXPIRED, $offer);
 
         AssignCourierToDeliveryJob::dispatch($offer->delivery_id)->afterCommit();
@@ -153,7 +155,7 @@ class DeliveryService implements DeliveryServiceInterface
     #[Transactional]
     public function acceptDeliveryOffer(string $offerId): Delivery
     {
-        $offer = $this->deliveries->getOfferByIdOrFail($offerId, lock: true);
+        $offer = $this->offers->getByIdOrFail($offerId, lock: true);
         $offer->load(['delivery.order', 'courier']);
 
         if ($offer->status !== DeliveryOfferStatus::PENDING) {
@@ -161,7 +163,7 @@ class DeliveryService implements DeliveryServiceInterface
         }
 
         if ($offer->expires_at->isPast()) {
-            $this->deliveries->updateOffer($offer, new UpdateDeliveryOfferDTO(status: DeliveryOfferStatus::EXPIRED));
+            $this->offers->updateOffer($offer, new UpdateDeliveryOfferDTO(status: DeliveryOfferStatus::EXPIRED));
             $this->broadcastJobEvent(DeliveryOfferEventType::JOB_EXPIRED, $offer);
 
             throw ValidationException::withMessages(['offer_id' => 'Offer expired.']);
@@ -177,13 +179,13 @@ class DeliveryService implements DeliveryServiceInterface
             throw ValidationException::withMessages(['courier_id' => 'Courier is not available.']);
         }
 
-        $this->deliveries->updateOffer($offer, new UpdateDeliveryOfferDTO(
+        $this->offers->updateOffer($offer, new UpdateDeliveryOfferDTO(
             status: DeliveryOfferStatus::ACCEPTED,
             acceptedAt: now(),
         ));
 
         $this->deliveries->updateDelivery($delivery, new UpdateDeliveryDTO(courierId: $offer->courier_id));
-        $this->deliveries->expireOtherPendingOffers($delivery->id, $offer->id);
+        $this->offers->expireOtherPendingOffers($delivery->id, $offer->id);
 
         app(CourierServiceInterface::class)->updateCourierStatus($offer->courier_id, CourierStatus::BUSY->value);
         $this->recordEvent($delivery, DeliveryEventType::DELIVERY_ACCEPTED);
@@ -196,10 +198,10 @@ class DeliveryService implements DeliveryServiceInterface
     #[Transactional]
     public function rejectDeliveryOffer(string $offerId): bool
     {
-        $offer = $this->deliveries->getPendingOfferByIdOrFail($offerId);
+        $offer = $this->offers->getPendingByIdOrFail($offerId);
         $offer->load('delivery');
 
-        $this->deliveries->updateOffer($offer, new UpdateDeliveryOfferDTO(
+        $this->offers->updateOffer($offer, new UpdateDeliveryOfferDTO(
             status: DeliveryOfferStatus::REJECTED,
             rejectedAt: now(),
         ));

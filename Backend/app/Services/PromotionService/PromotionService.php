@@ -7,12 +7,18 @@ use App\DTOs\Campaigns\Promotion\CreatePromotionDTO;
 use App\DTOs\Campaigns\Promotion\UpdatePromotionDTO;
 use App\Enums\DiscountTarget;
 use App\Models\Promotion;
+use App\Repositories\CategoryRepository\CategoryRepositoryInterface;
+use App\Repositories\ProductRepository\ProductRepositoryInterface;
 use App\Repositories\PromotionRepository\PromotionRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class PromotionService implements PromotionServiceInterface
 {
-    public function __construct(private PromotionRepositoryInterface $promotions) {}
+    public function __construct(
+        private PromotionRepositoryInterface $promotions,
+        private CategoryRepositoryInterface $categories,
+        private ProductRepositoryInterface $products,
+    ) {}
 
     public function getPromotionsByChainId(string $chainId)
     {
@@ -103,12 +109,12 @@ class PromotionService implements PromotionServiceInterface
                 continue;
             }
 
-            if ($target === DiscountTarget::CATEGORY && ! $this->promotions->categoryBelongsToChain($itemId, $chainId)) {
+            if ($target === DiscountTarget::CATEGORY && ! $this->categories->belongsToChain($itemId, $chainId)) {
                 $errors["items.{$index}.item_id"][] = 'Category does not belong to promotion chain.';
             }
 
             if ($target === DiscountTarget::PRODUCT) {
-                $belongsToChain = $this->promotions->productBelongsToChain($itemId, $chainId);
+                $belongsToChain = $this->products->belongsToChain($itemId, $chainId);
 
                 if (! $belongsToChain) {
                     $errors["items.{$index}.item_id"][] = 'Product does not belong to promotion chain.';

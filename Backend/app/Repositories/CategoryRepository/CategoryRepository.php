@@ -5,6 +5,7 @@ namespace App\Repositories\CategoryRepository;
 use App\DTOs\Category\CreateCategoryDTO;
 use App\DTOs\Category\UpdateCategoryDTO;
 use App\Models\Category;
+use App\Models\RestaurantProduct;
 
 class CategoryRepository implements CategoryRepositoryInterface
 {
@@ -17,6 +18,24 @@ class CategoryRepository implements CategoryRepositoryInterface
     {
         return Category::with('products.optionGroups.options')
             ->where('chain_id', $restaurantChainId)
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function findByRestaurantId(string $restaurantId)
+    {
+        $categoryIds = RestaurantProduct::query()
+            ->where('restaurant_id', $restaurantId)
+            ->whereHas('product')
+            ->with('product:id,category_id')
+            ->get()
+            ->pluck('product.category_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return Category::with('products.optionGroups.options')
+            ->whereIn('id', $categoryIds)
             ->orderBy('name')
             ->get();
     }

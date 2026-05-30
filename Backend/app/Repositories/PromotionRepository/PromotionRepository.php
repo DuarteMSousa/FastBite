@@ -4,8 +4,6 @@ namespace App\Repositories\PromotionRepository;
 
 use App\DTOs\Campaigns\Promotion\CreatePromotionDTO;
 use App\DTOs\Campaigns\Promotion\UpdatePromotionDTO;
-use App\Models\Category;
-use App\Models\Product;
 use App\Models\Promotion;
 
 class PromotionRepository implements PromotionRepositoryInterface
@@ -125,16 +123,4 @@ class PromotionRepository implements PromotionRepositoryInterface
         $promotion->promotionItems()->whereNotIn('id', $keptIds)->delete();
     }
 
-    public function categoryBelongsToChain(string $categoryId, string $chainId): bool
-    {
-        return Category::query()->where('chain_id', $chainId)->whereKey($categoryId)->exists();
-    }
-
-    public function productBelongsToChain(string $productId, string $chainId): bool
-    {
-        return Product::query()
-            ->whereKey($productId)
-            ->whereHas('category', fn ($query) => $query->where('chain_id', $chainId))
-            ->exists();
-    }
 }

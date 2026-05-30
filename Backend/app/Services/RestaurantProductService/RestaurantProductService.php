@@ -6,6 +6,7 @@ use App\Aspects\Transactional;
 use App\DTOs\Product\CreateRestaurantProductDTO;
 use App\DTOs\Product\UpdateRestaurantProductDTO;
 use App\Models\RestaurantProduct;
+use App\Repositories\CategoryRepository\CategoryRepositoryInterface;
 use App\Repositories\ProductRepository\ProductRepositoryInterface;
 use App\Repositories\RestaurantProductRepository\RestaurantProductRepositoryInterface;
 use App\Repositories\RestaurantRepository\RestaurantRepositoryInterface;
@@ -19,14 +20,18 @@ class RestaurantProductService implements RestaurantProductServiceInterface
 
     private ProductRepositoryInterface $products;
 
+    private CategoryRepositoryInterface $categories;
+
     public function __construct(
         ?RestaurantProductRepositoryInterface $restaurantProducts = null,
         ?RestaurantRepositoryInterface $restaurants = null,
         ?ProductRepositoryInterface $products = null,
+        ?CategoryRepositoryInterface $categories = null,
     ) {
         $this->restaurantProducts = $restaurantProducts ?? app(RestaurantProductRepositoryInterface::class);
         $this->restaurants = $restaurants ?? app(RestaurantRepositoryInterface::class);
         $this->products = $products ?? app(ProductRepositoryInterface::class);
+        $this->categories = $categories ?? app(CategoryRepositoryInterface::class);
     }
 
     public function getRestaurantProductById(string $id): ?RestaurantProduct
@@ -48,7 +53,7 @@ class RestaurantProductService implements RestaurantProductServiceInterface
     {
         $restaurant = $this->restaurants->findByIdOrFail($restaurantId);
         $products = $this->getRestaurantProductsByRestaurantId($restaurantId);
-        $categories = $this->restaurantProducts->findCategoriesByRestaurantId($restaurantId);
+        $categories = $this->categories->findByRestaurantId($restaurantId);
 
         return [
             'restaurant' => $restaurant,

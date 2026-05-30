@@ -190,16 +190,6 @@ final class InMemoryPromotionRepository implements PromotionRepositoryInterface
     }
 
     public function replaceItems(string $promotionId, array $items): void {}
-
-    public function categoryBelongsToChain(string $categoryId, string $chainId): bool
-    {
-        return true;
-    }
-
-    public function productBelongsToChain(string $productId, string $chainId): bool
-    {
-        return true;
-    }
 }
 
 final class InMemoryCouponRepository implements CouponRepositoryInterface

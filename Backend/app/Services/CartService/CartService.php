@@ -10,6 +10,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\RestaurantProduct;
 use App\Repositories\CartRepository\CartRepositoryInterface;
+use App\Repositories\ProductOptionRepository\ProductOptionRepositoryInterface;
 use App\Repositories\RestaurantProductRepository\RestaurantProductRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
@@ -19,12 +20,16 @@ class CartService implements CartServiceInterface
 
     private RestaurantProductRepositoryInterface $restaurantProducts;
 
+    private ProductOptionRepositoryInterface $productOptions;
+
     public function __construct(
         ?CartRepositoryInterface $carts = null,
         ?RestaurantProductRepositoryInterface $restaurantProducts = null,
+        ?ProductOptionRepositoryInterface $productOptions = null,
     ) {
         $this->carts = $carts ?? app(CartRepositoryInterface::class);
         $this->restaurantProducts = $restaurantProducts ?? app(RestaurantProductRepositoryInterface::class);
+        $this->productOptions = $productOptions ?? app(ProductOptionRepositoryInterface::class);
     }
 
     public function getCartByUserId(string $userId): Cart
@@ -44,7 +49,7 @@ class CartService implements CartServiceInterface
         $restaurantProduct = $this->restaurantProducts->findByIdOrFail($data->restaurant_product_id);
 
         $optionIds = $data->option_ids;
-        $options = $this->carts->findProductOptionsByIds($optionIds);
+        $options = $this->productOptions->findByIds($optionIds);
         $this->validateRestaurantProductCanBeAdded($cart, $restaurantProduct);
         $this->validateOptionsForProduct($restaurantProduct, $optionIds, $options);
 
@@ -68,7 +73,7 @@ class CartService implements CartServiceInterface
         $item = $this->carts->findItemByUserIdOrFail($clientUserId, $cartItemId);
 
         if ($data->option_ids !== null) {
-            $options = $this->carts->findProductOptionsByIds($data->option_ids);
+            $options = $this->productOptions->findByIds($data->option_ids);
             $this->validateOptionsForProduct($item->restaurantProduct, $data->option_ids, $options);
             $this->carts->replaceCartItemOptions($item->id, $options);
         } else {

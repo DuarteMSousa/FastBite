@@ -2,25 +2,23 @@
 
 namespace App\Repositories\DeliveryOfferRepository;
 
+use App\DTOs\Delivery\CreateDeliveryOfferDTO;
+use App\DTOs\Delivery\UpdateDeliveryOfferDTO;
+use App\Models\DeliveryOffer;
+
 interface DeliveryOfferRepositoryInterface
 {
-    /**
-     * @return array<string, mixed>|null
-     */
-    public function getOffer(string $deliveryId, string $courierId): ?array;
+    public function createOffer(CreateDeliveryOfferDTO $data): DeliveryOffer;
 
-    /**
-     * @param  array<string, mixed>  $offer
-     */
-    public function putOffer(string $deliveryId, string $courierId, array $offer, int $ttlSeconds): void;
+    public function getById(string $offerId): ?DeliveryOffer;
 
-    public function forgetOffer(string $deliveryId, string $courierId): void;
+    public function getByIdOrFail(string $offerId, bool $lock = false): DeliveryOffer;
 
-    /**
-     * @return array<int, string>
-     */
-    public function getAttemptedCouriers(string $deliveryId): array;
+    public function getPendingByIdOrFail(string $offerId): DeliveryOffer;
 
-    public function addAttemptedCourier(string $deliveryId, string $courierId, int $ttlSeconds): void;
+    public function getPendingByCourierId(string $courierId);
+
+    public function updateOffer(DeliveryOffer $offer, UpdateDeliveryOfferDTO $data): DeliveryOffer;
+
+    public function expireOtherPendingOffers(string $deliveryId, string $acceptedOfferId): int;
 }
-

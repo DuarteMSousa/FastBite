@@ -2,53 +2,82 @@
 
 namespace App\Repositories\DeliveryOfferRepository;
 
-use Illuminate\Support\Facades\Cache;
+use App\DTOs\Delivery\CreateDeliveryOfferDTO;
+use App\DTOs\Delivery\UpdateDeliveryOfferDTO;
+use App\Enums\DeliveryOfferStatus;
+use App\Models\DeliveryOffer;
 
 class DeliveryOfferRepository implements DeliveryOfferRepositoryInterface
 {
-    public function getOffer(string $deliveryId, string $courierId): ?array
+    public function createOffer(CreateDeliveryOfferDTO $data): DeliveryOffer
     {
-        $value = Cache::get($this->getOfferKey($deliveryId, $courierId));
-
-        return is_array($value) ? $value : null;
+        return DeliveryOffer::query()->create([
+            'delivery_id' => $data->deliveryId,
+            'courier_id' => $data->courierId,
+            'status' => $data->status->value,
+            'expires_at' => $data->expiresAt,
+        ]);
     }
 
-    public function putOffer(string $deliveryId, string $courierId, array $offer, int $ttlSeconds): void
+    public function getById(string $offerId): ?DeliveryOffer
     {
-        Cache::put($this->getOfferKey($deliveryId, $courierId), $offer, now()->addSeconds($ttlSeconds));
+        return DeliveryOffer::query()->whereKey($offerId)->first();
     }
 
-    public function forgetOffer(string $deliveryId, string $courierId): void
+    public function getByIdOrFail(string $offerId, bool $lock = false): DeliveryOffer
     {
-        Cache::forget($this->getOfferKey($deliveryId, $courierId));
+        $query = DeliveryOffer::query();
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->findOrFail($offerId);
     }
 
-    public function getAttemptedCouriers(string $deliveryId): array
+    public function getPendingByIdOrFail(string $offerId): DeliveryOffer
     {
-        $value = Cache::get($this->getAttemptedCouriersKey($deliveryId), []);
-
-        return is_array($value) ? array_values(array_unique(array_filter($value))) : [];
+        return DeliveryOffer::query()
+            ->whereKey($offerId)
+            ->where('status', DeliveryOfferStatus::PENDING->value)
+            ->firstOrFail();
     }
 
-    public function addAttemptedCourier(string $deliveryId, string $courierId, int $ttlSeconds): void
+    public function getPendingByCourierId(string $courierId)
     {
-        $attempted = $this->getAttemptedCouriers($deliveryId);
-        $attempted[] = $courierId;
-        Cache::put(
-            $this->getAttemptedCouriersKey($deliveryId),
-            array_values(array_unique($attempted)),
-            now()->addSeconds($ttlSeconds)
-        );
+        return DeliveryOffer::query()
+            ->with([
+                'delivery.order.user',
+                'delivery.order.address',
+                'delivery.order.items.options',
+                'delivery.order.restaurant.address',
+                'delivery.positionHistory',
+                'courier.user',
+            ])
+            ->where('courier_id', $courierId)
+            ->where('status', DeliveryOfferStatus::PENDING->value)
+            ->where('expires_at', '>', now())
+            ->orderBy('expires_at')
+            ->get();
     }
 
-    private function getOfferKey(string $deliveryId, string $courierId): string
+    public function updateOffer(DeliveryOffer $offer, UpdateDeliveryOfferDTO $data): DeliveryOffer
     {
-        return "delivery_offer:{$deliveryId}:{$courierId}";
+        $offer->update(array_filter([
+            'status' => $data->status?->value,
+            'accepted_at' => $data->acceptedAt,
+            'rejected_at' => $data->rejectedAt,
+        ], static fn ($value) => $value !== null));
+
+        return $offer;
     }
 
-    private function getAttemptedCouriersKey(string $deliveryId): string
+    public function expireOtherPendingOffers(string $deliveryId, string $acceptedOfferId): int
     {
-        return "delivery_offer_attempted:{$deliveryId}";
+        return DeliveryOffer::query()
+            ->where('delivery_id', $deliveryId)
+            ->where('id', '!=', $acceptedOfferId)
+            ->where('status', DeliveryOfferStatus::PENDING->value)
+            ->update(['status' => DeliveryOfferStatus::EXPIRED->value]);
     }
 }
-

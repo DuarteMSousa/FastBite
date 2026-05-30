@@ -11,6 +11,8 @@ interface CategoryRepositoryInterface
 
     public function findByRestaurantChainId(string $restaurantChainId);
 
+    public function findByRestaurantId(string $restaurantId);
+
     public function exists(string $id): bool;
 
     public function belongsToChain(string $id, string $chainId): bool;

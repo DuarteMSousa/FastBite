@@ -22,8 +22,4 @@ interface PromotionRepositoryInterface
     public function deletePromotion(string $id);
 
     public function replaceItems(string $promotionId, array $items): void;
-
-    public function categoryBelongsToChain(string $categoryId, string $chainId): bool;
-
-    public function productBelongsToChain(string $productId, string $chainId): bool;
 }

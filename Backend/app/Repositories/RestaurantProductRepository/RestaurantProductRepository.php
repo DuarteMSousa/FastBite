@@ -28,20 +28,6 @@ class RestaurantProductRepository implements RestaurantProductRepositoryInterfac
             ->get();
     }
 
-    public function findCategoriesByRestaurantId(string $restaurantId)
-    {
-        $categoryIds = $this->findByRestaurantId($restaurantId)
-            ->pluck('product.category_id')
-            ->filter()
-            ->unique()
-            ->values();
-
-        return \App\Models\Category::with('products.optionGroups.options')
-            ->whereIn('id', $categoryIds)
-            ->orderBy('name')
-            ->get();
-    }
-
     public function createRestaurantProduct(CreateRestaurantProductDTO $data)
     {
         return RestaurantProduct::create([

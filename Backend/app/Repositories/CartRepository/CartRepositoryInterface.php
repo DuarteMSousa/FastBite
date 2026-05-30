@@ -39,8 +39,6 @@ interface CartRepositoryInterface
 
     public function updateTotal(string $cartId, float $total);
 
-    public function findProductOptionsByIds(array $ids);
-
     public function addCartItemOption(CartItemOptionDTO $data);
 
     public function deleteCartItem(string $cartItemId);

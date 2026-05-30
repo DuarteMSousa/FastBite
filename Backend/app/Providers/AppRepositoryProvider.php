@@ -30,6 +30,8 @@ use App\Repositories\PaymentRepository\PaymentRepository;
 use App\Repositories\PaymentRepository\PaymentRepositoryInterface;
 use App\Repositories\ProductRepository\ProductRepository;
 use App\Repositories\ProductRepository\ProductRepositoryInterface;
+use App\Repositories\ProductOptionRepository\ProductOptionRepository;
+use App\Repositories\ProductOptionRepository\ProductOptionRepositoryInterface;
 use App\Repositories\PromotionItemRepository\PromotionItemRepository;
 use App\Repositories\PromotionItemRepository\PromotionItemRepositoryInterface;
 use App\Repositories\PromotionRepository\PromotionRepository;
@@ -73,6 +75,7 @@ class AppRepositoryProvider extends ServiceProvider
         $this->app->bind(OutboxRepositoryInterface::class, OutboxRepository::class);
         $this->app->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
         $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
+        $this->app->bind(ProductOptionRepositoryInterface::class, ProductOptionRepository::class);
         $this->app->bind(PromotionItemRepositoryInterface::class, PromotionItemRepository::class);
         $this->app->bind(PromotionRepositoryInterface::class, PromotionRepository::class);
         $this->app->bind(RestaurantChainRepositoryInterface::class, RestaurantChainRepository::class);

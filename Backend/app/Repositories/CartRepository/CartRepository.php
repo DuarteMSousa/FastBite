@@ -9,7 +9,6 @@ use App\DTOs\Cart\UpdateCartItemDTO;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\CartItemOption;
-use App\Models\ProductOption;
 
 class CartRepository implements CartRepositoryInterface
 {
@@ -142,11 +141,6 @@ class CartRepository implements CartRepositoryInterface
         $cart->update(['total' => $total]);
 
         return $cart->refresh()->load(['items.restaurantProduct.product', 'items.options.productOption']);
-    }
-
-    public function findProductOptionsByIds(array $ids)
-    {
-        return ProductOption::whereIn('id', $ids)->get();
     }
 
     public function addCartItemOption(CartItemOptionDTO $data)
