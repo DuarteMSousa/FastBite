@@ -127,12 +127,12 @@ class OrderPricingService
 
         if (in_array($target, [DiscountTarget::ORDER, DiscountTarget::DELIVERY], true)) {
             $base = $target === DiscountTarget::ORDER ? $subtotal : $deliveryFee;
-            $amount = PricingCalculator::discountAmount($base, (float) $promotion->discount, $type);
+            $discountForPromotion = PricingCalculator::discountFor($type, (float) $promotion->discount);
 
             yield $this->campaignDiscountSnapshot(
                 name: $promotion->name,
                 description: $promotion->description,
-                amount: $amount,
+                amount: $discountForPromotion($base),
                 type: $type,
                 target: $target,
                 originType: CampaignMorphType::PROMOTION,
@@ -142,13 +142,15 @@ class OrderPricingService
             return;
         }
 
+        $discountForPromotion = PricingCalculator::discountFor($type, (float) $promotion->discount);
+
         foreach ($promotion->promotionItems as $promotionItem) {
             yield from $cart->items
                 ->filter($this->matchesCampaignTarget($target, (string) $promotionItem->item_id))
                 ->map(fn ($cartItem): array => $this->campaignDiscountSnapshot(
                     name: $promotion->name,
                     description: $promotion->description,
-                    amount: PricingCalculator::discountAmount((float) $cartItem->total_price, (float) $promotion->discount, $type),
+                    amount: $discountForPromotion((float) $cartItem->total_price),
                     type: $type,
                     target: $target,
                     originType: CampaignMorphType::PROMOTION,
@@ -186,12 +188,12 @@ class OrderPricingService
             DiscountTarget::PRODUCT, DiscountTarget::CATEGORY => $this->couponTargetBase($cart, $coupon, $target),
         };
 
-        $amount = PricingCalculator::discountAmount($base, (float) $coupon->discount, $type);
+        $discountForCoupon = PricingCalculator::discountFor($type, (float) $coupon->discount);
 
         return $this->campaignDiscountSnapshot(
             name: $coupon->code,
             description: $coupon->description,
-            amount: $amount,
+            amount: $discountForCoupon($base),
             type: $type,
             target: $target,
             originType: CampaignMorphType::COUPON,

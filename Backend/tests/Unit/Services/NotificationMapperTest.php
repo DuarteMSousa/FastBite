@@ -2,10 +2,10 @@
 
 namespace Tests\Unit\Services;
 
+use App\Enums\DeliveryOfferEventType;
 use App\Enums\NotificationType;
 use App\Enums\OrderEventType;
 use App\Enums\PaymentEventType;
-use App\Enums\DeliveryOfferEventType;
 use App\Services\NotificationService\NotificationMapper;
 use PHPUnit\Framework\TestCase;
 
@@ -13,7 +13,7 @@ class NotificationMapperTest extends TestCase
 {
     public function test_maps_order_ready_event_to_notification_dto(): void
     {
-        $dto = (new NotificationMapper())->map(OrderEventType::ORDER_READY, [
+        $dto = (new NotificationMapper)->map(OrderEventType::ORDER_READY, [
             'eventName' => OrderEventType::ORDER_READY->value,
             'orderId' => 'order-1',
             'customerId' => 'customer-1',
@@ -31,7 +31,7 @@ class NotificationMapperTest extends TestCase
 
     public function test_maps_created_order_with_pending_payment_to_pending_message(): void
     {
-        $dto = (new NotificationMapper())->map(OrderEventType::ORDER_CREATED, [
+        $dto = (new NotificationMapper)->map(OrderEventType::ORDER_CREATED, [
             'eventName' => OrderEventType::ORDER_CREATED->value,
             'orderId' => 'order-1',
             'customerId' => 'customer-1',
@@ -46,7 +46,7 @@ class NotificationMapperTest extends TestCase
 
     public function test_ignores_created_order_with_completed_payment_to_avoid_duplicate_confirmed_notification(): void
     {
-        $this->assertNull((new NotificationMapper())->map(OrderEventType::ORDER_CREATED, [
+        $this->assertNull((new NotificationMapper)->map(OrderEventType::ORDER_CREATED, [
             'eventName' => OrderEventType::ORDER_CREATED->value,
             'orderId' => 'order-1',
             'customerId' => 'customer-1',
@@ -55,9 +55,27 @@ class NotificationMapperTest extends TestCase
         ]));
     }
 
+    public function test_order_cancelled_delegate_resolves_dynamic_message_from_payload(): void
+    {
+        $dto = (new NotificationMapper)->map(OrderEventType::ORDER_CANCELLED, [
+            'eventName' => OrderEventType::ORDER_CANCELLED->value,
+            'orderId' => 'order-1',
+            'customerId' => 'customer-1',
+            'status' => 'CANCELLED',
+            'data' => [
+                'reason' => 'Restaurante indisponivel.',
+            ],
+        ]);
+
+        $this->assertNotNull($dto);
+        $this->assertSame('Pedido cancelado', $dto->title);
+        $this->assertSame('O seu pedido #ORDER-1 foi cancelado. Motivo: Restaurante indisponivel.', $dto->message);
+        $this->assertSame('Restaurante indisponivel.', $dto->data['reason']);
+    }
+
     public function test_maps_courier_job_offer_to_courier_notification(): void
     {
-        $dto = (new NotificationMapper())->map(DeliveryOfferEventType::JOB_OFFERED, [
+        $dto = (new NotificationMapper)->map(DeliveryOfferEventType::JOB_OFFERED, [
             'eventName' => DeliveryOfferEventType::JOB_OFFERED->value,
             'offerId' => 'offer-1',
             'deliveryId' => 'delivery-1',
@@ -74,12 +92,12 @@ class NotificationMapperTest extends TestCase
 
     public function test_returns_null_for_events_without_notification(): void
     {
-        $this->assertNull((new NotificationMapper())->map(PaymentEventType::PAYMENT_CREATED, []));
+        $this->assertNull((new NotificationMapper)->map(PaymentEventType::PAYMENT_CREATED, []));
     }
 
     public function test_returns_null_when_required_recipient_is_missing(): void
     {
-        $this->assertNull((new NotificationMapper())->map(OrderEventType::ORDER_READY, [
+        $this->assertNull((new NotificationMapper)->map(OrderEventType::ORDER_READY, [
             'eventName' => OrderEventType::ORDER_READY->value,
             'orderId' => 'order-1',
         ]));

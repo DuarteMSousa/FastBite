@@ -52,6 +52,22 @@ class PricingCalculatorTest extends TestCase
         $this->assertSame(4.0, PricingCalculator::calculateDiscountTotal($discounts));
     }
 
+    public function test_sum_by_uses_selector_delegate(): void
+    {
+        $items = [
+            ['line_total' => 4.25],
+            ['line_total' => '5.75'],
+            ['name' => 'without total'],
+        ];
+
+        $total = PricingCalculator::sumBy(
+            $items,
+            static fn (array $item): float => (float) ($item['line_total'] ?? 0)
+        );
+
+        $this->assertSame(10.0, $total);
+    }
+
     public function test_pipe_composes_transformations_left_to_right(): void
     {
         $result = PricingCalculator::pipe(
@@ -61,5 +77,23 @@ class PricingCalculatorTest extends TestCase
         );
 
         $this->assertSame(20, $result);
+    }
+
+    public function test_multiply_by_quantity_returns_curried_multiplier(): void
+    {
+        $multiplyByThree = PricingCalculator::multiplyByQuantity(3);
+        $normalizeAndMultiply = PricingCalculator::multiplyByQuantity(0);
+
+        $this->assertSame(12.0, $multiplyByThree(4));
+        $this->assertSame(5.0, $normalizeAndMultiply(5));
+    }
+
+    public function test_discount_for_returns_partially_applied_discount_delegate(): void
+    {
+        $tenPercentOff = PricingCalculator::discountFor(DiscountType::PERCENTAGE, 10);
+        $fourEurosOff = PricingCalculator::discountFor(DiscountType::FIXED_AMOUNT, 4);
+
+        $this->assertSame(2.0, $tenPercentOff(20));
+        $this->assertSame(4.0, $fourEurosOff(20));
     }
 }

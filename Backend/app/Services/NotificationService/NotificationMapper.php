@@ -8,61 +8,55 @@ use App\Enums\DeliveryOfferEventType;
 use App\Enums\NotificationType;
 use App\Enums\OrderEventType;
 use BackedEnum;
+use Closure;
 
 class NotificationMapper
 {
     /**
-     * @var array<string, mixed>
+     * @var array<string, Closure(array<string, mixed>): ?CreateNotificationDTO>
      */
-    private array $map;
+    private array $notificationDelegates;
 
     public function __construct()
     {
-        $this->map = [
-            OrderEventType::ORDER_CREATED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderCreated($payload),
-            OrderEventType::ORDER_CONFIRMED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
-                $payload,
+        $this->notificationDelegates = [
+            OrderEventType::ORDER_CREATED->value => function (array $payload): ?CreateNotificationDTO {
+                return $this->orderCreated($payload);
+            },
+            OrderEventType::ORDER_CONFIRMED->value => $this->orderUpdateDelegate(
                 'Pedido confirmado',
                 'teve o pagamento confirmado e avançou.'
             ),
-            OrderEventType::ORDER_PREPARING->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
-                $payload,
+            OrderEventType::ORDER_PREPARING->value => $this->orderUpdateDelegate(
                 'Pedido em preparação',
                 'foi aceite pelo restaurante e começou a ser preparado.'
             ),
-            OrderEventType::ORDER_READY->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
-                $payload,
+            OrderEventType::ORDER_READY->value => $this->orderUpdateDelegate(
                 'Pedido pronto',
                 'está pronto para recolha.'
             ),
-            OrderEventType::ORDER_OUT_FOR_DELIVERY->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
-                $payload,
+            OrderEventType::ORDER_OUT_FOR_DELIVERY->value => $this->orderUpdateDelegate(
                 'Pedido a caminho',
                 'saiu para entrega.'
             ),
-            OrderEventType::ORDER_DELIVERED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
-                $payload,
+            OrderEventType::ORDER_DELIVERED->value => $this->orderUpdateDelegate(
                 'Pedido entregue',
                 'foi entregue.'
             ),
-            OrderEventType::ORDER_CANCELLED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
-                $payload,
+            OrderEventType::ORDER_CANCELLED->value => $this->orderUpdateDelegate(
                 'Pedido cancelado',
-                $this->cancelledOrderMessage($payload)
+                fn (array $payload): string => $this->cancelledOrderMessage($payload)
             ),
             DeliveryOfferEventType::JOB_OFFERED->value => fn (array $payload): ?CreateNotificationDTO => $this->courierJobOffered($payload),
-            OrderEventType::ORDER_COURIER_ASSIGNED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
-                $payload,
+            OrderEventType::ORDER_COURIER_ASSIGNED->value => $this->orderUpdateDelegate(
                 'Estafeta atribuído',
                 'já tem estafeta atribuído.'
             ),
-            OrderEventType::ORDER_PICKED_UP->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
-                $payload,
+            OrderEventType::ORDER_PICKED_UP->value => $this->orderUpdateDelegate(
                 'Pedido recolhido',
                 'foi recolhido pelo estafeta no restaurante.'
             ),
-            DeliveryEventType::DELIVERY_FAILED->value => fn (array $payload): ?CreateNotificationDTO => $this->orderUpdate(
-                $payload,
+            DeliveryEventType::DELIVERY_FAILED->value => $this->orderUpdateDelegate(
                 'Problema na entrega',
                 'teve uma falha na entrega e será acompanhado pelo restaurante.'
             ),
@@ -74,9 +68,18 @@ class NotificationMapper
      */
     public function map(BackedEnum $eventType, array $payload): ?CreateNotificationDTO
     {
-        $factory = $this->map[$eventType->value] ?? null;
+        $delegate = $this->notificationDelegates[$eventType->value] ?? null;
 
-        return $factory ? $factory($payload) : null;
+        return $delegate ? $delegate($payload) : null;
+    }
+
+    private function orderUpdateDelegate(string $title, string|Closure $message): Closure
+    {
+        return function (array $payload) use ($title, $message): ?CreateNotificationDTO {
+            $resolvedMessage = $message instanceof Closure ? $message($payload) : $message;
+
+            return $this->orderUpdate($payload, $title, $resolvedMessage);
+        };
     }
 
     /**
