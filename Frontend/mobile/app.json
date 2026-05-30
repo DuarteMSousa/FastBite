@@ -16,6 +16,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "UIBackgroundModes": ["location", "fetch"],
+        "NSLocationAlwaysUsageDescription": "FastBite precisa da sua localizacao para entregar pedidos em tempo real, mesmo com a app em segundo plano.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "FastBite precisa da sua localizacao para entregar pedidos em tempo real, mesmo com a app em segundo plano.",
         "NSLocationWhenInUseUsageDescription": "FastBite precisa da sua localizacao para entregar pedidos em tempo real.",
         "LSApplicationQueriesSchemes": ["comgooglemaps", "waze"]
