@@ -37,14 +37,6 @@ class CartRepository implements CartRepositoryInterface
             ->find($cartId);
     }
 
-    public function findCheckoutCart(string $userId, ?string $cartId)
-    {
-        return Cart::with(['items.restaurantProduct.product.category', 'items.options.productOption'])
-            ->where('user_id', $userId)
-            ->when($cartId, fn ($query, $id) => $query->whereKey($id))
-            ->firstOrFail();
-    }
-
     public function findItemByUserIdOrFail(string $userId, string $cartItemId)
     {
         return CartItem::with(['restaurantProduct.product.optionGroups.options', 'options.productOption'])

@@ -2,6 +2,7 @@
 
 namespace App\GraphQL\Queries;
 
+use App\DTOs\Order\CheckoutPreviewDTO;
 use App\Services\OrderService\OrderServiceInterface;
 
 class OrderQueries
@@ -38,7 +39,7 @@ class OrderQueries
         return $this->orderService->getOrderEvents($args['order_id']);
     }
 
-    public function previewCheckout($_, array $args): array
+    public function previewCheckout($_, array $args): CheckoutPreviewDTO
     {
         $input = $args['input'];
 

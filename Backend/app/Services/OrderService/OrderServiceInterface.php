@@ -3,6 +3,7 @@
 namespace App\Services\OrderService;
 
 use App\DTOs\Order\CheckoutDTO;
+use App\DTOs\Order\CheckoutPreviewDTO;
 use App\Models\Cart;
 use App\Models\Order;
 
@@ -22,10 +23,7 @@ interface OrderServiceInterface
 
     public function checkoutOrder(string $clientUserId, CheckoutDTO $data): array;
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function previewCheckout(string $clientUserId, ?string $cartId, ?string $addressId, ?string $couponCode): array;
+    public function previewCheckout(string $clientUserId, ?string $cartId, ?string $addressId, ?string $couponCode): CheckoutPreviewDTO;
 
     public function cancelOrderByClient(string $userId, string $orderId, ?string $reason): Order;
 

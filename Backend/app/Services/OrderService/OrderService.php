@@ -6,6 +6,7 @@ use App\Aspects\Transactional;
 use App\Domain\Geo\GeoMath;
 use App\Domain\StateMachines\Orders\OrderStateFactory;
 use App\DTOs\Order\CheckoutDTO;
+use App\DTOs\Order\CheckoutPreviewDTO;
 use App\DTOs\Order\CreateOrderDTO;
 use App\DTOs\Order\OrderAddress\CreateOrderAddressDTO;
 use App\DTOs\Order\OrderItem\CreateOrderItemDTO;
@@ -35,6 +36,7 @@ use App\Services\DeliveryService\DeliveryServiceInterface;
 use App\Services\OrderPricingService;
 use App\Services\OutboxService;
 use App\Services\PaymentService\PaymentServiceInterface;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -101,23 +103,12 @@ class OrderService implements OrderServiceInterface
         return $this->orderRepository->getEvents($orderId);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    public function previewCheckout(string $clientUserId, ?string $cartId, ?string $addressId, ?string $couponCode): array
+    public function previewCheckout(string $clientUserId, ?string $cartId, ?string $addressId, ?string $couponCode): CheckoutPreviewDTO
     {
-        $cart = $this->cartRepository->findCheckoutCart($clientUserId, $cartId);
+        $cart = $this->checkoutCartForUser($clientUserId, $cartId);
 
         if ($cart->items->isEmpty()) {
-            return [
-                'subtotal' => 0.0,
-                'delivery_fee' => 0.0,
-                'discount_total' => 0.0,
-                'total' => 0.0,
-                'discounts' => [],
-                'coupon_valid' => false,
-                'coupon_error' => null,
-            ];
+            return CheckoutPreviewDTO::empty();
         }
 
         $restaurant = $cart->items->first()->restaurantProduct->restaurant()->firstOrFail();
@@ -143,28 +134,13 @@ class OrderService implements OrderServiceInterface
             $pricing = app(OrderPricingService::class)->price($cart, $restaurant, $address, null);
         }
 
-        return [
-            'subtotal' => $pricing['subtotal'],
-            'delivery_fee' => $pricing['delivery_fee'],
-            'discount_total' => $pricing['discount_total'],
-            'total' => $pricing['total'],
-            'discounts' => array_map(static fn (array $entry) => [
-                'name' => $entry['name_snapshot'],
-                'description' => $entry['description_snapshot'] ?? null,
-                'amount' => $entry['discount_amount'],
-                'type' => $entry['discount_type'],
-                'target' => $entry['discount_target'],
-                'origin_type' => $entry['origin_type'],
-            ], $pricing['discounts']),
-            'coupon_valid' => $effectiveCouponCode !== null && $couponError === null && $pricing['coupon'] !== null,
-            'coupon_error' => $couponError,
-        ];
+        return CheckoutPreviewDTO::fromPricing($pricing, $effectiveCouponCode, $couponError);
     }
 
     #[Transactional]
     public function checkoutOrder(string $clientUserId, CheckoutDTO $data): array
     {
-        $cart = $this->cartRepository->findCheckoutCart($clientUserId, $data->cart_id);
+        $cart = $this->checkoutCartForUser($clientUserId, $data->cart_id);
 
         if ($cart->items->isEmpty()) {
             throw new \RuntimeException('Cart is empty.');
@@ -240,6 +216,19 @@ class OrderService implements OrderServiceInterface
             'order' => $order->load($this->with),
             'payment' => $payment->refresh()->load('events'),
         ];
+    }
+
+    private function checkoutCartForUser(string $clientUserId, ?string $cartId): Cart
+    {
+        $cart = $cartId !== null && trim($cartId) !== ''
+            ? $this->cartRepository->findByUserIdAndCartId($clientUserId, $cartId)
+            : $this->cartRepository->findByUserId($clientUserId);
+
+        if (! $cart) {
+            throw (new ModelNotFoundException())->setModel(Cart::class);
+        }
+
+        return $cart;
     }
 
     #[Transactional]

@@ -17,8 +17,6 @@ interface CartRepositoryInterface
 
     public function findByUserIdAndCartId(string $userId, string $cartId);
 
-    public function findCheckoutCart(string $userId, ?string $cartId);
-
     public function findItemByUserIdOrFail(string $userId, string $cartItemId);
 
     public function replaceCartItemOptions(string $cartItemId, $options): void;

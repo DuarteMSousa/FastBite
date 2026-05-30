@@ -18,7 +18,7 @@ type CheckoutPayload {
   payment: Payment
 }
 
-type CheckoutPreview {
+type CheckoutPreviewPayload {
   subtotal: Float!
   delivery_fee: Float!
   discount_total: Float!
@@ -60,7 +60,7 @@ extend type Query {
     @field(resolver: "App\\GraphQL\\Queries\\OrderQueries@getRestaurantOrder")
   getOrderEvents(order_id: ID!): [OrderEvent!]!
     @field(resolver: "App\\GraphQL\\Queries\\OrderQueries@getOrderEvents")
-  previewCheckout(input: PreviewCheckoutInput!): CheckoutPreview!
+  previewCheckout(input: PreviewCheckoutInput!): CheckoutPreviewPayload!
     @field(resolver: "App\\GraphQL\\Queries\\OrderQueries@previewCheckout")
 }
 
