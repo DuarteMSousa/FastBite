@@ -112,6 +112,17 @@ class RestaurantRepository implements RestaurantRepositoryInterface
         );
     }
 
+    public function updateRating(string $restaurantId, float $ratingSum, int $ratingCount)
+    {
+        $restaurant = Restaurant::findOrFail($restaurantId);
+        $restaurant->update([
+            'rating_sum' => $ratingSum,
+            'rating_count' => $ratingCount,
+        ]);
+
+        return $restaurant;
+    }
+
     public function updateRestaurant(string $id, UpdateRestaurantDTO $data)
     {
         $restaurant = Restaurant::find($id);

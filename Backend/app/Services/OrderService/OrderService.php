@@ -385,7 +385,11 @@ class OrderService implements OrderServiceInterface
     #[Transactional]
     public function markOrderDelivered(Order $order): Order
     {
-        return $this->transition($order, OrderStatus::DELIVERED, OrderEventType::ORDER_DELIVERED);
+        $result = $this->transition($order, OrderStatus::DELIVERED, OrderEventType::ORDER_DELIVERED);
+
+        $this->checkUserOrderMilestone($result);
+
+        return $result;
     }
 
     #[Transactional]
@@ -763,5 +767,34 @@ class OrderService implements OrderServiceInterface
                 ])->values()->all(),
             ])->values()->all(),
         ];
+    }
+
+    private const ORDER_MILESTONES = [5, 10, 25, 50, 100];
+
+    private function checkUserOrderMilestone(Order $order): void
+    {
+        $userId = $order->user_id;
+
+        $totalDelivered = $this->orders->countByUserIdAndStatus($userId, OrderStatus::DELIVERED);
+
+        if (! in_array($totalDelivered, self::ORDER_MILESTONES, true)) {
+            return;
+        }
+
+        app(OutboxService::class)->enqueue(
+            OutboxAggregateType::USER,
+            $userId,
+            OutboxEventType::USER_ORDER_MILESTONE_REACHED,
+            [
+                'eventId' => (string) Str::uuid(),
+                'eventName' => OutboxEventType::USER_ORDER_MILESTONE_REACHED->value,
+                'aggregateType' => 'user',
+                'aggregateId' => $userId,
+                'userId' => $userId,
+                'totalDeliveredOrders' => $totalDelivered,
+                'milestone' => $totalDelivered,
+                'occurredAt' => now()->toIso8601String(),
+            ]
+        );
     }
 }

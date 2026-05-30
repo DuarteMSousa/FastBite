@@ -236,4 +236,11 @@ class OrderRepository implements OrderRepositoryInterface
 
         return true;
     }
+
+    public function countByUserIdAndStatus(string $userId, OrderStatus $status): int
+    {
+        return Order::where('user_id', $userId)
+            ->where('status', $status->value)
+            ->count();
+    }
 }

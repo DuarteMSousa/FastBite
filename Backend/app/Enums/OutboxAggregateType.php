@@ -10,4 +10,6 @@ enum OutboxAggregateType: string
     case DELIVERY_OFFER = 'delivery_offer';
     case CHAT = 'chat';
     case NOTIFICATION = 'notification';
+    case RESTAURANT = 'restaurant';
+    case USER = 'user';
 }

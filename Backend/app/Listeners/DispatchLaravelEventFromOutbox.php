@@ -10,7 +10,9 @@ use App\Outbox\EventHandlers\CourierPositionUpdatedOutboxEventHandler;
 use App\Outbox\EventHandlers\DeliveryOfferedOutboxEventHandler;
 use App\Outbox\EventHandlers\OrderStatusUpdatedOutboxEventHandler;
 use App\Outbox\EventHandlers\OutboxEventHandler;
+use App\Outbox\EventHandlers\RestaurantRatingThresholdOutboxEventHandler;
 use App\Outbox\EventHandlers\UserNotificationCreatedOutboxEventHandler;
+use App\Outbox\EventHandlers\UserOrderMilestoneOutboxEventHandler;
 
 class DispatchLaravelEventFromOutbox
 {
@@ -31,6 +33,8 @@ class DispatchLaravelEventFromOutbox
         OutboxEventType::ORDER_OUT_FOR_DELIVERY->value => OrderStatusUpdatedOutboxEventHandler::class,
         OutboxEventType::ORDER_DELIVERED->value => OrderStatusUpdatedOutboxEventHandler::class,
         OutboxEventType::ORDER_CANCELLED->value => OrderStatusUpdatedOutboxEventHandler::class,
+        OutboxEventType::RESTAURANT_RATING_THRESHOLD_REACHED->value => RestaurantRatingThresholdOutboxEventHandler::class,
+        OutboxEventType::USER_ORDER_MILESTONE_REACHED->value => UserOrderMilestoneOutboxEventHandler::class,
     ];
 
     public function handle(OutboxEventPublished $event): void

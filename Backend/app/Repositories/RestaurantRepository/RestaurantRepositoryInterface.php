@@ -22,6 +22,8 @@ interface RestaurantRepositoryInterface
 
     public function upsertAddress(string $restaurantId, array $payload);
 
+    public function updateRating(string $restaurantId, float $ratingSum, int $ratingCount);
+
     public function updateRestaurant(string $id, UpdateRestaurantDTO $data);
 
     public function deleteRestaurant(string $id);
