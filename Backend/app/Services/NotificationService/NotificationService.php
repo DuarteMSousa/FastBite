@@ -3,6 +3,7 @@
 namespace App\Services\NotificationService;
 
 use App\Aspects\Transactional;
+use App\Domain\Notifications\OutboxNotificationMapper;
 use App\DTOs\Notification\CreateNotificationDTO;
 use App\Enums\NotificationType;
 use App\Enums\OutboxAggregateType;
@@ -23,7 +24,7 @@ class NotificationService implements NotificationServiceInterface
 {
     public function __construct(
         private OutboxService $outboxService,
-        private NotificationMapper $mapper,
+        private OutboxNotificationMapper $mapper,
         private NotificationRepositoryInterface $notificationRepository,
         private UserPushTokenRepositoryInterface $userPushTokenRepository,
     ) {}

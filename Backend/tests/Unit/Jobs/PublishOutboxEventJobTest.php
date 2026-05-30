@@ -7,6 +7,7 @@ use App\Gateway\GatewayClientSocketPusher;
 use App\Jobs\PublishOutboxEventJob;
 use App\Models\OutboxEvent;
 use App\Repositories\OutboxRepository\OutboxRepositoryInterface;
+use App\Services\OutboxService;
 use Mockery;
 use RuntimeException;
 use Tests\TestCase;
@@ -74,6 +75,6 @@ class PublishOutboxEventJobTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('gateway down');
 
-        (new PublishOutboxEventJob('outbox-1'))->handle();
+        (new PublishOutboxEventJob('outbox-1'))->handle(app(OutboxService::class));
     }
 }

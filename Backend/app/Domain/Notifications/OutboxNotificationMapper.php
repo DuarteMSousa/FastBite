@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\NotificationService;
+namespace App\Domain\Notifications;
 
 use App\DTOs\Notification\CreateNotificationDTO;
 use App\Enums\DeliveryEventType;
@@ -10,7 +10,7 @@ use App\Enums\OrderEventType;
 use BackedEnum;
 use Closure;
 
-class NotificationMapper
+class OutboxNotificationMapper
 {
     /**
      * @var array<string, Closure(array<string, mixed>): ?CreateNotificationDTO>
@@ -25,15 +25,15 @@ class NotificationMapper
             },
             OrderEventType::ORDER_CONFIRMED->value => $this->orderUpdateDelegate(
                 'Pedido confirmado',
-                'teve o pagamento confirmado e avançou.'
+                'teve o pagamento confirmado e avancou.'
             ),
             OrderEventType::ORDER_PREPARING->value => $this->orderUpdateDelegate(
-                'Pedido em preparação',
-                'foi aceite pelo restaurante e começou a ser preparado.'
+                'Pedido em preparacao',
+                'foi aceite pelo restaurante e comecou a ser preparado.'
             ),
             OrderEventType::ORDER_READY->value => $this->orderUpdateDelegate(
                 'Pedido pronto',
-                'está pronto para recolha.'
+                'esta pronto para recolha.'
             ),
             OrderEventType::ORDER_OUT_FOR_DELIVERY->value => $this->orderUpdateDelegate(
                 'Pedido a caminho',
@@ -49,8 +49,8 @@ class NotificationMapper
             ),
             DeliveryOfferEventType::JOB_OFFERED->value => fn (array $payload): ?CreateNotificationDTO => $this->courierJobOffered($payload),
             OrderEventType::ORDER_COURIER_ASSIGNED->value => $this->orderUpdateDelegate(
-                'Estafeta atribuído',
-                'já tem estafeta atribuído.'
+                'Estafeta atribuido',
+                'ja tem estafeta atribuido.'
             ),
             OrderEventType::ORDER_PICKED_UP->value => $this->orderUpdateDelegate(
                 'Pedido recolhido',
@@ -58,7 +58,7 @@ class NotificationMapper
             ),
             DeliveryEventType::DELIVERY_FAILED->value => $this->orderUpdateDelegate(
                 'Problema na entrega',
-                'teve uma falha na entrega e será acompanhado pelo restaurante.'
+                'teve uma falha na entrega e sera acompanhado pelo restaurante.'
             ),
         ];
     }
@@ -179,7 +179,7 @@ class NotificationMapper
             userId: (string) $courierId,
             type: NotificationType::ORDER_UPDATE,
             title: 'Nova proposta de entrega',
-            message: 'Tem uma nova entrega disponível para aceitar.',
+            message: 'Tem uma nova entrega disponivel para aceitar.',
             data: [
                 'offer_id' => $payload['offerId'] ?? null,
                 'delivery_id' => $payload['deliveryId'] ?? null,
