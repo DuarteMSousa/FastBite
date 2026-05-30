@@ -35,7 +35,6 @@ use App\Services\DeliveryService\DeliveryServiceInterface;
 use App\Services\OrderPricingService;
 use App\Services\OutboxService;
 use App\Services\PaymentService\PaymentServiceInterface;
-use BackedEnum;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -316,27 +315,25 @@ class OrderService implements OrderServiceInterface
         $item = $this->orderRepository->updateOrderItemStatus($orderItemId, $status);
         $order = $item->order->refresh()->load('items');
 
-        $itemValue = static fn ($entry) => $entry->status instanceof BackedEnum
-            ? $entry->status->value
-            : $entry->status;
-        $orderStatusValue = $order->status instanceof BackedEnum ? $order->status->value : $order->status;
+        $itemStatus = static fn ($entry): OrderItemStatus => $entry->status;
+        $orderStatus = $order->status;
 
         $hasInProgress = $order->items->contains(
-            fn ($entry) => in_array($itemValue($entry), [
-                OrderItemStatus::PREPARING->value,
-                OrderItemStatus::READY->value,
+            fn ($entry) => in_array($itemStatus($entry), [
+                OrderItemStatus::PREPARING,
+                OrderItemStatus::READY,
             ], true)
         );
 
-        if ($hasInProgress && $orderStatusValue === OrderStatus::CONFIRMED->value) {
+        if ($hasInProgress && $orderStatus === OrderStatus::CONFIRMED) {
             $order = $this->transition($order, OrderStatus::PREPARING, OrderEventType::ORDER_PREPARING);
-            $orderStatusValue = OrderStatus::PREPARING->value;
+            $orderStatus = OrderStatus::PREPARING;
         }
 
         $allReady = $order->items->isNotEmpty()
-            && $order->items->every(fn ($entry) => $itemValue($entry) === OrderItemStatus::READY->value);
+            && $order->items->every(fn ($entry) => $itemStatus($entry) === OrderItemStatus::READY);
 
-        if ($allReady && $orderStatusValue === OrderStatus::PREPARING->value) {
+        if ($allReady && $orderStatus === OrderStatus::PREPARING) {
             return $this->transition($order, OrderStatus::READY, OrderEventType::ORDER_READY);
         }
 
