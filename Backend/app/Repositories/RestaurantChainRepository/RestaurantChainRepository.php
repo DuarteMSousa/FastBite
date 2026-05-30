@@ -3,6 +3,7 @@
 namespace App\Repositories\RestaurantChainRepository;
 
 use App\DTOs\RestaurantChain\CreateRestaurantChainDTO;
+use App\DTOs\RestaurantChain\SearchRestaurantChainsDTO;
 use App\DTOs\RestaurantChain\UpdateRestaurantChainDTO;
 use App\Models\RestaurantChain;
 
@@ -13,9 +14,17 @@ class RestaurantChainRepository implements RestaurantChainRepositoryInterface
         return RestaurantChain::find($id);
     }
 
-    public function findAll(int $limit = 100)
+    public function searchRestaurantChains(SearchRestaurantChainsDTO $filters)
     {
-        return RestaurantChain::orderBy('name')->limit($limit)->get();
+        $query = RestaurantChain::query();
+
+        if ($filters->q !== '') {
+            $query->where('name', 'like', "%{$filters->q}%");
+        }
+
+        return $query
+            ->orderBy('name')
+            ->paginate($filters->pageSize, ['*'], 'page', $filters->pageNumber);
     }
 
     public function exists(string $id): bool

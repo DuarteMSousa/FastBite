@@ -15,8 +15,6 @@ use Illuminate\Validation\ValidationException;
 
 class CartService implements CartServiceInterface
 {
-    private array $with = ['items.restaurantProduct.product', 'items.options.productOption'];
-
     private CartRepositoryInterface $carts;
 
     private RestaurantProductRepositoryInterface $restaurantProducts;

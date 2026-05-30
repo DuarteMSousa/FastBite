@@ -19,8 +19,6 @@ interface PaymentRepositoryInterface
 
     public function createPayment(CreatePaymentDTO $data): Payment;
 
-    public function createForOrder(string $orderId, string $method, string $status, float $amount, mixed $paidAt = null, mixed $expiredAt = null): Payment;
-
     public function updatePayment(Payment $payment, UpdatePaymentDTO $data): Payment;
 
     public function createEvent(Payment $payment, CreatePaymentEventDTO $data): void;

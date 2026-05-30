@@ -10,6 +10,7 @@ use App\DTOs\Order\CreateOrderDTO;
 use App\DTOs\Order\OrderAddress\CreateOrderAddressDTO;
 use App\DTOs\Order\OrderItem\CreateOrderItemDTO;
 use App\DTOs\Order\OrderItemOption\CreateOrderItemOptionDTO;
+use App\DTOs\Payment\CreatePaymentDTO;
 use App\Enums\OrderEventType;
 use App\Enums\OrderItemStatus;
 use App\Enums\OrderStatus;
@@ -26,7 +27,7 @@ use App\Models\Restaurant;
 use App\Models\UserAddress;
 use App\Repositories\CartRepository\CartRepositoryInterface;
 use App\Repositories\OrderRepository\OrderRepositoryInterface;
-use App\Repositories\PaymentRepository\PaymentRepositoryInterface as PaymentRepositoryContract;
+use App\Repositories\PaymentRepository\PaymentRepositoryInterface;
 use App\Repositories\UserAddressRepository\UserAddressRepositoryInterface;
 use App\Services\CartService\CartServiceInterface;
 use App\Services\DeliveryService\DeliveryServiceInterface;
@@ -54,19 +55,19 @@ class OrderService implements OrderServiceInterface
 
     private CartRepositoryInterface $carts;
 
-    private PaymentRepositoryContract $payments;
+    private PaymentRepositoryInterface $payments;
 
     private UserAddressRepositoryInterface $addresses;
 
     public function __construct(
         ?OrderRepositoryInterface $orders = null,
         ?CartRepositoryInterface $carts = null,
-        ?PaymentRepositoryContract $payments = null,
+        ?PaymentRepositoryInterface $payments = null,
         ?UserAddressRepositoryInterface $addresses = null,
     ) {
         $this->orders = $orders ?? app(OrderRepositoryInterface::class);
         $this->carts = $carts ?? app(CartRepositoryInterface::class);
-        $this->payments = $payments ?? app(PaymentRepositoryContract::class);
+        $this->payments = $payments ?? app(PaymentRepositoryInterface::class);
         $this->addresses = $addresses ?? app(UserAddressRepositoryInterface::class);
     }
 
@@ -199,14 +200,14 @@ class OrderService implements OrderServiceInterface
             ]);
         }
 
-        $payment = $this->payments->createForOrder(
-            $order->id,
-            $method->value,
-            $paymentStatus->value,
-            $pricing['total'],
-            $paymentStatus === PaymentStatus::COMPLETED ? now() : null,
-            $paymentStatus === PaymentStatus::PENDING ? now()->addMinutes(10) : null,
-        );
+        $payment = $this->payments->createPayment(new CreatePaymentDTO(
+            order_id: $order->id,
+            method: $method,
+            amount: $pricing['total'],
+            status: $paymentStatus,
+            paid_at: $paymentStatus === PaymentStatus::COMPLETED ? now() : null,
+            expired_at: $paymentStatus === PaymentStatus::PENDING ? now()->addMinutes(10) : null,
+        ));
 
         $this->recordEvent($order, OrderEventType::ORDER_CREATED, [
             'paymentStatus' => $paymentStatus->value,

@@ -96,8 +96,6 @@ class ChatService implements ChatServiceInterface
 
         $participant = $this->chats->findParticipant($data->chat_id, $senderUserId);
 
-        // Auto-adicionar managers autorizados que ainda nao sejam participantes.
-        // Espelha a logica de authorization do canal broadcast chat.{chatId}.
         if (! $participant) {
             $sender = $this->users->findById($senderUserId);
 

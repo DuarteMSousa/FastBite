@@ -11,8 +11,6 @@ interface CategoryRepositoryInterface
 
     public function findByRestaurantChainId(string $restaurantChainId);
 
-    public function findAll(?string $restaurantChainId = null, int $limit = 100);
-
     public function exists(string $id): bool;
 
     public function belongsToChain(string $id, string $chainId): bool;
@@ -23,4 +21,3 @@ interface CategoryRepositoryInterface
 
     public function deleteCategory(string $id);
 }
-

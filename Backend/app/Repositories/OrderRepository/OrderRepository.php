@@ -103,20 +103,6 @@ class OrderRepository implements OrderRepositoryInterface
             ->get();
     }
 
-    public function findByUserIdWithFilters(string $userId, int $limit, ?array $statuses = null)
-    {
-        $query = Order::with($this->defaultRelations)
-            ->where('user_id', $userId)
-            ->orderByDesc('created_at')
-            ->limit($limit);
-
-        if ($statuses !== null && count($statuses) > 0) {
-            $query->whereIn('status', $statuses);
-        }
-
-        return $query->get();
-    }
-
     public function getEvents(string $orderId)
     {
         return OrderEvent::where('order_id', $orderId)

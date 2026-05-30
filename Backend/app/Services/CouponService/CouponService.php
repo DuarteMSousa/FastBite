@@ -109,19 +109,6 @@ class CouponService implements CouponServiceInterface
         return $this->coupons->deleteCoupon($id);
     }
 
-    private function payload(CreateCouponDTO|UpdateCouponDTO $data): array
-    {
-        return [
-            'chain_id' => $data instanceof CreateCouponDTO ? $data->chain_id : null,
-            'code' => $data->code,
-            'description' => $data->description,
-            'type' => $data->type?->value,
-            'target' => $data->target?->value,
-            'expiry_date' => $data->expiry_date,
-            'discount' => $data->discount,
-        ];
-    }
-
     private function validateCoupon(string $chainId, DiscountTarget $target, ?float $discount, array $items, mixed $expiryDate): void
     {
         $errors = [];

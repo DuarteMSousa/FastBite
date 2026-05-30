@@ -6,7 +6,6 @@ use App\Aspects\Transactional;
 use App\DTOs\Restaurant\CreateRestaurantDTO;
 use App\DTOs\Restaurant\SearchRestaurantsDTO;
 use App\DTOs\Restaurant\UpdateRestaurantDTO;
-use App\Models\ChainManager;
 use App\Models\LocalManager;
 use App\Models\Restaurant;
 use App\Models\RestaurantAddress;
@@ -135,24 +134,6 @@ class RestaurantService implements RestaurantServiceInterface
     public function getRestaurantChainByManagerUserId(string $userId): ?RestaurantChain
     {
         return $this->chainManagers->findByUserId($userId)?->chain;
-    }
-
-    #[Transactional]
-    public function assignChainManager(string $userId, string $chainId): ChainManager
-    {
-        if (! $this->users->exists($userId)) {
-            throw ValidationException::withMessages([
-                'user_id' => ['User does not exist.'],
-            ]);
-        }
-
-        if (! $this->chains->exists($chainId)) {
-            throw ValidationException::withMessages([
-                'chain_id' => ['Restaurant chain does not exist.'],
-            ]);
-        }
-
-        return $this->chainManagers->updateOrCreate($userId, $chainId);
     }
 
     #[Transactional]

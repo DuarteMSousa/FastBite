@@ -5,7 +5,6 @@ namespace App\Repositories\PaymentRepository;
 use App\DTOs\Payment\CreatePaymentDTO;
 use App\DTOs\Payment\CreatePaymentEventDTO;
 use App\DTOs\Payment\UpdatePaymentDTO;
-use App\Enums\PaymentStatus;
 use App\Models\Payment;
 
 class PaymentRepository implements PaymentRepositoryInterface
@@ -42,19 +41,9 @@ class PaymentRepository implements PaymentRepositoryInterface
             'order_id' => $data->order_id,
             'method' => $data->method->value,
             'amount' => $data->amount,
-            'status' => PaymentStatus::PENDING->value,
-        ]);
-    }
-
-    public function createForOrder(string $orderId, string $method, string $status, float $amount, mixed $paidAt = null, mixed $expiredAt = null): Payment
-    {
-        return Payment::query()->create([
-            'order_id' => $orderId,
-            'method' => $method,
-            'status' => $status,
-            'amount' => $amount,
-            'paid_at' => $paidAt,
-            'expired_at' => $expiredAt,
+            'status' => $data->status->value,
+            'paid_at' => $data->paid_at,
+            'expired_at' => $data->expired_at,
         ]);
     }
 

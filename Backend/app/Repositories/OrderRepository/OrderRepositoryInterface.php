@@ -28,8 +28,6 @@ interface OrderRepositoryInterface
 
     public function findActiveByRestaurantId(string $restaurantId);
 
-    public function findByUserIdWithFilters(string $userId, int $limit, ?array $statuses = null);
-
     public function getEvents(string $orderId);
 
     public function findOrderItemOrFail(string $orderItemId);

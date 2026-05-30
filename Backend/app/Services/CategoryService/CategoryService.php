@@ -34,11 +34,6 @@ class CategoryService implements CategoryServiceInterface
         return $this->categories->findById($id);
     }
 
-    public function getAllCategories(?string $chainId = null, int $limit = 100)
-    {
-        return $this->categories->findAll($chainId, $limit);
-    }
-
     #[Transactional]
     public function createCategory(CreateCategoryDTO $data): Category
     {

@@ -12,8 +12,6 @@ interface CategoryServiceInterface
 
     public function getCategoryById(string $id): ?Category;
 
-    public function getAllCategories(?string $chainId = null, int $limit = 100);
-
     public function createCategory(CreateCategoryDTO $data): Category;
 
     public function updateCategory(string $id, UpdateCategoryDTO $data): ?Category;

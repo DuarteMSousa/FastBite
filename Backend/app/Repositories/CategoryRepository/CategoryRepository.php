@@ -21,15 +21,6 @@ class CategoryRepository implements CategoryRepositoryInterface
             ->get();
     }
 
-    public function findAll(?string $restaurantChainId = null, int $limit = 100)
-    {
-        return Category::with('products.optionGroups.options')
-            ->when($restaurantChainId !== null, fn ($query) => $query->where('chain_id', $restaurantChainId))
-            ->orderBy('name')
-            ->limit($limit)
-            ->get();
-    }
-
     public function exists(string $id): bool
     {
         return Category::whereKey($id)->exists();

@@ -48,7 +48,7 @@ class RestaurantMutations
 
     public function assignChainManager($_, array $args)
     {
-        return $this->restaurantService->assignChainManager($args['user_id'], $args['chain_id']);
+        return $this->restaurantChainService->assignChainManager($args['user_id'], $args['chain_id']);
     }
 
     public function assignLocalManager($_, array $args)

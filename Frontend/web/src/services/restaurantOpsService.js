@@ -118,9 +118,9 @@ const CHAIN_BY_MANAGER_USER_QUERY = `
   }
 `
 
-const ALL_RESTAURANT_CHAINS_QUERY = `
-  query GetAllRestaurantChains {
-    getAllRestaurantChains {
+const SEARCH_RESTAURANT_CHAINS_QUERY = `
+  query SearchRestaurantChains($input: SearchRestaurantChainsInput) {
+    searchRestaurantChains(input: $input) {
       id
       name
     }
@@ -877,12 +877,19 @@ export async function registerRestaurantUser({
   return data.createUser
 }
 
-export async function fetchAllRestaurantChains() {
+export async function searchRestaurantChains({ q = '', pageSize = 20 } = {}) {
   const data = await graphqlRequest({
-    query: ALL_RESTAURANT_CHAINS_QUERY,
+    query: SEARCH_RESTAURANT_CHAINS_QUERY,
+    variables: {
+      input: {
+        q: q.trim(),
+        pageNumber: 1,
+        pageSize,
+      },
+    },
   })
 
-  return data.getAllRestaurantChains ?? []
+  return data.searchRestaurantChains ?? []
 }
 
 export async function completeRestaurantOnboarding({

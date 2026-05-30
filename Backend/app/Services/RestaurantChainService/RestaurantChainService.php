@@ -4,18 +4,31 @@ namespace App\Services\RestaurantChainService;
 
 use App\Aspects\Transactional;
 use App\DTOs\RestaurantChain\CreateRestaurantChainDTO;
+use App\DTOs\RestaurantChain\SearchRestaurantChainsDTO;
 use App\DTOs\RestaurantChain\UpdateRestaurantChainDTO;
+use App\Models\ChainManager;
 use App\Models\RestaurantChain;
+use App\Repositories\ChainManagerRepository\ChainManagerRepositoryInterface;
 use App\Repositories\RestaurantChainRepository\RestaurantChainRepositoryInterface;
+use App\Repositories\UserRepository\UserRepositoryInterface;
 use Illuminate\Validation\ValidationException;
 
 class RestaurantChainService implements RestaurantChainServiceInterface
 {
     private RestaurantChainRepositoryInterface $chains;
 
-    public function __construct(?RestaurantChainRepositoryInterface $chains = null)
-    {
+    private ChainManagerRepositoryInterface $chainManagers;
+
+    private UserRepositoryInterface $users;
+
+    public function __construct(
+        ?RestaurantChainRepositoryInterface $chains = null,
+        ?ChainManagerRepositoryInterface $chainManagers = null,
+        ?UserRepositoryInterface $users = null,
+    ) {
         $this->chains = $chains ?? app(RestaurantChainRepositoryInterface::class);
+        $this->chainManagers = $chainManagers ?? app(ChainManagerRepositoryInterface::class);
+        $this->users = $users ?? app(UserRepositoryInterface::class);
     }
 
     public function getRestaurantChainById(string $id): ?RestaurantChain
@@ -23,9 +36,9 @@ class RestaurantChainService implements RestaurantChainServiceInterface
         return $this->chains->findById($id);
     }
 
-    public function getAllRestaurantChains(int $limit = 100)
+    public function searchRestaurantChains(SearchRestaurantChainsDTO $filters)
     {
-        return $this->chains->findAll($limit);
+        return $this->chains->searchRestaurantChains($filters)->items();
     }
 
     #[Transactional]
@@ -54,6 +67,24 @@ class RestaurantChainService implements RestaurantChainServiceInterface
     public function deleteRestaurantChain(string $id): bool
     {
         return $this->chains->deleteRestaurantChain($id);
+    }
+
+    #[Transactional]
+    public function assignChainManager(string $userId, string $chainId): ChainManager
+    {
+        if (! $this->users->exists($userId)) {
+            throw ValidationException::withMessages([
+                'user_id' => ['User does not exist.'],
+            ]);
+        }
+
+        if (! $this->chains->exists($chainId)) {
+            throw ValidationException::withMessages([
+                'chain_id' => ['Restaurant chain does not exist.'],
+            ]);
+        }
+
+        return $this->chainManagers->updateOrCreate($userId, $chainId);
     }
 
     private function validateInput(array $input): void

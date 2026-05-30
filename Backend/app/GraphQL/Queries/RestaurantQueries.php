@@ -3,6 +3,7 @@
 namespace App\GraphQL\Queries;
 
 use App\DTOs\Restaurant\SearchRestaurantsDTO;
+use App\DTOs\RestaurantChain\SearchRestaurantChainsDTO;
 use App\Services\RestaurantChainService\RestaurantChainServiceInterface;
 use App\Services\RestaurantService\RestaurantServiceInterface;
 
@@ -25,9 +26,11 @@ class RestaurantQueries
         return $this->restaurantService->getRestaurantById($args['id']);
     }
 
-    public function getAllRestaurantChains()
+    public function searchRestaurantChains($_, array $args)
     {
-        return $this->restaurantChainService->getAllRestaurantChains(500);
+        return $this->restaurantChainService->searchRestaurantChains(
+            SearchRestaurantChainsDTO::from($args['input'] ?? []),
+        );
     }
 
     public function getRestaurantChainById($_, array $args)

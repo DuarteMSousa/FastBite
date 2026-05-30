@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   bootstrapRestaurantSession,
   completeRestaurantOnboarding,
-  fetchAllRestaurantChains,
   registerRestaurantUser,
+  searchRestaurantChains,
 } from '../../../services/restaurantOpsService'
 import { RestaurantAddressMapPicker } from '../../../components/common/RestaurantAddressMapPicker'
 
@@ -74,6 +74,7 @@ export function RestaurantLoginScreen({ onLogin }) {
   const [setupMode, setSetupMode] = useState('existing-chain')
   const [restaurantForm, setRestaurantForm] = useState(INITIAL_RESTAURANT_FORM)
   const [chainName, setChainName] = useState('')
+  const [chainSearch, setChainSearch] = useState('')
   const [selectedChainId, setSelectedChainId] = useState('')
   const [chains, setChains] = useState([])
   const [loadingAction, setLoadingAction] = useState('')
@@ -96,13 +97,19 @@ export function RestaurantLoginScreen({ onLogin }) {
   useEffect(() => {
     let cancelled = false
 
-    async function loadChains() {
+    const timeoutId = window.setTimeout(async () => {
       try {
-        const nextChains = await fetchAllRestaurantChains()
+        const nextChains = await searchRestaurantChains({ q: chainSearch, pageSize: 20 })
         if (cancelled) return
         setChains(nextChains)
-        setSelectedChainId((current) => current || nextChains[0]?.id || '')
-        if (nextChains.length === 0) {
+        setSelectedChainId((current) => {
+          if (nextChains.some((chain) => chain.id === current)) {
+            return current
+          }
+
+          return nextChains[0]?.id || ''
+        })
+        if (chainSearch.trim() === '' && nextChains.length === 0) {
           setSetupMode('new-chain')
         }
       } catch {
@@ -111,14 +118,13 @@ export function RestaurantLoginScreen({ onLogin }) {
           setSetupMode('new-chain')
         }
       }
-    }
-
-    loadChains()
+    }, 250)
 
     return () => {
       cancelled = true
+      window.clearTimeout(timeoutId)
     }
-  }, [])
+  }, [chainSearch])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -349,6 +355,12 @@ export function RestaurantLoginScreen({ onLogin }) {
                 {setupMode === 'existing-chain' ? (
                   <label>
                     Cadeia existente
+                    <input
+                      value={chainSearch}
+                      onChange={(event) => setChainSearch(event.target.value)}
+                      type="search"
+                      placeholder="Pesquisar cadeia"
+                    />
                     <select
                       value={selectedChainId}
                       onChange={(event) => setSelectedChainId(event.target.value)}
