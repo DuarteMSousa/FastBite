@@ -433,7 +433,6 @@ class OrderService implements OrderServiceInterface
     {
         $order = $this->orderRepository->findByIdOrFail($order->id, lock: true);
         OrderStateFactory::from($order->status)->transition($order, $status);
-        $this->recordEvent($order, $eventType, $payload);
 
         return $order->refresh()->load($this->with);
     }

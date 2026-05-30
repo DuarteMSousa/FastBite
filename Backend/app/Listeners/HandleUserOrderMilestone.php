@@ -44,7 +44,7 @@ class HandleUserOrderMilestone
 
     private function createMilestoneCoupon(string $userId, int $milestone): Coupon
     {
-        $lastOrders = $this->orders->findByUserIdWithFilters($userId, 1, [OrderStatus::DELIVERED->value]);
+        $lastOrders = $this->orders->findByUserIdFiltered($userId, [OrderStatus::DELIVERED], 1, 1);
         $lastOrder = $lastOrders->first();
 
         $chainId = $lastOrder?->restaurant?->chain_id;

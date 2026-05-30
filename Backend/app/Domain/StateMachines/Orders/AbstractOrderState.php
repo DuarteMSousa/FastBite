@@ -26,6 +26,6 @@ abstract class AbstractOrderState implements OrderState
             ]);
         }
 
-        $order->update(['status' => $next->value]);
+        $order->transitionTo($next);
     }
 }
