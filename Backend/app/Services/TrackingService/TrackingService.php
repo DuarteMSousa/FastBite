@@ -45,7 +45,7 @@ class TrackingService implements TrackingServiceInterface
             'delivery' => $delivery,
             'courier' => $delivery?->courier,
             'last_position' => $lastPosition,
-            ...$this->trackingRepositoryRoute($delivery, $lastPosition),
+            ...$this->trackingRoute($delivery, $lastPosition),
         ];
     }
 
@@ -57,7 +57,7 @@ class TrackingService implements TrackingServiceInterface
         return [
             'delivery' => $delivery,
             'last_position' => $lastPosition,
-            ...$this->trackingRepositoryRoute($delivery, $lastPosition),
+            ...$this->trackingRoute($delivery, $lastPosition),
         ];
     }
 
@@ -80,7 +80,7 @@ class TrackingService implements TrackingServiceInterface
 
         $timestamp = $data->recorded_at ?? now()->toIso8601String();
         $this->trackingRepository->createPosition($delivery->id, $data->latitude, $data->longitude, $timestamp);
-        $route = $this->trackingRepositoryRoute($delivery, null, $data->latitude, $data->longitude);
+        $route = $this->trackingRoute($delivery, null, $data->latitude, $data->longitude);
 
         app(OutboxService::class)->enqueue(OutboxAggregateType::DELIVERY, $delivery->id, OutboxEventType::COURIER_POSITION_UPDATED, [
             'eventId' => (string) Str::uuid(),
