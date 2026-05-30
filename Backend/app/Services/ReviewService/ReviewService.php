@@ -5,18 +5,31 @@ namespace App\Services\ReviewService;
 use App\Aspects\Transactional;
 use App\DTOs\Review\CreateReviewDTO;
 use App\DTOs\Review\UpdateReviewDTO;
+use App\Enums\OutboxAggregateType;
+use App\Enums\OutboxEventType;
+use App\Enums\ReviewTargetType;
 use App\Models\Review;
+use App\Repositories\RestaurantRepository\RestaurantRepositoryInterface;
 use App\Repositories\ReviewRepository\ReviewRepositoryInterface;
+use App\Services\OutboxService;
 use BackedEnum;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ReviewService implements ReviewServiceInterface
 {
-    private ReviewRepositoryInterface $reviews;
+    private const RATING_LOW_THRESHOLD = 3.0;
+    private const RATING_HIGH_THRESHOLD = 4.5;
 
-    public function __construct(?ReviewRepositoryInterface $reviews = null)
-    {
+    private ReviewRepositoryInterface $reviews;
+    private RestaurantRepositoryInterface $restaurants;
+
+    public function __construct(
+        ?ReviewRepositoryInterface $reviews = null,
+        ?RestaurantRepositoryInterface $restaurants = null,
+    ) {
         $this->reviews = $reviews ?? app(ReviewRepositoryInterface::class);
+        $this->restaurants = $restaurants ?? app(RestaurantRepositoryInterface::class);
     }
 
     public function getReviewsByUserId(string $userId, int $page, int $perPage)
@@ -56,7 +69,13 @@ class ReviewService implements ReviewServiceInterface
         $this->assertUserCanReviewTarget($data);
         $this->assertNotDuplicate($data);
 
-        return $this->reviews->createReview($data);
+        $review = $this->reviews->createReview($data);
+
+        if ($data->target_type === ReviewTargetType::RESTAURANT) {
+            $this->updateRestaurantRatingAndCheckThreshold($data->target_id, $data->rating);
+        }
+
+        return $review;
     }
 
     private function assertUserCanReviewTarget(CreateReviewDTO $data): void
@@ -107,5 +126,52 @@ class ReviewService implements ReviewServiceInterface
         }
 
         return is_string($value) ? $value : null;
+    }
+
+    private function updateRestaurantRatingAndCheckThreshold(string $restaurantId, int $newRating): void
+    {
+        $restaurant = $this->restaurants->findByIdOrFail($restaurantId);
+
+        $previousRatingCount = (int) $restaurant->rating_count;
+        $previousRatingSum = (float) $restaurant->rating_sum;
+        $previousAverage = $previousRatingCount > 0
+            ? $previousRatingSum / $previousRatingCount
+            : 0.0;
+
+        $newRatingSum = $previousRatingSum + $newRating;
+        $newRatingCount = $previousRatingCount + 1;
+
+        $this->restaurants->updateRating($restaurantId, $newRatingSum, $newRatingCount);
+
+        $newAverage = $newRatingSum / $newRatingCount;
+
+        $thresholdType = null;
+
+        if ($newAverage <= self::RATING_LOW_THRESHOLD && $previousAverage > self::RATING_LOW_THRESHOLD) {
+            $thresholdType = 'LOW';
+        } elseif ($newAverage >= self::RATING_HIGH_THRESHOLD && $previousAverage < self::RATING_HIGH_THRESHOLD) {
+            $thresholdType = 'HIGH';
+        }
+
+        if ($thresholdType !== null) {
+            app(OutboxService::class)->enqueue(
+                OutboxAggregateType::RESTAURANT,
+                $restaurantId,
+                OutboxEventType::RESTAURANT_RATING_THRESHOLD_REACHED,
+                [
+                    'eventId' => (string) Str::uuid(),
+                    'eventName' => OutboxEventType::RESTAURANT_RATING_THRESHOLD_REACHED->value,
+                    'aggregateType' => 'restaurant',
+                    'aggregateId' => $restaurantId,
+                    'restaurantId' => $restaurantId,
+                    'restaurantName' => $restaurant->name,
+                    'averageRating' => round($newAverage, 2),
+                    'previousAverageRating' => round($previousAverage, 2),
+                    'ratingCount' => $newRatingCount,
+                    'thresholdType' => $thresholdType,
+                    'occurredAt' => now()->toIso8601String(),
+                ]
+            );
+        }
     }
 }

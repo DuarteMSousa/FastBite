@@ -10,11 +10,15 @@ use App\Events\CourierPositionUpdated;
 use App\Events\DeliveryOffered;
 use App\Events\OrderStatusUpdated;
 use App\Events\OutboxEventPublished;
+use App\Events\RestaurantRatingThresholdReached;
 use App\Events\UserNotificationCreated;
+use App\Events\UserOrderMilestoneReached;
 use App\Listeners\CourierConnectionStatusListener;
 use App\Listeners\DispatchLaravelEventFromOutbox;
 use App\Listeners\DispatchNotificationChannelsFromUserNotificationCreated;
 use App\Listeners\DispatchSocketMessage;
+use App\Listeners\HandleRestaurantRatingThreshold;
+use App\Listeners\HandleUserOrderMilestone;
 use App\Models\Coupon;
 use App\Models\Promotion;
 use App\Outbox\Handlers\CreateNotificationFromOutboxEventHandler;
@@ -109,5 +113,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(UserNotificationCreated::class, DispatchNotificationChannelsFromUserNotificationCreated::class);
         Event::listen(UserNotificationCreated::class, DispatchSocketMessage::class);
         Event::listen(CourierLastSocketDisconnected::class, CourierConnectionStatusListener::class);
+        Event::listen(RestaurantRatingThresholdReached::class, HandleRestaurantRatingThreshold::class);
+        Event::listen(UserOrderMilestoneReached::class, HandleUserOrderMilestone::class);
     }
 }

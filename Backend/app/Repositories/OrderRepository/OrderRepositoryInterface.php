@@ -4,6 +4,7 @@ namespace App\Repositories\OrderRepository;
 
 use App\DTOs\Order\CreateOrderDTO;
 use App\DTOs\Order\UpdateOrderDTO;
+use App\Enums\OrderStatus;
 use App\Models\Order;
 
 interface OrderRepositoryInterface
@@ -45,4 +46,6 @@ interface OrderRepositoryInterface
     public function updateOrder(string $id, UpdateOrderDTO $data);
 
     public function deleteOrder(string $id);
+
+    public function countByUserIdAndStatus(string $userId, OrderStatus $status): int;
 }
