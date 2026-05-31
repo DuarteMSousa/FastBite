@@ -6,11 +6,12 @@ skinparam shadowing false
 [*] --> PENDING : evento de domínio é registado\npara publicação assíncrona
 
 PENDING --> PROCESSING : worker da queue apanha o evento\ne inicia tentativa de publicação
-FAILED --> PROCESSING : chega o momento de nova tentativa\napós erro anterior
 
 PROCESSING --> PUBLISHED : evento foi enviado ao canal realtime\nou ao consumidor pretendido
-PROCESSING --> FAILED : publicação falha e são guardados\nerro, contador e próxima tentativa
+PROCESSING --> PENDING : publicação falha mas ainda há retries\n(backoff com next_attempt_at)
+PROCESSING --> FAILED : publicação falha e atinge limite de retries\n(estado terminal)
 
 PUBLISHED --> [*]
+FAILED --> [*]
 
 @enduml

@@ -420,7 +420,7 @@ orders ||--o{ order_items
 orders ||--|| order_addresses
 orders ||--o{ order_discounts
 orders ||--|| payments
-orders ||--|| deliveries
+orders ||--o| deliveries
 orders ||--o{ order_events
 orders ||--o{ chats
 restaurant_products ||--o{ order_items

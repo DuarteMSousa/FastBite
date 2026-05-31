@@ -14,4 +14,11 @@ PREPARING --> CANCELLED : falha durante preparação\nou rutura de stock
 READY --> [*]
 CANCELLED --> [*]
 
+note right of READY
+  Fluxo esperado de negócio.
+  Na implementação atual, updateOrderItemStatus
+  apenas valida valores do enum e não impõe
+  guardas estritas de transição entre estados.
+end note
+
 @enduml
