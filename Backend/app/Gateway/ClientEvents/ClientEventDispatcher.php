@@ -28,6 +28,11 @@ class ClientEventDispatcher
     public function dispatch(string $clientId, string $message): void
     {
         $socketMessage = ClientSocketMessage::fromJson($message);
+
+        if ($socketMessage->type === SocketClientEventType::GATEWAY_HEARTBEAT) {
+            return;
+        }
+
         $handlerClass = $this->handlersByType[$socketMessage->type->value] ?? null;
 
         if (! $handlerClass) {

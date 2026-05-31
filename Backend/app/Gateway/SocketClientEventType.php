@@ -4,6 +4,7 @@ namespace App\Gateway;
 
 enum SocketClientEventType: string
 {
+    case GATEWAY_HEARTBEAT = 'gateway.heartbeat';
     case HELLO = 'hello';
     case SUBSCRIBE = 'subscribe';
     case UNSUBSCRIBE = 'unsubscribe';

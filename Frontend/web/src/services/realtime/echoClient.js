@@ -175,6 +175,11 @@ function handleGatewayMessage(rawData) {
     return
   }
 
+  if (type === 'gateway.heartbeat') {
+    sendOrQueue({ type: 'gateway.heartbeat' })
+    return
+  }
+
   if (type === 'subscribe.ack') {
     const channelName = String(message.channel ?? '')
     const channelState = channelStates.get(channelName)
