@@ -2,14 +2,16 @@ import { graphqlRequest } from '../apiClient'
 import { requestOptions, sessionUserId } from './core'
 
 const CLIENT_NOTIFICATIONS_QUERY = `
-  query ClientNotifications($userId: ID!, $unreadOnly: Boolean!, $limit: Int!) {
-    getNotificationsByUserId(user_id: $userId, unread_only: $unreadOnly, limit: $limit) {
-      id
-      type
-      title
-      message
-      sent_at
-      read_at
+  query ClientNotifications($userId: ID!, $unreadOnly: Boolean!, $page: Int!, $perPage: Int!) {
+    getNotificationsByUserId(user_id: $userId, unread_only: $unreadOnly, page: $page, per_page: $perPage) {
+      items {
+        id
+        type
+        title
+        message
+        sent_at
+        read_at
+      }
     }
   }
 `
@@ -43,12 +45,13 @@ export async function fetchClientNotifications({
     variables: {
       userId: sessionUserId(session),
       unreadOnly,
-      limit,
+      page: 1,
+      perPage: limit,
     },
     ...requestOptions(session),
   })
 
-  return (data.getNotificationsByUserId ?? []).map((notification) => ({
+  return (data.getNotificationsByUserId?.items ?? []).map((notification) => ({
     id: notification.id,
     type: notification.type,
     title: notification.title,

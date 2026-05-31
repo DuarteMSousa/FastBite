@@ -884,16 +884,21 @@ export async function registerRestaurantUser({
   return data.createUser
 }
 
-export async function searchRestaurantChains({ q = '', pageSize = 20 } = {}) {
+export async function searchRestaurantChains(options = {}) {
+  const { q = null, pageNumber = 1, pageSize = 20 } = options ?? {}
+  const input = {
+    pageNumber,
+    pageSize,
+  }
+  const trimmedQuery = typeof q === 'string' ? q.trim() : q
+
+  if (trimmedQuery) {
+    input.q = trimmedQuery
+  }
+
   const data = await graphqlRequest({
     query: SEARCH_RESTAURANT_CHAINS_QUERY,
-    variables: {
-      input: {
-        q: q.trim(),
-        pageNumber: 1,
-        pageSize,
-      },
-    },
+    variables: { input },
   })
 
   return data.searchRestaurantChains ?? []
