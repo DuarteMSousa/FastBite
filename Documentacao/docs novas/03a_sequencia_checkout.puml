@@ -7,7 +7,6 @@ participant "Mobile\nCustomerAppScreen" as Mobile
 participant "GraphQL\nOrderQueries/OrderMutations" as GQL
 participant "OrderService" as OrderSvc
 participant "OrderPricingService" as Pricing
-participant "PaymentRepository" as PayRepo
 participant "OutboxService" as Outbox
 participant "Queue" as Queue
 participant "Repositories" as Repos
@@ -29,13 +28,13 @@ OrderSvc -> Repos: cria order PENDING, items e address snapshot
 OrderSvc -> Repos: cria order_discounts quando aplicável
 
 alt pagamento em dinheiro concluido no checkout
-  OrderSvc -> PayRepo: cria payment COMPLETED
+  OrderSvc -> Repos: cria payment COMPLETED
   OrderSvc -> Repos: order_events ORDER_CREATED, ORDER_PAYMENT_COMPLETED
   OrderSvc -> Repos: payment_events PAYMENT_CREATED, PAYMENT_COMPLETED
   OrderSvc -> Outbox: enqueue eventos da encomenda
   OrderSvc -> Queue: AssignCourierToDeliveryJob
 else pagamento simulado pendente
-  OrderSvc -> PayRepo: cria payment PENDING
+  OrderSvc -> Repos: cria payment PENDING
   OrderSvc -> Repos: order_events ORDER_CREATED
   OrderSvc -> Repos: payment_events PAYMENT_CREATED
   OrderSvc -> Outbox: enqueue ORDER_CREATED

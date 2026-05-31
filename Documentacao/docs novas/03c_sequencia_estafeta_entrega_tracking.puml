@@ -5,12 +5,12 @@ skinparam shadowing false
 actor Estafeta
 participant "Mobile\nCourierAppScreen" as CourierApp
 participant "GraphQL\nDelivery/Tracking Mutations" as GQL
-participant "DeliveryService\n#[Transactional]" as DeliverySvc
+participant "DeliveryService" as DeliverySvc
 participant "CourierService" as CourierSvc
 participant "TrackingService" as TrackingSvc
 participant "OrderService" as OrderSvc
 participant "OutboxService" as Outbox
-database "PostgreSQL" as DB
+participant "Repositories" as Repos
 participant "GatewayWorker" as GW
 participant "Mobile Cliente" as CustomerApp
 participant "Web Restaurante" as RestaurantWeb
@@ -18,15 +18,15 @@ participant "Web Restaurante" as RestaurantWeb
 Estafeta -> CourierApp: aceita oferta
 CourierApp -> GQL: mutation acceptDeliveryOffer(offer_id)
 GQL -> DeliverySvc: acceptDeliveryOffer(offer_id)
-DeliverySvc -> DB: bloqueia offer e delivery
-DeliverySvc -> DB: offer PENDING -> ACCEPTED
-DeliverySvc -> DB: delivery.courier_id = courierId
-DeliverySvc -> DB: expira outras ofertas pendentes
+DeliverySvc -> Repos: bloqueia offer e delivery
+DeliverySvc -> Repos: offer PENDING -> ACCEPTED
+DeliverySvc -> Repos: delivery.courier_id = courierId
+DeliverySvc -> Repos: expira outras ofertas pendentes
 DeliverySvc -> CourierSvc: status AVAILABLE -> BUSY
-DeliverySvc -> DB: delivery_events DELIVERY_ACCEPTED
+DeliverySvc -> Repos: delivery_events DELIVERY_ACCEPTED
 DeliverySvc -> OrderSvc: recordCourierAssignedToOrder(order)
-OrderSvc -> DB: order PENDING -> COURIER_ASSIGNED
-OrderSvc -> DB: order_events ORDER_COURIER_ASSIGNED
+OrderSvc -> Repos: order PENDING -> COURIER_ASSIGNED
+OrderSvc -> Repos: order_events ORDER_COURIER_ASSIGNED
 DeliverySvc -> Outbox: enqueue JOB_ACCEPTED + DELIVERY_ACCEPTED
 GW -> CustomerApp: customer.{userId}.orders
 GW -> RestaurantWeb: restaurant.{restaurantId}.orders
@@ -34,29 +34,29 @@ GW -> RestaurantWeb: restaurant.{restaurantId}.orders
 Estafeta -> CourierApp: recolhe pedido
 CourierApp -> GQL: mutation markDeliveryPickedUp(delivery_id, courier_id)
 GQL -> DeliverySvc: markDeliveryPickedUp(delivery_id, courier_id)
-DeliverySvc -> DB: delivery PENDING -> PICKED_UP
-DeliverySvc -> DB: delivery_events DELIVERY_PICKED_UP
+DeliverySvc -> Repos: delivery PENDING -> PICKED_UP
+DeliverySvc -> Repos: delivery_events DELIVERY_PICKED_UP
 DeliverySvc -> Outbox: enqueue DELIVERY_PICKED_UP
 DeliverySvc -> OrderSvc: recordOrderPickedUp(order)
-OrderSvc -> DB: order_events ORDER_PICKED_UP
+OrderSvc -> Repos: order_events ORDER_PICKED_UP
 OrderSvc -> Outbox: enqueue ORDER_PICKED_UP
 GW -> CustomerApp: order.{orderId}.tracking
 
 Estafeta -> CourierApp: inicia caminho para cliente
 CourierApp -> GQL: mutation markDeliveryInTransit(delivery_id, courier_id)
 GQL -> DeliverySvc: markDeliveryInTransit(delivery_id, courier_id)
-DeliverySvc -> DB: delivery PICKED_UP -> IN_TRANSIT
-DeliverySvc -> DB: delivery_events DELIVERY_IN_TRANSIT
+DeliverySvc -> Repos: delivery PICKED_UP -> IN_TRANSIT
+DeliverySvc -> Repos: delivery_events DELIVERY_IN_TRANSIT
 DeliverySvc -> Outbox: enqueue DELIVERY_IN_TRANSIT
 DeliverySvc -> OrderSvc: markOrderOutForDelivery(order)
-OrderSvc -> DB: order READY -> OUT_FOR_DELIVERY
+OrderSvc -> Repos: order READY -> OUT_FOR_DELIVERY
 OrderSvc -> Outbox: enqueue ORDER_OUT_FOR_DELIVERY
 GW -> CustomerApp: tracking + order update
 
 loop localizacao periodica
   CourierApp -> GQL: mutation updateCourierLocation(input)
   GQL -> TrackingSvc: updateCourierLocation(UpdateCourierLocationDTO)
-  TrackingSvc -> DB: atualiza couriers + courier_position_history
+  TrackingSvc -> Repos: atualiza couriers + courier_position_history
   TrackingSvc -> Outbox: enqueue COURIER_POSITION_UPDATED
   GW -> CustomerApp: order.{orderId}.tracking
 end
@@ -64,11 +64,11 @@ end
 Estafeta -> CourierApp: entrega concluida
 CourierApp -> GQL: mutation markDeliveryDelivered(delivery_id, courier_id)
 GQL -> DeliverySvc: markDeliveryDelivered(delivery_id, courier_id)
-DeliverySvc -> DB: delivery IN_TRANSIT -> DELIVERED
-DeliverySvc -> DB: delivery_events DELIVERY_DELIVERED
+DeliverySvc -> Repos: delivery IN_TRANSIT -> DELIVERED
+DeliverySvc -> Repos: delivery_events DELIVERY_DELIVERED
 DeliverySvc -> Outbox: enqueue DELIVERY_DELIVERED
 DeliverySvc -> OrderSvc: markOrderDelivered(order)
-OrderSvc -> DB: order OUT_FOR_DELIVERY -> DELIVERED
+OrderSvc -> Repos: order OUT_FOR_DELIVERY -> DELIVERED
 OrderSvc -> Outbox: enqueue ORDER_DELIVERED
 DeliverySvc -> CourierSvc: status BUSY -> AVAILABLE
 GW -> CustomerApp: ORDER_DELIVERED
