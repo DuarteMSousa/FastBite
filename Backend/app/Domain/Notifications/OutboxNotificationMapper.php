@@ -7,7 +7,9 @@ use App\Enums\DeliveryEventType;
 use App\Enums\DeliveryOfferEventType;
 use App\Enums\NotificationType;
 use App\Enums\OrderEventType;
+use App\Models\ChainManager;
 use App\Models\LocalManager;
+use App\Models\Restaurant;
 use BackedEnum;
 use Closure;
 
@@ -19,7 +21,7 @@ class OutboxNotificationMapper
     private array $notificationDelegates;
 
     /**
-     * @var array<string, Closure(array<string, mixed>): ?CreateNotificationDTO>
+     * @var array<string, Closure(array<string, mixed>): CreateNotificationDTO|array|null>
      */
     private array $restaurantDelegates;
 
@@ -110,9 +112,11 @@ class OutboxNotificationMapper
 
         $restaurantDelegate = $this->restaurantDelegates[$eventType->value] ?? null;
         if ($restaurantDelegate) {
-            $dto = $restaurantDelegate($payload);
-            if ($dto) {
-                $notifications[] = $dto;
+            $dtos = $restaurantDelegate($payload);
+            foreach (is_array($dtos) ? $dtos : [$dtos] as $dto) {
+                if ($dto) {
+                    $notifications[] = $dto;
+                }
             }
         }
 
@@ -257,40 +261,64 @@ class OutboxNotificationMapper
 
     /**
      * @param  array<string, mixed>  $payload
+     * @return CreateNotificationDTO[]
      */
-    private function restaurantOrderUpdate(array $payload, string $title, string $message): ?CreateNotificationDTO
+    private function restaurantOrderUpdate(array $payload, string $title, string $message): array
     {
         $restaurantId = $payload['restaurantId'] ?? $payload['restaurant_id'] ?? null;
 
         if (! $restaurantId) {
-            return null;
+            return [];
         }
 
-        $managerId = $this->resolveRestaurantManagerId((string) $restaurantId);
+        $managerIds = $this->resolveRestaurantManagerIds((string) $restaurantId);
 
-        if (! $managerId) {
-            return null;
+        if ($managerIds === []) {
+            return [];
         }
 
-        return new CreateNotificationDTO(
-            userId: $managerId,
-            type: NotificationType::ORDER_UPDATE,
-            title: $title,
-            message: sprintf('O %s %s', $this->orderReference($payload), $message),
-            data: [
-                'order_id' => $payload['orderId'] ?? null,
-                'delivery_id' => $payload['deliveryId'] ?? null,
-                'event_name' => $payload['eventName'] ?? null,
-                'status' => $payload['status'] ?? null,
-                'restaurant_id' => $restaurantId,
-            ],
+        return array_map(
+            fn (string $managerId): CreateNotificationDTO => new CreateNotificationDTO(
+                userId: $managerId,
+                type: NotificationType::ORDER_UPDATE,
+                title: $title,
+                message: sprintf('O %s %s', $this->orderReference($payload), $message),
+                data: [
+                    'order_id' => $payload['orderId'] ?? null,
+                    'delivery_id' => $payload['deliveryId'] ?? null,
+                    'event_name' => $payload['eventName'] ?? null,
+                    'status' => $payload['status'] ?? null,
+                    'restaurant_id' => $restaurantId,
+                ],
+            ),
+            $managerIds
         );
     }
 
-    private function resolveRestaurantManagerId(string $restaurantId): ?string
+    /**
+     * @return string[]
+     */
+    private function resolveRestaurantManagerIds(string $restaurantId): array
     {
-        $manager = LocalManager::where('restaurant_id', $restaurantId)->first(['user_id']);
+        $managerIds = LocalManager::query()
+            ->where('restaurant_id', $restaurantId)
+            ->pluck('user_id')
+            ->all();
 
-        return $manager?->user_id;
+        $chainId = Restaurant::query()
+            ->whereKey($restaurantId)
+            ->value('chain_id');
+
+        if ($chainId) {
+            $managerIds = [
+                ...$managerIds,
+                ...ChainManager::query()
+                    ->where('chain_id', $chainId)
+                    ->pluck('user_id')
+                    ->all(),
+            ];
+        }
+
+        return array_values(array_unique(array_map('strval', $managerIds)));
     }
 }
