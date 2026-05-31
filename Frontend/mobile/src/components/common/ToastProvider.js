@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
 
 const ToastContext = createContext(null)
+const TOAST_DURATION_MS = 2500
 let nextToastId = 0
 
 export function ToastProvider({ children }) {
@@ -12,7 +13,7 @@ export function ToastProvider({ children }) {
   }, [])
 
   const push = useCallback(
-    ({ message, title, kind = 'info', duration = 4000 }) => {
+    ({ message, title, kind = 'info', duration = TOAST_DURATION_MS }) => {
       if (!message && !title) return null
       const id = (nextToastId += 1)
       setToasts((current) => [...current, { id, message, title, kind }])
@@ -53,7 +54,7 @@ export function useToast() {
   return useContext(ToastContext) ?? { push: () => null, dismiss: () => {} }
 }
 
-export function useAutoToast({ message, kind = 'info', duration = 4000 } = {}) {
+export function useAutoToast({ message, kind = 'info', duration = TOAST_DURATION_MS } = {}) {
   const { push } = useToast()
 
   useEffect(() => {

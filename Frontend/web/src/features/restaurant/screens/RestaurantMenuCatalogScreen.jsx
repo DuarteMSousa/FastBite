@@ -284,9 +284,6 @@ export function RestaurantMenuCatalogScreen({ session }) {
               {category}
             </button>
           ))}
-          <button type="button" className="rb-filter" onClick={loadProducts} disabled={loading}>
-            Atualizar
-          </button>
         </div>
       </article>
 

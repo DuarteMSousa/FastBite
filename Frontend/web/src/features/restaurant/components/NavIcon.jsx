@@ -20,14 +20,6 @@ const ICON_PATHS = {
       <path d="M12 7v5l3.5 2" />
     </>
   ),
-  stats: (
-    <>
-      <path d="M3 3v18h18" />
-      <path d="M18 17V9" />
-      <path d="M13 17V5" />
-      <path d="M8 17v-3" />
-    </>
-  ),
   menu: (
     <>
       <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />

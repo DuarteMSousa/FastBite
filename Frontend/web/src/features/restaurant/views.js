@@ -8,7 +8,6 @@ import { RestaurantOrderDetailScreen } from './screens/RestaurantOrderDetailScre
 import { RestaurantOrdersHistoryScreen } from './screens/RestaurantOrdersHistoryScreen'
 import { RestaurantReviewsScreen } from './screens/RestaurantReviewsScreen'
 import { RestaurantCampaignsScreen } from './screens/RestaurantCampaignsScreen'
-import { RestaurantStatsScreen } from './screens/RestaurantStatsScreen'
 import { RestaurantProfileScreen } from './screens/RestaurantProfileScreen'
 
 export const RESTAURANT_VIEWS = [
@@ -32,13 +31,6 @@ export const RESTAURANT_VIEWS = [
     label: 'Histórico',
     icon: 'HS',
     Component: RestaurantOrdersHistoryScreen,
-  },
-  {
-    id: 'stats',
-    path: 'stats',
-    label: 'Estatísticas',
-    icon: 'ST',
-    Component: RestaurantStatsScreen,
   },
   {
     id: 'order-detail',

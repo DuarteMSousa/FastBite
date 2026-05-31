@@ -72,9 +72,6 @@ export function RestaurantOrdersHistoryScreen({ session, onSelectOrder, onNaviga
         <div>
           <h2>Histórico de pedidos</h2>
         </div>
-        <button type="button" className="rb-btn-outline" onClick={() => load({ append: false, page: 1 })}>
-          {loading ? 'A carregar...' : 'Atualizar'}
-        </button>
       </header>
 
       <div className="rb-stat-grid">

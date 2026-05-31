@@ -1,4 +1,4 @@
-export const OFFER_EXPIRY_FALLBACK_SECONDS = 30
+export const OFFER_EXPIRY_FALLBACK_SECONDS = 60
 
 export function parseServerDateMs(value) {
   if (!value) return null

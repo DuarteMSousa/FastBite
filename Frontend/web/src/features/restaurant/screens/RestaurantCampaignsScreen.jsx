@@ -384,9 +384,6 @@ export function RestaurantCampaignsScreen({ session }) {
         <div>
           <h2>Campanhas</h2>
         </div>
-        <button type="button" className="rb-btn-outline" onClick={load} disabled={loading}>
-          {loading ? 'A carregar...' : 'Atualizar'}
-        </button>
       </header>
 
       <article className="rb-table-card">

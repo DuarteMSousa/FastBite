@@ -59,7 +59,7 @@ class DeliveryService implements DeliveryServiceInterface
     }
 
     #[Transactional]
-    public function createDeliveryOfferForCourier(string $deliveryId, string $courierId, int $ttlSeconds = 30): DeliveryOffer
+    public function createDeliveryOfferForCourier(string $deliveryId, string $courierId, int $ttlSeconds = 60): DeliveryOffer
     {
         $offer = $this->deliveryOfferRepository->createOffer(new CreateDeliveryOfferDTO(
             deliveryId: $deliveryId,

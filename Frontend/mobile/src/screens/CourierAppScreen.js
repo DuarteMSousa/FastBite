@@ -51,6 +51,8 @@ import {
 } from './courier/utils'
 import { useAutoToast } from '../components/common/ToastProvider'
 
+const COURIER_TOAST_DURATION_MS = 2500
+
 function normalizeSocketChatMessage(payload) {
   return {
     id: payload?.message_id ?? payload?.event_id ?? `${Date.now()}-${Math.random()}`,
@@ -167,6 +169,16 @@ export function CourierAppScreen({ session, onLogout, deepLink, onConsumeDeepLin
     .toUpperCase() || 'E'
 
   useAutoToast({ message: errorText, kind: 'error' })
+
+  useEffect(() => {
+    if (!toast) return undefined
+
+    const timer = setTimeout(() => {
+      setToast((current) => (current === toast ? '' : current))
+    }, COURIER_TOAST_DURATION_MS)
+
+    return () => clearTimeout(timer)
+  }, [toast])
 
   const activeOffer = useMemo(
     () => availableOffers.find((offer) => offer.offer_token === activeOfferId) ?? null,
@@ -1177,12 +1189,6 @@ export function CourierAppScreen({ session, onLogout, deepLink, onConsumeDeepLin
                 {statusText(courierStatus)}
               </Text>
             </Pressable>
-          </View>
-
-          <View style={styles.statusRow}>
-            <Text style={[styles.statusChip, isOnline ? styles.statusChipOk : styles.statusChipWarn]}>
-              Net: {isOnline ? 'online' : 'offline'}
-            </Text>
           </View>
 
           <View style={styles.statusToggleRow}>

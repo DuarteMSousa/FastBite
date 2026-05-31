@@ -141,17 +141,37 @@ export function RestaurantLoginScreen({ onLogin }) {
   }, [])
 
   useEffect(() => {
-    loadChains({ append: false, page: 1, syncMode: !dialogOpen })
+    let cancelled = false
+
+    queueMicrotask(() => {
+      if (!cancelled) {
+        loadChains({ append: false, page: 1, syncMode: !dialogOpen })
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [dialogOpen, loadChains])
 
   useEffect(() => {
-    setSelectedChainId((current) => {
-      if (current && (dialogOpen || chains.some((chain) => chain.id === current))) {
-        return current
-      }
+    let cancelled = false
 
-      return chains[0]?.id || ''
+    queueMicrotask(() => {
+      if (cancelled) return
+
+      setSelectedChainId((current) => {
+        if (current && (dialogOpen || chains.some((chain) => chain.id === current))) {
+          return current
+        }
+
+        return chains[0]?.id || ''
+      })
     })
+
+    return () => {
+      cancelled = true
+    }
   }, [chains, dialogOpen])
 
   async function handleSubmit(event) {
@@ -270,7 +290,6 @@ export function RestaurantLoginScreen({ onLogin }) {
         {activeMode === 'login' ? (
           <>
             <h2>Entrar no painel do restaurante</h2>
-            <p>Utilize email e palavra-passe. O restaurante é identificado automaticamente.</p>
 
             <form className="rb-login-form" onSubmit={handleSubmit}>
               <label>
@@ -301,7 +320,6 @@ export function RestaurantLoginScreen({ onLogin }) {
         ) : (
           <>
             <h2>Criar utilizador de restaurante</h2>
-            <p>Depois de criar a conta, configure a cadeia e o restaurante numa janela.</p>
 
             <form className="rb-login-form" onSubmit={handleRegister}>
               <label>

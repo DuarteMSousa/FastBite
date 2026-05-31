@@ -558,9 +558,6 @@ export function RestaurantChainCatalogScreen({ session }) {
               {category}
             </button>
           ))}
-          <button type="button" className="rb-filter" onClick={loadCatalog} disabled={loading}>
-            Atualizar
-          </button>
         </div>
       </article>
 

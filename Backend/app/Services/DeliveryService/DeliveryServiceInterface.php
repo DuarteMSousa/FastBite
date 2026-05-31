@@ -13,7 +13,7 @@ interface DeliveryServiceInterface
 
     public function createDeliveryForOrder(string $orderId, float $deliveryFee): Delivery;
 
-    public function createDeliveryOfferForCourier(string $deliveryId, string $courierId, int $ttlSeconds = 30): DeliveryOffer;
+    public function createDeliveryOfferForCourier(string $deliveryId, string $courierId, int $ttlSeconds = 60): DeliveryOffer;
 
     public function assignCourierToDelivery(string $deliveryId): void;
 
