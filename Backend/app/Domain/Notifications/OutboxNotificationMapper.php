@@ -7,9 +7,9 @@ use App\Enums\DeliveryEventType;
 use App\Enums\DeliveryOfferEventType;
 use App\Enums\NotificationType;
 use App\Enums\OrderEventType;
-use App\Models\ChainManager;
-use App\Models\LocalManager;
-use App\Models\Restaurant;
+use App\Repositories\ChainManagerRepository\ChainManagerRepositoryInterface;
+use App\Repositories\LocalManagerRepository\LocalManagerRepositoryInterface;
+use App\Repositories\RestaurantRepository\RestaurantRepositoryInterface;
 use BackedEnum;
 use Closure;
 
@@ -25,8 +25,11 @@ class OutboxNotificationMapper
      */
     private array $restaurantDelegates;
 
-    public function __construct()
-    {
+    public function __construct(
+        private LocalManagerRepositoryInterface $localManagerRepository,
+        private ChainManagerRepositoryInterface $chainManagerRepository,
+        private RestaurantRepositoryInterface $restaurantRepository,
+    ) {
         $this->notificationDelegates = [
             OrderEventType::ORDER_CREATED->value => function (array $payload): ?CreateNotificationDTO {
                 return $this->orderCreated($payload);
@@ -252,7 +255,7 @@ class OutboxNotificationMapper
 
     private function restaurantOrderDelegate(string $title, string|Closure $message): Closure
     {
-        return function (array $payload) use ($title, $message): ?CreateNotificationDTO {
+        return function (array $payload) use ($title, $message): array {
             $resolvedMessage = $message instanceof Closure ? $message($payload) : $message;
 
             return $this->restaurantOrderUpdate($payload, $title, $resolvedMessage);
@@ -300,20 +303,18 @@ class OutboxNotificationMapper
      */
     private function resolveRestaurantManagerIds(string $restaurantId): array
     {
-        $managerIds = LocalManager::query()
-            ->where('restaurant_id', $restaurantId)
+        $managerIds = $this->localManagerRepository
+            ->findByRestaurantId($restaurantId)
             ->pluck('user_id')
             ->all();
 
-        $chainId = Restaurant::query()
-            ->whereKey($restaurantId)
-            ->value('chain_id');
+        $chainId = $this->restaurantRepository->findById($restaurantId)?->chain_id;
 
         if ($chainId) {
             $managerIds = [
                 ...$managerIds,
-                ...ChainManager::query()
-                    ->where('chain_id', $chainId)
+                ...$this->chainManagerRepository
+                    ->findByChainId((string) $chainId)
                     ->pluck('user_id')
                     ->all(),
             ];
