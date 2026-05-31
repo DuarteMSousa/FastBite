@@ -6,15 +6,12 @@ skinparam shadowing false
 skinparam roundCorner 6
 skinparam linetype ortho
 left to right direction
-skinparam packageStyle rectangle
 skinparam nodesep 55
 skinparam ranksep 45
 
 ' =========================================================
 ' USERS E PERFIS
 ' =========================================================
-
-package "Utilizadores e Perfis" {
 
 class User {
   +id: uuid
@@ -78,13 +75,9 @@ class UserPushToken {
   +updated_at: timestamp
 }
 
-}
-
 ' =========================================================
 ' RESTAURANTES E CATALOGO
 ' =========================================================
-
-package "Restaurantes e Catalogo" {
 
 class RestaurantChain {
   +id: uuid
@@ -168,13 +161,9 @@ class ProductOption {
   +updated_at: timestamp
 }
 
-}
-
 ' =========================================================
 ' CARRINHO
 ' =========================================================
-
-package "Carrinho" {
 
 class Cart {
   +id: uuid
@@ -204,13 +193,9 @@ class CartItemOption {
   +updated_at: timestamp
 }
 
-}
-
 ' =========================================================
 ' ENCOMENDAS
 ' =========================================================
-
-package "Encomendas" {
 
 class Order {
   +id: uuid
@@ -277,18 +262,14 @@ class OrderDiscount {
 class OrderEvent {
   +id: uuid
   +order_id: uuid
-  +event_type: string
+  +event_type: OrderEventType
   +timestamp: timestamp
   +payload: jsonb?
-}
-
 }
 
 ' =========================================================
 ' PAGAMENTOS E ENTREGAS
 ' =========================================================
-
-package "Pagamentos e Entregas" {
 
 class Payment {
   +id: uuid
@@ -306,7 +287,7 @@ class Payment {
 class PaymentEvent {
   +id: uuid
   +payment_id: uuid
-  +event_type: string
+  +event_type: PaymentEventType
   +timestamp: timestamp
   +payload: jsonb?
 }
@@ -338,7 +319,7 @@ class DeliveryOffer {
 class DeliveryEvent {
   +id: uuid
   +delivery_id: uuid
-  +event_type: string
+  +event_type: DeliveryEventType
   +payload: jsonb?
   +created_at: timestamp
 }
@@ -351,13 +332,9 @@ class CourierPositionHistory {
   +timestamp: timestamp
 }
 
-}
-
 ' =========================================================
 ' CAMPANHAS, REVIEWS, NOTIFICACOES E CHAT
 ' =========================================================
-
-package "Campanhas, Comunicacao e Auditoria" {
 
 class Promotion {
   +id: uuid
@@ -438,7 +415,7 @@ class ChatParticipant {
 class Message {
   +id: uuid
   +chat_id: uuid
-  +sender_participant_id: uuid
+  +user_id: uuid
   +content: text
   +timestamp: timestamp
   +read_at: timestamp?
@@ -446,9 +423,9 @@ class Message {
 
 class OutboxEvent {
   +id: uuid
-  +aggregate_type: string
+  +aggregate_type: OutboxAggregateType
   +aggregate_id: uuid?
-  +event_name: string
+  +event_type: OutboxEventType
   +payload: json
   +status: OutboxStatus
   +retry_count: int
@@ -459,6 +436,186 @@ class OutboxEvent {
   +updated_at: timestamp
 }
 
+enum CourierStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+enum OrderStatus {
+  PENDING
+  COURIER_ASSIGNED
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum OrderItemStatus {
+  PENDING
+  PREPARING
+  READY
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  MBWAY
+  PAYPAL
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum DeliveryStatus {
+  PENDING
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+}
+
+enum DeliveryOfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum DiscountTarget {
+  ORDER
+  PRODUCT
+  DELIVERY
+  CATEGORY
+}
+
+enum CampaignMorphType {
+  PROMOTION
+  COUPON
+}
+
+enum ReviewTargetType {
+  RESTAURANT
+  COURIER
+}
+
+enum ChatType {
+  CUSTOMER_RESTAURANT
+  CUSTOMER_COURIER
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  PROMOTION
+  SYSTEM
+}
+
+enum PushTokenProvider {
+  expo
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}
+
+enum OutboxAggregateType {
+  order
+  payment
+  delivery
+  delivery_offer
+  chat
+  notification
+  restaurant
+  user
+}
+
+enum OutboxEventType {
+  ORDER_CREATED
+  ORDER_PAYMENT_COMPLETED
+  ORDER_CONFIRMED
+  ORDER_REJECTED
+  ORDER_COURIER_ASSIGNED
+  ORDER_PREPARING
+  ORDER_READY
+  ORDER_PICKED_UP
+  ORDER_OUT_FOR_DELIVERY
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  ORDER_STATUS_UPDATED
+  PAYMENT_CREATED
+  PAYMENT_COMPLETED
+  PAYMENT_FAILED
+  PAYMENT_EXPIRED
+  PAYMENT_CANCELLED
+  PAYMENT_REFUNDED
+  DELIVERY_ACCEPTED
+  DELIVERY_PICKED_UP
+  DELIVERY_IN_TRANSIT
+  DELIVERY_DELIVERED
+  DELIVERY_FAILED
+  JOB_OFFERED
+  JOB_ACCEPTED
+  JOB_REJECTED
+  JOB_EXPIRED
+  COURIER_POSITION_UPDATED
+  CHAT_MESSAGE_SENT
+  USER_NOTIFICATION_CREATED
+  RESTAURANT_RATING_THRESHOLD_REACHED
+  USER_ORDER_MILESTONE_REACHED
+}
+
+enum OrderEventType {
+  ORDER_CREATED
+  ORDER_PAYMENT_COMPLETED
+  ORDER_CONFIRMED
+  ORDER_REJECTED
+  ORDER_COURIER_ASSIGNED
+  ORDER_PREPARING
+  ORDER_READY
+  ORDER_PICKED_UP
+  ORDER_OUT_FOR_DELIVERY
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+}
+
+enum PaymentEventType {
+  PAYMENT_CREATED
+  PAYMENT_COMPLETED
+  PAYMENT_FAILED
+  PAYMENT_EXPIRED
+  PAYMENT_CANCELLED
+  PAYMENT_REFUNDED
+}
+
+enum DeliveryEventType {
+  DELIVERY_ACCEPTED
+  DELIVERY_PICKED_UP
+  DELIVERY_IN_TRANSIT
+  DELIVERY_DELIVERED
+  DELIVERY_FAILED
+}
+
+enum DeliveryOfferEventType {
+  JOB_OFFERED
+  JOB_ACCEPTED
+  JOB_REJECTED
+  JOB_EXPIRED
 }
 
 ' =========================================================
@@ -523,7 +680,7 @@ Coupon "1" -- "0..*" PromotionItem : alvos
 
 Chat "1" -- "2..*" ChatParticipant : participantes
 Chat "1" -- "0..*" Message : mensagens
-ChatParticipant "1" -- "0..*" Message : envia
+ChatParticipant "1" -- "0..*" Message : envia via user_id
 
 ' Relacoes polimorficas / por tipo
 Review ..> Restaurant : target_type=RESTAURANT
@@ -535,6 +692,7 @@ OrderDiscount ..> Coupon : origin_type=COUPON
 OutboxEvent ..> Order : aggregate_type=order
 OutboxEvent ..> Payment : aggregate_type=payment
 OutboxEvent ..> Delivery : aggregate_type=delivery
+OutboxEvent ..> DeliveryOffer : aggregate_type=delivery_offer
 OutboxEvent ..> Notification : aggregate_type=notification
 OutboxEvent ..> Chat : aggregate_type=chat
 
@@ -544,24 +702,5 @@ RestaurantChain -[hidden]right- Cart
 Cart -[hidden]right- Order
 Order -[hidden]right- Payment
 Payment -[hidden]right- Promotion
-
-legend right
-  <b>Tipos enumerados</b>
-  CourierStatus: AVAILABLE, BUSY, OFFLINE
-  OrderStatus: PENDING, COURIER_ASSIGNED, CONFIRMED, PREPARING, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED
-  OrderItemStatus: PENDING, PREPARING, READY, CANCELLED
-  PaymentMethod: CASH, CARD, MBWAY, PAYPAL
-  PaymentStatus: PENDING, COMPLETED, FAILED, CANCELLED, REFUNDED
-  DeliveryStatus: PENDING, PICKED_UP, IN_TRANSIT, DELIVERED, FAILED
-  DeliveryOfferStatus: PENDING, ACCEPTED, REJECTED, EXPIRED
-  DiscountType: PERCENTAGE, FIXED_AMOUNT
-  DiscountTarget: ORDER, PRODUCT, DELIVERY, CATEGORY
-  CampaignMorphType: PROMOTION, COUPON
-  ReviewTargetType: RESTAURANT, COURIER
-  ChatType: CUSTOMER_RESTAURANT, CUSTOMER_COURIER
-  NotificationType: ORDER_UPDATE, PROMOTION, SYSTEM
-  PushTokenProvider: expo
-  OutboxStatus: PENDING, PROCESSING, PUBLISHED, FAILED
-endlegend
 
 @enduml

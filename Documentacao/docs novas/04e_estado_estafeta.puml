@@ -9,9 +9,11 @@ OFFLINE --> AVAILABLE : estafeta entra na app\ne ativa disponibilidade
 AVAILABLE --> BUSY : estafeta aceita uma oferta\ne fica associado a uma entrega
 BUSY --> AVAILABLE : entrega é concluída\ne o estafeta volta a receber ofertas
 AVAILABLE --> OFFLINE : estafeta termina sessão\nou desliga a app
-BUSY --> OFFLINE : socket é desligado
 OFFLINE --> BUSY : recuperação excecional de entrega\njá atribuída
 
-
+note right of BUSY
+  O backend bloqueia a passagem para OFFLINE
+  enquanto existir entrega ativa.
+end note
 
 @enduml

@@ -3,9 +3,9 @@ title FastBite - Estados de Entrega (DeliveryStatus)
 
 skinparam shadowing false
 
-[*] --> PENDING : encomenda confirmada cria entrega\nainda sem percurso iniciado
+[*] --> PENDING : pagamento concluido cria entrega\nainda sem estafeta atribuido
 
-PENDING --> PICKED_UP : estafeta chega ao restaurante\ne recolhe o pedido
+PENDING --> PICKED_UP : estafeta atribuido chega ao restaurante\ne recolhe o pedido
 PENDING --> FAILED : não foi possível atribuir/recolher\na entrega
 
 PICKED_UP --> IN_TRANSIT : estafeta sai do restaurante\na caminho do cliente

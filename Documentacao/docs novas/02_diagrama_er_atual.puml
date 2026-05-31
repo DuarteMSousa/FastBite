@@ -201,6 +201,7 @@ entity order_discounts {
   order_id : uuid <<FK orders.id>>
   order_item_id : uuid? <<FK order_items.id>>
   name_snapshot : string
+  description_snapshot : string?
   discount_amount : float
   discount_type : enum
   discount_target : enum
@@ -256,6 +257,7 @@ entity promotions {
   --
   chain_id : uuid <<FK restaurant_chains.id>>
   name : string
+  description : string?
   type : enum
   target : enum
   discount : float
@@ -268,6 +270,7 @@ entity coupons {
   --
   chain_id : uuid <<FK restaurant_chains.id>>
   code : string <<UK>>
+  description : string?
   type : enum
   target : enum
   discount : float
@@ -313,7 +316,7 @@ entity messages {
   *id : uuid <<PK>>
   --
   chat_id : uuid <<FK chats.id>>
-  sender_participant_id : uuid <<FK chat_participants.id>>
+  user_id : uuid <<FK users.id>>
   content : text
   timestamp : timestamp
   read_at : timestamp?
@@ -373,7 +376,7 @@ entity outbox_events {
   --
   aggregate_type : string
   aggregate_id : uuid?
-  event_name : string
+  event_type : string
   payload : json
   status : enum(PENDING, PROCESSING, PUBLISHED, FAILED)
   retry_count : int
@@ -434,6 +437,7 @@ couriers ||--o{ delivery_offers
 
 chats ||--o{ chat_participants
 chats ||--o{ messages
-chat_participants ||--o{ messages
+users ||--o{ messages
+chat_participants ||--o{ messages : "(chat_id,user_id)"
 
 @enduml

@@ -28,16 +28,17 @@ OrderSvc -> DB: begin transaction
 OrderSvc -> DB: cria order PENDING, items e address snapshot
 OrderSvc -> DB: cria order_discounts quando aplicável
 
-alt pagamento concluído no checkout
+alt pagamento em dinheiro concluido no checkout
   OrderSvc -> PayRepo: cria payment COMPLETED
   OrderSvc -> DB: order_events ORDER_CREATED, ORDER_PAYMENT_COMPLETED
   OrderSvc -> DB: payment_events PAYMENT_CREATED, PAYMENT_COMPLETED
-  OrderSvc -> Outbox: enqueue order/payment events
+  OrderSvc -> Outbox: enqueue eventos da encomenda
   OrderSvc -> Queue: AssignCourierToDeliveryJob
 else pagamento simulado pendente
   OrderSvc -> PayRepo: cria payment PENDING
   OrderSvc -> DB: order_events ORDER_CREATED
   OrderSvc -> DB: payment_events PAYMENT_CREATED
+  OrderSvc -> Outbox: enqueue ORDER_CREATED
   OrderSvc -> Queue: ExpirePendingPaymentJob(delay expired_at)
 end
 
