@@ -1,8 +1,8 @@
-# Relatorio do Projeto FastBite
+# Relatório do Projeto FastBite
 
-**Unidade Curricular:** Programacao em Dispositivos Web e Moveis  
+**Unidade Curricular:** Programação em Dispositivos Web e Móveis  
 **Projeto:** 2526-IPP-ESTG-MEI-PEDWM-AC-TP2  
-**Instituicao:** Instituto Politecnico do Porto - ESTG  
+**Instituição:** Instituto Politécnico do Porto - ESTG  
 **Ano letivo:** 2025/2026  
 **Data:** Maio de 2026  
 **Elementos do grupo:** A preencher  
@@ -10,9 +10,9 @@
 
 ## Resumo
 
-O FastBite e uma plataforma academica de encomendas e entregas de refeicoes que liga tres atores principais: cliente, restaurante e estafeta. O sistema permite que clientes consultem restaurantes e menus, criem carrinhos, finalizem encomendas, acompanhem o estado da entrega e comuniquem atraves de notificacoes e chat. Do lado do restaurante, a aplicacao web suporta a gestao operacional de pedidos, catalogo, campanhas, avaliacoes, notificacoes e acompanhamento da cozinha. Do lado do estafeta, a aplicacao mobile permite gerir disponibilidade, receber ofertas de entrega, aceitar ou rejeitar servicos, atualizar estados e enviar localizacao para tracking.
+O FastBite é uma plataforma académica de encomendas e entregas de refeições que liga três atores principais: cliente, restaurante e estafeta. O sistema permite que clientes consultem restaurantes e menus, criem carrinhos, finalizem encomendas, acompanhem o estado da entrega e comuniquem através de notificações e chat. Do lado do restaurante, a aplicação web suporta a gestão operacional de pedidos, catálogo, campanhas, avaliações, notificações e acompanhamento da cozinha. Do lado do estafeta, a aplicação mobile permite gerir disponibilidade, receber ofertas de entrega, aceitar ou rejeitar serviços, atualizar estados e enviar localização para tracking.
 
-Do ponto de vista tecnico, o projeto foi desenvolvido com backend em Laravel, API GraphQL atraves de Lighthouse, base de dados PostgreSQL, frontend web em React/Vite e frontend mobile em React Native/Expo. A comunicacao em tempo real foi implementada com WebSockets usando GatewayWorker/Workerman, de acordo com a implementacao existente no codigo. O sistema aplica uma arquitetura modular e orientada a eventos, recorrendo a outbox, jobs, notificacoes, tracking, chat, pagamentos simulados, auditoria e maquinas de estados para controlar encomendas, pagamentos e entregas.
+Do ponto de vista técnico, o projeto foi desenvolvido com backend em Laravel, API GraphQL através de Lighthouse, base de dados PostgreSQL, frontend web em React/Vite e frontend mobile em React Native/Expo. A comunicação em tempo real foi implementada com WebSockets usando GatewayWorker/Workerman, de acordo com a implementação existente no código. O sistema aplica uma arquitetura modular e orientada a eventos, recorrendo a outbox, jobs, notificações, tracking, chat, pagamentos simulados, auditoria e máquinas de estados para controlar encomendas, pagamentos e entregas.
 
 ## Abstract
 
@@ -20,237 +20,237 @@ FastBite is an academic meal ordering and delivery platform connecting three mai
 
 From a technical perspective, the project was developed with a Laravel backend, a GraphQL API powered by Lighthouse, PostgreSQL as the relational database, a React/Vite web frontend and a React Native/Expo mobile frontend. Real-time communication was implemented with WebSockets using GatewayWorker/Workerman, matching the actual project implementation. The system follows a modular and event-driven architecture, using an outbox pattern, background jobs, notifications, tracking, chat, simulated payments, audit events and state machines to control orders, payments and deliveries.
 
-## Indice
+## Índice
 
-1. Contextualizacao e Motivacao
-2. Enquadramento Tecnologico
-3. Conceptualizacao do Problema
-4. Arquitetura da Solucao
-5. Modelacao e Especificacao
-6. Paradigmas e Padroes Aplicados
-7. Implementacao do Backend
-8. Implementacao dos Frontends
-9. Validacao e Testes
+1. Contextualização e Motivação
+2. Enquadramento Tecnológico
+3. Conceptualização do Problema
+4. Arquitetura da Solução
+5. Modelação e Especificação
+6. Paradigmas e Padrões Aplicados
+7. Implementação do Backend
+8. Implementação dos Frontends
+9. Validação e Testes
 10. Resultados Obtidos
-11. Gestao do Projeto
-12. Limitacoes e Decisoes Assumidas
+11. Gestão do Projeto
+12. Limitações e Decisões Assumidas
 13. Trabalho Futuro
-14. Conclusao
+14. Conclusão
 15. Bibliografia
 16. Anexos
 
-## 1. Contextualizacao e Motivacao
+## 1. Contextualização e Motivação
 
-### 1.1 Introducao
+### 1.1 Introdução
 
-O FastBite foi desenvolvido no contexto da unidade curricular de Programacao em Dispositivos Web e Moveis, com o objetivo de construir uma solucao completa que integrasse backend, aplicacao web, aplicacao mobile, persistencia, comunicacao em tempo real e regras de negocio nao triviais. O dominio escolhido foi o de encomendas e entregas de refeicoes, por ser um problema familiar, rico em estados e adequado para demonstrar interacao entre diferentes perfis de utilizador.
+O FastBite foi desenvolvido no contexto da unidade curricular de Programação em Dispositivos Web e Móveis, com o objetivo de construir uma solução completa que integrasse backend, aplicação web, aplicação mobile, persistência, comunicação em tempo real e regras de negócio não triviais. O domínio escolhido foi o de encomendas e entregas de refeições, por ser um problema familiar, rico em estados e adequado para demonstrar interação entre diferentes perfis de utilizador.
 
-Uma plataforma deste tipo tem de coordenar processos que acontecem em simultaneo: um cliente cria uma encomenda, um restaurante aceita e prepara o pedido, o sistema atribui um estafeta, o estafeta atualiza a localizacao e todos os intervenientes precisam de receber informacao atualizada. Assim, o projeto nao se limita a operacoes CRUD; exige tambem sincronizacao entre interfaces, consistencia de estados, auditoria de eventos e integracao entre canais HTTP/GraphQL e WebSockets.
+Uma plataforma deste tipo tem de coordenar processos que acontecem em simultâneo: um cliente cria uma encomenda, um restaurante aceita e prepara o pedido, o sistema atribui um estafeta, o estafeta atualiza a localização e todos os intervenientes precisam de receber informação atualizada. Assim, o projeto não se limita a operações CRUD; exige também sincronização entre interfaces, consistência de estados, auditoria de eventos e integração entre canais HTTP/GraphQL e WebSockets.
 
-### 1.2 Motivacao
+### 1.2 Motivação
 
-O dominio de delivery e particularmente interessante para esta unidade curricular porque combina aplicacoes web e moveis com necessidades reais de tempo real. O cliente tende a utilizar uma experiencia mobile, o restaurante beneficia de um painel web de operacao e o estafeta precisa de uma interface movel orientada a disponibilidade, localizacao e entrega.
+O domínio de delivery é particularmente interessante para esta unidade curricular porque combina aplicações web e móveis com necessidades reais de tempo real. O cliente tende a utilizar uma experiência mobile, o restaurante beneficia de um painel web de operação e o estafeta precisa de uma interface móvel orientada a disponibilidade, localização e entrega.
 
-Ao mesmo tempo, o sistema permite aplicar conceitos tecnicos importantes: programacao funcional em calculos e transformacoes de dados, programacao orientada a aspetos para transacoes, arquitetura orientada a eventos para notificacoes e sincronizacao, maquinas de estados para impedir transicoes invalidas e padroes como Service Layer, Repository, DTO, Factory e Publish-Subscribe.
+Ao mesmo tempo, o sistema permite aplicar conceitos técnicos importantes: programação funcional em cálculos e transformações de dados, programação orientada a aspetos para transações, arquitetura orientada a eventos para notificações e sincronização, máquinas de estados para impedir transições inválidas e padrões como Service Layer, Repository, DTO, Factory e Publish-Subscribe.
 
 ### 1.3 Objetivos do Projeto
 
-Os objetivos funcionais do FastBite foram definidos em torno dos tres atores principais:
+Os objetivos funcionais do FastBite foram definidos em torno dos três atores principais:
 
-- permitir que clientes consultem restaurantes, menus, produtos e opcoes;
+- permitir que clientes consultem restaurantes, menus, produtos e opções;
 - permitir que clientes adicionem produtos ao carrinho e finalizem uma encomenda;
-- suportar pagamentos simulados e aplicacao de promocoes ou cupoes;
+- suportar pagamentos simulados e aplicação de promoções ou cupões;
 - permitir que restaurantes recebam, aceitem, rejeitem e preparem pedidos;
-- permitir que restaurantes giram catalogo, disponibilidade de produtos, campanhas e avaliacoes;
+- permitir que restaurantes possam gerir o catálogo, disponibilidade de produtos, campanhas e avaliações;
 - permitir que estafetas indiquem disponibilidade, recebam ofertas e atualizem entregas;
-- permitir tracking da entrega atraves de localizacao;
-- disponibilizar notificacoes e chat entre participantes.
+- permitir tracking da entrega através de localização;
+- disponibilizar notificações e chat entre participantes.
 
-Os objetivos tecnicos foram:
+Os objetivos técnicos foram:
 
 - implementar um backend modular em Laravel;
 - expor uma API GraphQL tipada com Lighthouse;
-- persistir o dominio em PostgreSQL;
-- separar regras de negocio, acesso a dados e interfaces;
-- usar WebSockets com GatewayWorker/Workerman para atualizacoes em tempo real;
-- registar eventos de dominio para auditoria;
+- persistir o domínio em PostgreSQL;
+- separar regras de negócio, acesso a dados e interfaces;
+- usar WebSockets com GatewayWorker/Workerman para atualizações em tempo real;
+- registar eventos de domínio para auditoria;
 - usar outbox e jobs para publicar eventos de forma controlada;
-- aplicar maquinas de estados para encomendas, pagamentos e entregas;
-- validar o sistema atraves de testes unitarios, testes de feature e testes manuais ponta-a-ponta.
+- aplicar máquinas de estados para encomendas, pagamentos e entregas;
+- validar o sistema através de testes unitários, testes de feature e testes manuais ponta-a-ponta.
 
-### 1.4 Organizacao do Documento
+### 1.4 Organização do Documento
 
-Este relatorio comeca por enquadrar a motivacao e as tecnologias usadas. Depois descreve o dominio, os requisitos e a arquitetura. Segue-se a modelacao, a explicacao dos paradigmas e padroes aplicados, a implementacao do backend e dos frontends, a estrategia de validacao, os resultados obtidos, as limitacoes assumidas, o trabalho futuro e a conclusao. No final sao apresentadas referencias bibliograficas e anexos com os principais artefactos do projeto.
+Este relatório começa por enquadrar a motivação e as tecnologias usadas. Depois descreve o domínio, os requisitos e a arquitetura. Segue-se a modelação, a explicação dos paradigmas e padrões aplicados, a implementação do backend e dos frontends, a estratégia de validação, os resultados obtidos, as limitações assumidas, o trabalho futuro e a conclusão. No final são apresentadas referências bibliográficas e anexos com os principais artefactos do projeto.
 
-## 2. Enquadramento Tecnologico
+## 2. Enquadramento Tecnológico
 
 ### 2.1 Laravel no Backend
 
-O backend foi desenvolvido em Laravel, usando PHP 8.3. Laravel foi escolhido por disponibilizar uma base robusta para aplicacoes web com models Eloquent, migrations, service providers, queues, jobs, configuracao de ambientes, testes com PHPUnit e integracao facilitada com Docker/Sail.
+O backend foi desenvolvido em Laravel, usando PHP 8.3. Laravel foi escolhido por disponibilizar uma base robusta para aplicações web com models Eloquent, migrations, service providers, queues, jobs, configuração de ambientes, testes com PHPUnit e integração facilitada com Docker/Sail.
 
-No projeto, Laravel e usado como nucleo da aplicacao de dominio. Os models representam entidades persistentes como `User`, `Restaurant`, `Cart`, `Order`, `Payment`, `Delivery`, `Notification`, `Chat` e `Review`. As migrations definem a estrutura relacional, incluindo tabelas de negocio e tabelas de eventos. Os services concentram regras de negocio, os repositories isolam o acesso a dados e os jobs permitem processamento assincrono, como expiracao de pagamentos, expiracao de ofertas de entrega, publicacao de eventos da outbox e envio de notificacoes push.
+No projeto, Laravel é usado como núcleo da aplicação de domínio. Os models representam entidades persistentes como `User`, `Restaurant`, `Cart`, `Order`, `Payment`, `Delivery`, `Notification`, `Chat` e `Review`. As migrations definem a estrutura relacional, incluindo tabelas de negócio e tabelas de eventos. Os services concentram regras de negócio, os repositories isolam o acesso a dados e os jobs permitem processamento assíncrono, como expiração de pagamentos, expiração de ofertas de entrega, publicação de eventos da outbox e envio de notificações push.
 
 ### 2.2 GraphQL e Lighthouse
 
-A API foi exposta com GraphQL usando Lighthouse. A escolha de GraphQL permite que as interfaces pecam exatamente os dados necessarios para cada ecra, reduzindo over-fetching e evitando a proliferacao de endpoints REST demasiado especificos.
+A API foi exposta com GraphQL usando Lighthouse. A escolha de GraphQL permite que as interfaces peçam exatamente os dados necessários para cada ecrã, reduzindo over-fetching e evitando a proliferação de endpoints REST demasiado específicos.
 
-O schema esta organizado por dominio em `Backend/graphql`, com ficheiros para utilizadores, restaurantes, menus, carrinhos, encomendas, pagamentos, entregas, tracking, notificacoes, avaliacoes, campanhas e chat. As queries sao usadas para leitura, por exemplo obter restaurantes, consultar o carrinho, carregar encomendas de cliente ou restaurante e obter tracking. As mutations sao usadas para escrita, por exemplo adicionar itens ao carrinho, fazer checkout, aceitar encomendas, atualizar localizacao do estafeta, enviar mensagens e marcar notificacoes como lidas.
+O schema está organizado por domínio em `Backend/graphql`, com ficheiros para utilizadores, restaurantes, menus, carrinhos, encomendas, pagamentos, entregas, tracking, notificações, avaliações, campanhas e chat. As queries são usadas para leitura, por exemplo obter restaurantes, consultar o carrinho, carregar encomendas de cliente ou restaurante e obter tracking. As mutations são usadas para escrita, por exemplo adicionar itens ao carrinho, fazer checkout, aceitar encomendas, atualizar localização do estafeta, enviar mensagens e marcar notificações como lidas.
 
 ### 2.3 PostgreSQL e Modelo Relacional
 
-A persistencia foi modelada numa base de dados relacional PostgreSQL. O modelo guarda utilizadores, moradas, restaurantes, cadeias, gestores, categorias, produtos, opcoes, carrinhos, encomendas, pagamentos, entregas, ofertas de entrega, posicoes de estafetas, promocoes, cupoes, avaliacoes, chats, mensagens e notificacoes.
+A persistência foi modelada numa base de dados relacional PostgreSQL. O modelo guarda utilizadores, moradas, restaurantes, cadeias, gestores, categorias, produtos, opções, carrinhos, encomendas, pagamentos, entregas, ofertas de entrega, posições de estafetas, promoções, cupões, avaliações, chats, mensagens e notificações.
 
-O modelo relacional e adequado porque o dominio tem muitas relacoes fortes: uma encomenda pertence a um cliente e a um restaurante, contem varios itens, possui uma morada de entrega, um pagamento e uma entrega. Existem tambem entidades historicas e de auditoria, como `order_events`, `payment_events`, `delivery_events` e `outbox_events`. Para preservar historico, alguns dados sao guardados como snapshots, por exemplo nomes de produtos, nomes de restaurantes, precos e opcoes no momento da encomenda.
+O modelo relacional é adequado porque o domínio tem muitas relações fortes: uma encomenda pertence a um cliente e a um restaurante, contém vários itens, possui uma morada de entrega, um pagamento e uma entrega. Existem também entidades históricas e de auditoria, como `order_events`, `payment_events`, `delivery_events` e `outbox_events`. Para preservar histórico, alguns dados são guardados como snapshots, por exemplo nomes de produtos, nomes de restaurantes, preços e opções no momento da encomenda.
 
 ### 2.4 GatewayWorker/Workerman e WebSockets
 
-A comunicacao em tempo real foi implementada com GatewayWorker/Workerman, e nao com Laravel Reverb. Esta decisao e coerente com o codigo, os README e a configuracao atual do projeto.
+A comunicação em tempo real foi implementada com GatewayWorker/Workerman, e não com Laravel Reverb. Esta decisão é coerente com o código, os README e a configuração atual do projeto.
 
-Os WebSockets sao usados para propagar eventos sem obrigar os clientes a fazer polling constante. Os canais incluem, entre outros, canais por cliente, restaurante, encomenda, estafeta, notificacao e chat. Exemplos de canais usados pelos frontends sao `restaurant.{id}.orders`, `customer.{id}.orders`, `order.{id}.tracking`, `courier.{id}.jobs`, `user.{id}.notifications` e `chat.{id}`.
+Os WebSockets são usados para propagar eventos sem obrigar os clientes a fazer polling constante. Os canais incluem, entre outros, canais por cliente, restaurante, encomenda, estafeta, notificação e chat. Exemplos de canais usados pelos frontends são `restaurant.{id}.orders`, `customer.{id}.orders`, `order.{id}.tracking`, `courier.{id}.jobs`, `user.{id}.notifications` e `chat.{id}`.
 
-As chamadas HTTP/GraphQL continuam a ser usadas para operacoes estruturadas, como criar uma encomenda ou consultar historico. Ja os WebSockets sao usados para avisar as interfaces quando algo mudou, como uma nova encomenda, uma alteracao de estado, uma posicao do estafeta, uma notificacao ou uma nova mensagem de chat.
+As chamadas HTTP/GraphQL continuam a ser usadas para operações estruturadas, como criar uma encomenda ou consultar histórico. Já os WebSockets são usados para avisar as interfaces quando algo mudou, como uma nova encomenda, uma alteração de estado, uma posição do estafeta, uma notificação ou uma nova mensagem de chat.
 
 ### 2.5 React/Vite no Frontend Web
 
-O frontend web foi desenvolvido com React e Vite. Esta aplicacao e focada principalmente na experiencia do restaurante e inclui ecras para login, navegacao lateral, fila de encomendas, detalhe de encomenda, historico, cozinha virtual, catalogo, campanhas e cupoes, avaliacoes, notificacoes, chat, perfil e estatisticas.
+O frontend web foi desenvolvido com React e Vite. Esta aplicação é focada principalmente na experiência do restaurante e inclui ecrãs para login, navegação lateral, fila de encomendas, detalhe de encomenda, histórico, cozinha virtual, catálogo, campanhas e cupões, avaliações, notificações, chat, perfil e estatísticas.
 
-O React permite construir uma interface por componentes, com reutilizacao de elementos como badges de estado, timelines, botoes, dialogos, skeletons, mapas e componentes de avaliacao. O Vite oferece um ambiente rapido de desenvolvimento e build.
+O React permite construir uma interface por componentes, com reutilização de elementos como badges de estado, timelines, botões, diálogos, skeletons, mapas e componentes de avaliação. O Vite oferece um ambiente rápido de desenvolvimento e build.
 
 ### 2.6 React Native/Expo no Frontend Mobile
 
-O frontend mobile foi desenvolvido com React Native e Expo. A aplicacao cobre dois perfis: cliente e estafeta. No fluxo de cliente, a app permite login, home, exploracao de restaurantes, consulta de menus, carrinho, checkout, tracking, historico, perfil, moradas e avaliacoes. No fluxo do estafeta, a app permite alterar disponibilidade, receber ofertas de entrega, aceitar ou rejeitar trabalhos, ver detalhes, atualizar estados e enviar localizacao.
+O frontend mobile foi desenvolvido com React Native e Expo. A aplicação cobre dois perfis: cliente e estafeta. No fluxo de cliente, a app permite login, home, exploração de restaurantes, consulta de menus, carrinho, checkout, tracking, histórico, perfil, moradas e avaliações. No fluxo do estafeta, a app permite alterar disponibilidade, receber ofertas de entrega, aceitar ou rejeitar trabalhos, ver detalhes, atualizar estados e enviar localização.
 
-Expo facilita o desenvolvimento mobile, a gestao de permissoes e a integracao com funcionalidades nativas. O projeto usa bibliotecas como `expo-location`, `expo-notifications`, `expo-task-manager` e `react-native-maps` para localizacao, notificacoes, tarefas em background e mapas.
+Expo facilita o desenvolvimento mobile, a gestão de permissões e a integração com funcionalidades nativas. O projeto usa bibliotecas como `expo-location`, `expo-notifications`, `expo-task-manager` e `react-native-maps` para localização, notificações, tarefas em background e mapas.
 
 ### 2.7 Bibliotecas e Ferramentas Auxiliares
 
-Para alem das tecnologias principais, o projeto usa:
+Para além das tecnologias principais, o projeto usa:
 
-- `react-router-dom` na aplicacao web;
+- `react-router-dom` na aplicação web;
 - `leaflet` e `react-leaflet` para mapas no frontend web;
 - `react-native-maps` para mapas mobile;
 - `expo-location`, `expo-notifications` e `expo-task-manager` no mobile;
-- `ray/aop` para programacao orientada a aspetos;
+- `ray/aop` para programação orientada a aspetos;
 - `spatie/laravel-data` para DTOs;
 - `workerman/gateway-worker` e `workerman/gatewayclient` para realtime;
 - PHPUnit para testes;
 - Docker/Sail para facilitar ambiente local.
 
-## 3. Conceptualizacao do Problema
+## 3. Conceptualização do Problema
 
-### 3.1 Descricao do Dominio
+### 3.1 Descrição do Dominio
 
-O FastBite representa uma plataforma que interliga clientes, restaurantes e estafetas num fluxo de encomenda e entrega. O cliente escolhe produtos de um restaurante, configura opcoes, finaliza checkout e acompanha o estado. O restaurante recebe o pedido, gere a preparacao e atualiza estados. O estafeta recebe uma oferta, aceita a entrega, desloca-se ao restaurante, recolhe a encomenda e entrega ao cliente.
+O FastBite representa uma plataforma que interliga clientes, restaurantes e estafetas num fluxo de encomenda e entrega. O cliente escolhe produtos de um restaurante, configura opções, finaliza checkout e acompanha o estado. O restaurante recebe o pedido, gere a preparação e atualiza estados. O estafeta recebe uma oferta, aceita a entrega, desloca-se ao restaurante, recolhe a encomenda e entrega ao cliente.
 
-As entidades centrais do dominio incluem:
+As entidades centrais do domínio incluem:
 
 - `User`, que representa a identidade base;
 - `UserAddress`, que guarda moradas de entrega;
 - `Courier`, que representa o perfil de estafeta;
 - `Restaurant` e `RestaurantChain`, que organizam lojas e cadeias;
-- `Category`, `Product`, `ProductOptionGroup`, `ProductOption` e `RestaurantProduct`, que modelam o catalogo;
-- `Cart`, `CartItem` e `CartItemOption`, que representam a preparacao da compra;
+- `Category`, `Product`, `ProductOptionGroup`, `ProductOption` e `RestaurantProduct`, que modelam o catálogo;
+- `Cart`, `CartItem` e `CartItemOption`, que representam a preparação da compra;
 - `Order`, `OrderItem`, `OrderAddress` e `OrderDiscount`, que representam a encomenda final;
 - `Payment` e `PaymentEvent`, que modelam pagamentos simulados;
 - `Delivery`, `DeliveryOffer`, `DeliveryEvent` e `CourierPositionHistory`, que modelam entrega e tracking;
 - `Promotion` e `Coupon`, que representam campanhas;
-- `Notification`, `Chat`, `Message` e `Review`, que suportam comunicacao e feedback.
+- `Notification`, `Chat`, `Message` e `Review`, que suportam comunicação e feedback.
 
 ### 3.2 Atores do Sistema
 
-O cliente e responsavel por pesquisar restaurantes, consultar menus, adicionar produtos ao carrinho, escolher morada, aplicar cupoes, finalizar checkout, acompanhar a encomenda e avaliar o servico.
+O cliente é responsável por pesquisar restaurantes, consultar menus, adicionar produtos ao carrinho, escolher morada, aplicar cupões, finalizar checkout, acompanhar a encomenda e avaliar o serviço.
 
-O restaurante e responsavel por gerir catalogo, produtos, disponibilidade, campanhas e cupoes. Durante o ciclo operacional, recebe pedidos, aceita ou rejeita encomendas, atualiza a preparacao e acompanha historico, notificacoes, chat e avaliacoes.
+O restaurante é responsável por gerir catálogo, produtos, disponibilidade, campanhas e cupões. Durante o ciclo operacional, recebe pedidos, aceita ou rejeita encomendas, atualiza a preparação e acompanha histórico, notificações, chat e avaliações.
 
-O estafeta define a sua disponibilidade, recebe ofertas de entrega, aceita ou rejeita servicos, atualiza estados como recolha e entrega, envia localizacao e conclui a entrega.
+O estafeta define a sua disponibilidade, recebe ofertas de entrega, aceita ou rejeita serviços, atualiza estados como recolha e entrega, envia localização e conclui a entrega.
 
-O sistema executa regras internas: calcula precos, aplica descontos, calcula taxas de entrega, cria pagamentos simulados, atribui estafetas, gere expiracao de ofertas, publica eventos, cria notificacoes, mantem auditoria e sincroniza os clientes ligados por WebSockets.
+O sistema executa regras internas: calcula preços, aplica descontos, calcula taxas de entrega, cria pagamentos simulados, atribui estafetas, gere expiração de ofertas, publica eventos, cria notificações, mantém auditoria e sincroniza os clientes ligados por WebSockets.
 
 ### 3.3 Requisitos Funcionais
 
-Os requisitos funcionais foram agrupados por modulo:
+Os requisitos funcionais foram agrupados por módulo:
 
-- autenticacao simplificada para identificar utilizadores em contexto academico;
-- gestao de utilizadores, moradas, restaurantes, cadeias e gestores;
-- consulta e gestao de catalogo, categorias, produtos, opcoes e disponibilidade local;
-- criacao, atualizacao e limpeza de carrinho;
+- autenticação simplificada para identificar utilizadores em contexto académico;
+- gestão de utilizadores, moradas, restaurantes, cadeias e gestores;
+- consulta e gestão de catálogo, categorias, produtos, opções e disponibilidade local;
+- criação, atualização e limpeza de carrinho;
 - preview de checkout com subtotal, taxa de entrega, descontos e total;
-- checkout com criacao de encomenda e pagamento simulado;
-- gestao do ciclo de encomendas pelo restaurante;
+- checkout com criação de encomenda e pagamento simulado;
+- gestão do ciclo de encomendas pelo restaurante;
 - pagamentos simulados com estados e eventos;
-- criacao de entregas e atribuicao de estafetas;
-- ofertas de entrega com aceitacao, rejeicao e expiracao;
-- tracking de localizacao e calculo de rota/ETA;
-- notificacoes internas e push tokens;
+- criação de entregas e atribuição de estafetas;
+- ofertas de entrega com aceitação, rejeição e expiração;
+- tracking de localização e cálculo de rota/ETA;
+- notificações internas e push tokens;
 - chat associado a encomendas;
-- campanhas, promocoes e cupoes;
-- avaliacoes de restaurante e estafeta;
-- auditoria atraves de eventos persistidos.
+- campanhas, promoções e cupões;
+- avaliações de restaurante e estafeta;
+- auditoria através de eventos persistidos.
 
-### 3.4 Requisitos Nao Funcionais
+### 3.4 Requisitos Não Funcionais
 
-O projeto procurou cumprir requisitos nao funcionais relevantes para este tipo de sistema:
+O projeto procurou cumprir requisitos não funcionais relevantes para este tipo de sistema:
 
-- modularidade, separando dominio, servicos, repositorios, DTOs e interfaces;
-- manutencao, evitando concentrar regras em controllers ou resolvers;
-- consistencia, atraves de maquinas de estados e transacoes;
-- baixa latencia nas atualizacoes visuais, atraves de WebSockets;
+- modularidade, separando domínio, serviços, repositórios, DTOs e interfaces;
+- manutenção, evitando concentrar regras em controllers ou resolvers;
+- consistência, através de máquinas de estados e transações;
+- baixa latência nas atualizações visuais, através de WebSockets;
 - auditabilidade, com eventos persistidos;
-- testabilidade, com testes unitarios e de feature;
+- testabilidade, com testes unitários e de feature;
 - extensibilidade, permitindo adicionar novos consumidores de eventos;
-- resiliencia parcial, com outbox e jobs reprocessaveis;
-- separacao entre fluxos estruturados de API e notificacoes em tempo real.
+- resiliência parcial, com outbox e jobs reprocessáveis;
+- separação entre fluxos estruturados de API e notificações em tempo real.
 
-### 3.5 Decisoes de Ambito
+### 3.5 Decisões de Âmbito
 
-Algumas funcionalidades foram assumidas como fora do ambito desta versao. A autenticacao e autorizacao de producao nao foram implementadas de forma completa. O projeto usa identificacao simplificada adequada ao contexto academico, mas nao emite tokens de producao nem aplica policies completas por role.
+Algumas funcionalidades foram assumidas como fora do âmbito desta versão. A autenticação e autorização de produção não foram implementadas de forma completa. O projeto usa identificação simplificada adequada ao contexto académico, mas não emite tokens de produção nem aplica policies completas por role.
 
-A autorizacao fina dos canais WebSocket tambem ficou fora de ambito. Em ambiente local e de demonstracao, os clientes usam IDs de utilizador para subscricao e simulacao de identidade. Em producao, seria obrigatorio validar cada subscricao.
+A autorização fina dos canais WebSocket também ficou fora de âmbito. Em ambiente local e de demonstração, os clientes usam IDs de utilizador para subscrição e simulação de identidade. Em produção, seria obrigatório validar cada subscrição.
 
-Os pagamentos sao simulados. O sistema modela metodos, estados, expiracao, cancelamento, falha e eventos, mas nao comunica com gateways reais como Stripe, PayPal ou MB Way.
+Os pagamentos são simulados. O sistema modela métodos, estados, expiração, cancelamento, falha e eventos, mas não comunica com gateways reais como Stripe, PayPal ou MB Way.
 
-## 4. Arquitetura da Solucao
+## 4. Arquitetura da Solução
 
-### 4.1 Visao Geral da Arquitetura
+### 4.1 Visão Geral da Arquitetura
 
-A solucao e composta pelos seguintes blocos:
+A solução é composta pelos seguintes blocos:
 
-- frontend web React/Vite para operacao de restaurante;
+- frontend web React/Vite para operação de restaurante;
 - frontend mobile React Native/Expo para cliente e estafeta;
-- backend Laravel responsavel pelo dominio;
+- backend Laravel responsável pelo domínio;
 - API GraphQL exposta por Lighthouse;
 - base de dados PostgreSQL;
 - filas e jobs Laravel;
 - servidor WebSocket GatewayWorker/Workerman;
-- mecanismo de outbox para publicacao assincrona de eventos.
+- mecanismo de outbox para publicação assincrona de eventos.
 
-O frontend comunica com o backend por GraphQL para operacoes principais. Quando uma operacao altera o estado do dominio, o backend regista eventos, cria entradas na outbox e despacha jobs. Esses jobs publicam eventos para WebSockets e notificacoes, permitindo que as interfaces atualizem de forma reativa.
+O frontend comunica com o backend por GraphQL para operações principais. Quando uma operação altera o estado do domínio, o backend regista eventos, cria entradas na outbox e despacha jobs. Esses jobs publicam eventos para WebSockets e notificações, permitindo que as interfaces atualizem de forma reativa.
 
 ### 4.2 Separacao por Camadas
 
-O backend segue uma separacao clara de responsabilidades:
+O backend segue uma separação clara de responsabilidades:
 
 - `app/Models`: entidades Eloquent persistentes;
-- `app/DTOs`: objetos de transferencia de dados para entradas estruturadas;
-- `app/Services`: regras de negocio e orquestracao;
+- `app/DTOs`: objetos de transferência de dados para entradas estruturadas;
+- `app/Services`: regras de negócio e orquestração;
 - `app/Repositories`: acesso a dados e queries persistentes;
 - `app/GraphQL`: resolvers de queries e mutations;
-- `app/Domain`: logica pura e maquinas de estados;
-- `app/Jobs`: processamento assincrono;
-- `app/Gateway`: integracao com GatewayWorker;
+- `app/Domain`: lógica pura e máquinas de estados;
+- `app/Jobs`: processamento assíncrono;
+- `app/Gateway`: integração com GatewayWorker;
 - `app/Enums`: estados, tipos de eventos e constantes tipadas.
 
-Esta estrutura reduz acoplamento entre a API e a regra de negocio. Os resolvers GraphQL funcionam como camada de entrada, mas a decisao de negocio esta nos services. Os repositories escondem detalhes de Eloquent, facilitando testes e evolucao.
+Esta estrutura reduz acoplamento entre a API e a regra de negócio. Os resolvers GraphQL funcionam como camada de entrada, mas a decisão de negócio está nos services. Os repositories escondem detalhes de Eloquent, facilitando testes e evolução.
 
 ### 4.3 Fluxo HTTP vs Fluxo Realtime
 
-O FastBite separa dois tipos de comunicacao. O fluxo GraphQL e usado quando uma interface precisa de executar uma operacao ou obter dados de forma estruturada. Exemplos incluem `checkoutOrder`, `getRestaurantOrders`, `acceptDeliveryOffer`, `updateCourierLocation` e `sendChatMessage`.
+O FastBite separa dois tipos de comunicação. O fluxo GraphQL é usado quando uma interface precisa de executar uma operação ou obter dados de forma estruturada. Exemplos incluem `checkoutOrder`, `getRestaurantOrders`, `acceptDeliveryOffer`, `updateCourierLocation` e `sendChatMessage`.
 
-O fluxo realtime e usado para avisar outras interfaces de que algo mudou. Por exemplo, quando o restaurante altera o estado de uma encomenda, o cliente recebe um evento no canal de encomendas. Quando o estafeta envia localizacao, o cliente recebe atualizacoes no canal de tracking. Quando uma mensagem e enviada, os participantes do chat recebem o evento correspondente.
+O fluxo realtime é usado para avisar outras interfaces de que algo mudou. Por exemplo, quando o restaurante altera o estado de uma encomenda, o cliente recebe um evento no canal de encomendas. Quando o estafeta envia localização, o cliente recebe atualizações no canal de tracking. Quando uma mensagem é enviada, os participantes do chat recebem o evento correspondente.
 
 ### 4.4 Arquitetura Event-Driven
 
-O sistema regista eventos de dominio sempre que acontecem alteracoes importantes. Exemplos de eventos incluem:
+O sistema regista eventos de domínio sempre que acontecem alterações importantes. Exemplos de eventos incluem:
 
 - `ORDER_CREATED`;
 - `ORDER_PAYMENT_COMPLETED`;
@@ -274,48 +274,48 @@ O sistema regista eventos de dominio sempre que acontecem alteracoes importantes
 - `CHAT_MESSAGE_SENT`;
 - `COURIER_POSITION_UPDATED`.
 
-Esta abordagem traz varios beneficios. A auditoria fica mais completa, porque e possivel reconstruir o historico de uma encomenda, pagamento ou entrega. A publicacao para WebSockets fica desacoplada do service que alterou o estado. Novos consumidores podem ser adicionados no futuro, como email, analytics ou dashboards, sem alterar profundamente a regra de negocio.
+Esta abordagem traz vários benefícios. A auditoria fica mais completa, porque é possível reconstruir o histórico de uma encomenda, pagamento ou entrega. A publicação para WebSockets fica desacoplada do service que alterou o estado. Novos consumidores podem ser adicionados no futuro, como email, analytics ou dashboards, sem alterar profundamente a regra de negócio.
 
 ### 4.5 Outbox Pattern
 
-O projeto usa o padrao Outbox para reduzir o risco de uma alteracao ser persistida sem que o evento correspondente seja publicado. O fluxo aplicado e:
+O projeto usa o padrão Outbox para reduzir o risco de uma alteração ser persistida sem que o evento correspondente seja publicado. O fluxo aplicado é:
 
-1. um service valida e altera o estado do dominio;
-2. o evento de dominio e guardado na tabela propria, como `order_events`, `payment_events` ou `delivery_events`;
+1. um service valida e altera o estado do domínio;
+2. o evento de domínio é guardado na tabela própria, como `order_events`, `payment_events` ou `delivery_events`;
 3. o `OutboxService` cria uma entrada em `outbox_events`;
 4. o `PublishOutboxEventJob` publica o evento;
 5. em caso de erro, o evento pode ficar marcado para tentativa posterior.
 
-No codigo, `OutboxService` centraliza a criacao do evento de outbox e despacha o job apos commit. O `PublishOutboxEventJob` trata eventos especificos como `COURIER_POSITION_UPDATED`, `CHAT_MESSAGE_SENT` e `USER_NOTIFICATION_CREATED`, ou eventos de dominio genericos com canais definidos no payload.
+No código, `OutboxService` centraliza a criação do evento de outbox e despacha o job após commit. O `PublishOutboxEventJob` trata eventos específicos como `COURIER_POSITION_UPDATED`, `CHAT_MESSAGE_SENT` e `USER_NOTIFICATION_CREATED`, ou eventos de domínio genéricos com canais definidos no payload.
 
 ### 4.6 Comunicacao entre Clientes
 
-A comunicacao entre clientes e feita por canais logicos. O restaurante subscreve eventos das suas encomendas. O cliente subscreve eventos das suas encomendas, tracking e notificacoes. O estafeta subscreve ofertas de entrega e eventos associados ao seu trabalho. Os chats usam canais proprios por conversa.
+A comunicação entre clientes é feita por canais lógicos. O restaurante subscreve eventos das suas encomendas. O cliente subscreve eventos das suas encomendas, tracking e notificações. O estafeta subscreve ofertas de entrega e eventos associados ao seu trabalho. Os chats usam canais próprios por conversa.
 
-Esta divisao permite que cada interface receba apenas os eventos relevantes para o seu contexto, simplificando a atualizacao visual e evitando pedidos repetidos ao backend.
+Esta divisão permite que cada interface receba apenas os eventos relevantes para o seu contexto, simplificando a atualização visual e evitando pedidos repetidos ao backend.
 
-## 5. Modelacao e Especificacao
+## 5. Modelação e Especificação
 
 ### 5.1 Diagrama de Classes
 
-O diagrama de classes encontra-se em `Documentacao/Diagramas/01_diagrama_classes.puml`. Este diagrama organiza as classes por grupos de dominio: utilizadores e perfis, restaurantes e catalogo, carrinho, encomendas, pagamentos, entregas, promocoes, notificacoes, chat, avaliacoes e moradas.
+O diagrama de classes encontra-se em `Documentacao/Diagramas/01_diagrama_classes.puml`. Este diagrama organiza as classes por grupos de domínio: utilizadores e perfis, restaurantes e catálogo, carrinho, encomendas, pagamentos, entregas, promoções, notificações, chat, avaliações e moradas.
 
-As relacoes principais sao:
+As relações principais são:
 
-- um cliente pode ter varias moradas e varias encomendas;
+- um cliente pode ter várias moradas e várias encomendas;
 - um restaurante pertence a uma cadeia e possui produtos locais;
 - uma categoria agrupa produtos;
-- um produto pode ter grupos de opcoes e opcoes;
-- um carrinho contem itens e opcoes selecionadas;
-- uma encomenda contem itens, morada, descontos, pagamento, entrega e eventos;
-- uma entrega pode ter varias ofertas enviadas a estafetas;
-- um chat pertence a uma encomenda e contem participantes e mensagens.
+- um produto pode ter grupos de opções e opções;
+- um carrinho contém itens e opções selecionadas;
+- uma encomenda contém itens, morada, descontos, pagamento, entrega e eventos;
+- uma entrega pode ter várias ofertas enviadas a estafetas;
+- um chat pertence a uma encomenda e contém participantes e mensagens.
 
 ### 5.2 Diagrama Entidade-Relacionamento
 
-O diagrama ER encontra-se em `Documentacao/Diagramas/02_diagrama_er.puml` e traduz o dominio para tabelas relacionais. O modelo privilegia normalizacao nos dados principais e usa tabelas especificas para historico e auditoria.
+O diagrama ER encontra-se em `Documentacao/Diagramas/02_diagrama_er.puml` e traduz o domínio para tabelas relacionais. O modelo privilegia normalização nos dados principais e usa tabelas específicas para histórico e auditoria.
 
-Destacam-se as tabelas de snapshots da encomenda, como itens, opcoes, morada e descontos. Esta decisao evita que alteracoes futuras no catalogo modifiquem retroativamente uma encomenda ja realizada. Tambem se destacam as tabelas `order_events`, `payment_events`, `delivery_events` e `outbox_events`, que suportam auditoria e integracao realtime.
+Destacam-se as tabelas de snapshots da encomenda, como itens, opções, morada e descontos. Esta decisão evita que alterações futuras no catálogo modifiquem retroativamente uma encomenda já realizada. Também se destacam as tabelas `order_events`, `payment_events`, `delivery_events` e `outbox_events`, que suportam auditoria e integração realtime.
 
 ### 5.3 Diagramas de Sequencia
 
@@ -326,11 +326,11 @@ Os principais fluxos estao representados nos diagramas:
 - `05_sequencia_entrega.puml`;
 - `06_comunicacao_realtime.puml`.
 
-No fluxo de criacao de encomenda, o cliente consulta o carrinho, escolhe morada e pagamento, executa checkout, e o backend cria encomenda, itens, descontos, pagamento e eventos. No fluxo de aceitacao, o restaurante altera o estado da encomenda e o sistema cria a entrega. No fluxo de entrega, o sistema seleciona estafetas, envia ofertas, aceita a primeira resposta valida e atualiza estados ate a conclusao. No fluxo realtime, os eventos persistidos sao publicados por WebSockets para os canais corretos.
+No fluxo de criação de encomenda, o cliente consulta o carrinho, escolhe morada e pagamento, executa checkout, e o backend cria a encomenda, itens, descontos, pagamento e eventos. No fluxo de aceitação, o restaurante altera o estado da encomenda e o sistema cria a entrega. No fluxo de entrega, o sistema seleciona estafetas, envia ofertas, aceita a primeira resposta válida e atualiza estados até a conclusão. No fluxo realtime, os eventos persistidos são publicados por WebSockets para os canais corretos.
 
 ### 5.4 Maquinas de Estados
 
-As maquinas de estados impedem transicoes invalidas e tornam o comportamento do sistema previsivel.
+As máquinas de estados impedem transições inválidas e tornam o comportamento do sistema previsível.
 
 A encomenda usa estados:
 
@@ -365,107 +365,107 @@ A oferta de entrega usa estados:
 - `REJECTED`;
 - `EXPIRED`.
 
-Os diagramas correspondentes estao em `07_state_machine_order.puml`, `08_state_machine_payment.puml` e `09_state_machine_delivery.puml`.
+Os diagramas correspondentes estão em `07_state_machine_order.puml`, `08_state_machine_payment.puml` e `09_state_machine_delivery.puml`.
 
 ### 5.5 Modelo de Eventos
 
-Os eventos foram organizados por dominio. Eventos de encomenda registam criacao, confirmacao, preparacao, pronto, atribuicao de estafeta, recolha, saida para entrega, entrega e cancelamento. Eventos de pagamento registam criacao, conclusao, falha, expiracao, cancelamento e reembolso. Eventos de entrega registam aceitacao, recolha, transporte, entrega e falha. Eventos de oferta registam oferta, aceitacao, rejeicao e expiracao.
+Os eventos foram organizados por domínio. Eventos de encomenda registam criação, confirmação, preparação, pronto, atribuição de estafeta, recolha, saída para entrega, entrega e cancelamento. Eventos de pagamento registam criação, conclusão, falha, expiração, cancelamento e reembolso. Eventos de entrega registam aceitação, recolha, transporte, entrega e falha. Eventos de oferta registam oferta, aceitação, rejeição e expiração.
 
-Para alem destes, existem eventos de notificacao, chat e tracking. Estes eventos servem simultaneamente para auditoria e para sincronizacao das interfaces.
+Para além destes, existem eventos de notificação, chat e tracking. Estes eventos servem simultaneamente para auditoria e para sincronização das interfaces.
 
-## 6. Paradigmas e Padroes Aplicados
+## 6. Paradigmas e Padrões Aplicados
 
-### 6.1 Programacao Funcional
+### 6.1 Programação Funcional
 
-O projeto aplica ideias de programacao funcional em partes onde a previsibilidade e importante. O exemplo mais direto e `PricingCalculator`, que concentra funcoes puras para normalizar quantidades, calcular totais de itens, subtotal, descontos e total final. Estas funcoes recebem dados de entrada e devolvem resultados sem depender de estado externo.
+O projeto aplica ideias de programação funcional em partes onde a previsibilidade é importante. O exemplo mais direto é `PricingCalculator`, que concentra funções puras para normalizar quantidades, calcular totais de itens, subtotal, descontos e total final. Estas funções recebem dados de entrada e devolvem resultados sem depender de estado externo.
 
-A implementacao reforca conceitos apresentados nos slides de programacao funcional:
+A implementação reforça conceitos apresentados nos slides de programação funcional:
 
-- funcoes puras e ausencia de efeitos colaterais em `PricingCalculator`, onde os metodos apenas transformam parametros em valores;
-- composicao de funcoes atraves de `pipe`, usada para encadear soma, aplicacao de quantidade e arredondamento;
-- currying/aplicacao parcial em `multiplyByQuantity`, que recebe a quantidade e devolve uma funcao preparada para aplicar essa quantidade a qualquer valor monetario;
-- funcoes de ordem superior em `sumBy`, `discountFor`, filtros de campanhas e scoring de estafetas, que recebem ou devolvem funcoes;
+- funções puras e ausência de efeitos colaterais em `PricingCalculator`, onde os métodos apenas transformam parâmetros em valores;
+- composição de funções através de `pipe`, usada para encadear soma, aplicação de quantidade e arredondamento;
+- currying/aplicação parcial em `multiplyByQuantity`, que recebe a quantidade e devolve uma função preparada para aplicar essa quantidade a qualquer valor monetário;
+- funções de ordem superior em `sumBy`, `discountFor`, filtros de campanhas e scoring de estafetas, que recebem ou devolvem funções;
 - operadores ao estilo LINQ/Laravel Collections em `CartService` e `OrderPricingService`, com `map`, `filter`, `flatMap`, `groupBy`, `diff`, `sum` e `values`;
-- `yield` em `OrderPricingService`, onde os descontos de promocoes sao gerados de forma incremental por um generator;
-- separacao entre calculo puro e efeitos colaterais: os calculos de desconto e selecao de candidatos sao isolados, enquanto persistencia, eventos e jobs ficam nos services.
+- `yield` em `OrderPricingService`, onde os descontos de promoções são gerados de forma incremental por um generator;
+- separação entre cálculo puro e efeitos colaterais: os cálculos de desconto e seleção de candidatos são isolados, enquanto persistência, eventos e jobs ficam nos services.
 
-Tambem se encontram ideias funcionais nos frontends, no mapeamento de eventos para labels de interface e nos componentes React, que sao compostos a partir de propriedades e estado local. A separacao entre calculo e efeitos colaterais torna o sistema mais testavel; por exemplo, os testes unitarios cobrem `PricingCalculator`, validacoes funcionais do carrinho, calculo de descontos e scoring de candidatos sem depender de IO externo.
+Também se encontram ideias funcionais nos frontends, no mapeamento de eventos para labels de interface e nos componentes React, que são compostos a partir de propriedades e estado local. A separação entre cálculo e efeitos colaterais torna o sistema mais testável; por exemplo, os testes unitários cobrem `PricingCalculator`, validações funcionais do carrinho, cálculo de descontos e scoring de candidatos sem depender de IO externo.
 
-### 6.2 Programacao Orientada a Aspetos
+### 6.2 Programação Orientada a Aspetos
 
-A programacao orientada a aspetos foi aplicada atraves de `ray/aop`. O projeto define o atributo `Transactional` e o `TransactionInterceptor`. Em vez de escrever manualmente `begin`, `commit` e `rollback` em cada metodo critico, os services podem ser anotados com `#[Transactional]`.
+A programação orientada a aspetos foi aplicada através de `ray/aop`. O projeto define o atributo `Transactional` e o `TransactionInterceptor`. Em vez de escrever manualmente `begin`, `commit` e `rollback` em cada método crítico, os services podem ser anotados com `#[Transactional]`.
 
-Assim, a regra de negocio fica mais limpa e a preocupacao transversal de transacoes e tratada por infraestrutura. Isto aparece em operacoes como checkout, aceitacao de ofertas, atualizacao de estados e criacao de entregas.
+Assim, a regra de negócio fica mais limpa e a preocupação transversal de transações é tratada por infraestrutura. Isto aparece em operações como checkout, aceitação de ofertas, atualização de estados e criação de entregas.
 
-### 6.3 Programacao Event-Driven
+### 6.3 Programação Event-Driven
 
-A programacao orientada a eventos e uma das bases da arquitetura. Services como `OrderService`, `PaymentService`, `DeliveryService`, `TrackingService`, `ChatService` e `NotificationService` geram eventos quando ocorrem alteracoes relevantes. Esses eventos sao persistidos, colocados na outbox e depois publicados por jobs.
+A programação orientada a eventos é uma das bases da arquitetura. Services como `OrderService`, `PaymentService`, `DeliveryService`, `TrackingService`, `ChatService` e `NotificationService` geram eventos quando ocorrem alterações relevantes. Esses eventos são persistidos, colocados na outbox e depois publicados por jobs.
 
-Esta abordagem desacopla a alteracao de estado da notificacao das interfaces. O restaurante nao precisa de consultar continuamente se existem novas encomendas; recebe eventos. O cliente nao precisa de atualizar manualmente o tracking; recebe posicoes do estafeta.
+Esta abordagem desacopla a alteração de estado da notificação das interfaces. O restaurante não precisa de consultar continuamente se existem novas encomendas; recebe eventos. O cliente não precisa de atualizar manualmente o tracking; recebe posições do estafeta.
 
 ### 6.4 Padrao State
 
-O padrao State foi usado nas maquinas de estados de encomendas, pagamentos e entregas. Cada estado conhece as transicoes validas e impede saltos que nao fazem sentido. Por exemplo, uma encomenda entregue nao deve voltar a preparacao, e um pagamento concluido nao deve regressar a pendente.
+O padrão State foi usado nas máquinas de estados de encomendas, pagamentos e entregas. Cada estado conhece as transições válidas e impede saltos que não fazem sentido. Por exemplo, uma encomenda entregue não deve voltar a preparação, e um pagamento concluído não deve regressar a pendente.
 
-No codigo, isto aparece em factories como `OrderStateFactory`, `PaymentStateFactory` e `DeliveryStateFactory`, que constroem o objeto de estado correto a partir do enum atual.
+No código, isto aparece em factories como `OrderStateFactory`, `PaymentStateFactory` e `DeliveryStateFactory`, que constroem o objeto de estado correto a partir do enum atual.
 
 ### 6.5 Padrao Repository
 
-O padrao Repository separa o acesso a dados da regra de negocio. Os services dependem de interfaces como `OrderRepositoryInterface`, `DeliveryRepositoryInterface`, `PaymentRepositoryInterface`, `RestaurantRepositoryInterface`, `NotificationRepositoryInterface` e outras. Isto evita que queries Eloquent complexas fiquem espalhadas pela aplicacao.
+O padrão Repository separa o acesso a dados da regra de negócio. Os services dependem de interfaces como `OrderRepositoryInterface`, `DeliveryRepositoryInterface`, `PaymentRepositoryInterface`, `RestaurantRepositoryInterface`, `NotificationRepositoryInterface` e outras. Isto evita que queries Eloquent complexas fiquem espalhadas pela aplicação.
 
 ### 6.6 Padrao Service Layer
 
-A camada de services concentra a logica principal do projeto. Exemplos importantes incluem:
+A camada de services concentra a lógica principal do projeto. Exemplos importantes incluem:
 
-- `OrderService`, responsavel por checkout e ciclo da encomenda;
-- `CartService`, responsavel pela manipulacao do carrinho;
-- `PaymentService`, responsavel por pagamentos simulados;
-- `DeliveryService`, responsavel por entregas e ofertas;
-- `TrackingService`, responsavel por localizacao e tracking;
+- `OrderService`, responsável por checkout e ciclo da encomenda;
+- `CartService`, responsável pela manipulacao do carrinho;
+- `PaymentService`, responsável por pagamentos simulados;
+- `DeliveryService`, responsável por entregas e ofertas;
+- `TrackingService`, responsável por localização e tracking;
 - `NotificationService` e `NotificationFeedService`;
 - `ChatService`;
 - `PromotionService` e `CouponService`;
-- `RestaurantService` e services de catalogo.
+- `RestaurantService` e services de catálogo.
 
 ### 6.7 Padrao Factory
 
-As factories de estado centralizam a criacao do estado correto. Isto evita condicionais repetidas em varias zonas do codigo e torna explicita a relacao entre enum e comportamento.
+As factories de estado centralizam a criação do estado correto. Isto evita condicionais repetidas em várias zonas do código e torna explícita a relação entre enum e comportamento.
 
 ### 6.8 Padrao Observer / Publish-Subscribe
 
-O realtime segue a logica de Publish-Subscribe. Os services produzem eventos, a outbox e os jobs publicam-nos, e os clientes subscrevem canais especificos. Desta forma, o cliente, o restaurante e o estafeta recebem atualizacoes sem depender de polling constante.
+O realtime segue a lógica de Publish-Subscribe. Os services produzem eventos, a outbox e os jobs publicam-nos, e os clientes subscrevem canais específicos. Desta forma, o cliente, o restaurante e o estafeta recebem atualizações sem depender de polling constante.
 
 ### 6.9 Padrao DTO
 
 Os DTOs estruturam dados de entrada e reduzem o uso de arrays soltos. Exemplos incluem `CheckoutDTO`, `CreateOrderDTO`, `CreateDeliveryOfferDTO`, `UpdateCourierLocationDTO`, `RegisterPushTokenDTO`, `CreateNotificationDTO` e DTOs de produtos, restaurantes, campanhas e carrinho.
 
-## 7. Implementacao do Backend
+## 7. Implementação do Backend
 
-### 7.1 Organizacao do Codigo
+### 7.1 Organização do Código
 
-O backend esta organizado de forma modular:
+O backend está organizado de forma modular:
 
 - `Backend/app/Models`: models Eloquent;
-- `Backend/app/Services`: services de dominio;
+- `Backend/app/Services`: services de domínio;
 - `Backend/app/Repositories`: repositories e interfaces;
 - `Backend/app/DTOs`: objetos de entrada;
-- `Backend/app/Domain`: logica pura, pricing, geo e state machines;
+- `Backend/app/Domain`: lógica pura, pricing, geo e state machines;
 - `Backend/app/GraphQL`: queries e mutations;
 - `Backend/app/Gateway`: WebSockets e handlers GatewayWorker;
-- `Backend/app/Jobs`: jobs assincronos;
+- `Backend/app/Jobs`: jobs assíncronos;
 - `Backend/app/Enums`: enums de estados e eventos;
 - `Backend/database/migrations`: schema;
-- `Backend/tests`: testes unitarios e de feature.
+- `Backend/tests`: testes unitários e de feature.
 
 ### 7.2 Modelos e Migrations
 
-O schema inicial cria as entidades principais do dominio. Migrations posteriores acrescentam funcionalidades como outbox, push tokens, cupoes avancados, delivery offers, normalizacao de estados e suporte a campanhas polimorficas.
+O schema inicial cria as entidades principais do domínio. Migrations posteriores acrescentam funcionalidades como outbox, push tokens, cupões avançados, delivery offers, normalização de estados e suporte a campanhas polimórficas.
 
 As tabelas mais relevantes incluem `users`, `user_addresses`, `restaurants`, `restaurant_chains`, `categories`, `products`, `restaurant_products`, `carts`, `orders`, `payments`, `deliveries`, `delivery_offers`, `notifications`, `chats`, `messages`, `promotions`, `coupons`, `reviews`, `order_events`, `payment_events`, `delivery_events` e `outbox_events`.
 
 ### 7.3 API GraphQL
 
-A API GraphQL esta dividida por ficheiros de dominio. Algumas operacoes relevantes sao:
+A API GraphQL está dividida por ficheiros de domínio. Algumas operações relevantes são:
 
 - `searchRestaurants` e `getRestaurantMenu`;
 - `addCartItem`, `updateCartItem`, `clearCart`;
@@ -481,91 +481,91 @@ A API GraphQL esta dividida por ficheiros de dominio. Algumas operacoes relevant
 
 Esta API tipada funciona como contrato entre backend, web e mobile.
 
-### 7.4 Servicos de Dominio
+### 7.4 Serviços de Dominio
 
-O `OrderService` gere checkout, criacao de encomendas, snapshots de itens, descontos, pagamentos iniciais e transicoes de estado. Quando uma encomenda e aceite ou preparada, cria a entrega e despacha a atribuicao de estafeta.
+O `OrderService` gere checkout, criação de encomendas, snapshots de itens, descontos, pagamentos iniciais e transições de estado. Quando uma encomenda é aceite ou preparada, cria a entrega e despacha a atribuição de estafeta.
 
-O `PaymentService` controla pagamentos simulados, incluindo confirmacao, cancelamento, falha, expiracao e reembolso. Cada transicao regista evento e pode provocar alteracoes na encomenda.
+O `PaymentService` controla pagamentos simulados, incluindo confirmação, cancelamento, falha, expiração e reembolso. Cada transição regista evento e pode provocar alterações na encomenda.
 
-O `DeliveryService` cria entregas, seleciona estafetas disponiveis por distancia, cria ofertas com TTL, trata aceitacao, rejeicao, expiracao e transicoes de entrega.
+O `DeliveryService` cria entregas, seleciona estafetas disponíveis por distância, cria ofertas com TTL, trata aceitação, rejeição, expiração e transições de entrega.
 
-O `TrackingService` valida coordenadas, atualiza a localizacao do estafeta, grava historico de posicoes e publica eventos de tracking. O `RoutingService` tenta obter rota via OSRM e usa fallback local com calculo geoespacial quando necessario.
+O `TrackingService` valida coordenadas, atualiza a localização do estafeta, grava histórico de posições e publica eventos de tracking. O `RoutingService` tenta obter rota via OSRM e usa fallback local com cálculo geoespacial quando necessário.
 
 ### 7.5 Pagamentos Simulados
 
-O sistema suporta metodos como `CASH`, `CARD`, `MBWAY` e `PAYPAL`. O pagamento em dinheiro e tratado como concluido no checkout; os restantes podem ficar pendentes e expirar. O backend modela estados, eventos e ligacao ao ciclo da encomenda, mas nao integra um gateway externo real.
+O sistema suporta métodos como `CASH`, `CARD`, `MBWAY` e `PAYPAL`. O pagamento em dinheiro é tratado como concluído no checkout; os restantes podem ficar pendentes e expirar. O backend modela estados, eventos e ligação ao ciclo da encomenda, mas não integra um gateway externo real.
 
-Esta decisao permite demonstrar consistencia de dominio sem depender de servicos externos. Em producao, os estados seriam atualizados por callbacks ou webhooks de um fornecedor de pagamentos.
+Esta decisão permite demonstrar consistência de domínio sem depender de serviços externos. Em produção, os estados seriam atualizados por callbacks ou webhooks de um fornecedor de pagamentos.
 
-### 7.6 Atribuicao de Estafetas
+### 7.6 Atribuição de Estafetas
 
-A atribuicao de estafetas segue um fluxo controlado:
+A atribuição de estafetas segue um fluxo controlado:
 
-1. a entrega e criada quando a encomenda entra em preparacao;
-2. o job `AssignCourierToDeliveryJob` procura estafetas disponiveis;
-3. o sistema ignora estafetas ja tentados;
+1. a entrega é criada quando a encomenda entra em preparação;
+2. o job `AssignCourierToDeliveryJob` procura estafetas disponíveis;
+3. o sistema ignora estafetas já tentados;
 4. apenas considera estafetas dentro do raio configurado;
-5. ordena candidatos por distancia ao restaurante;
+5. ordena candidatos por distância ao restaurante;
 6. cria uma oferta de entrega;
-7. a oferta expira se nao houver resposta;
+7. a oferta expira se não houver resposta;
 8. se for rejeitada ou expirar, o sistema tenta outro estafeta;
 9. ao aceitar, o estafeta fica ocupado e a entrega fica associada.
 
-O limite de tentativas evita loops infinitos. Se nao houver estafeta disponivel, a entrega pode falhar de forma controlada.
+O limite de tentativas evita loops infinitos. Se não houver estafeta disponível, a entrega pode falhar de forma controlada.
 
-### 7.7 Notificacoes e Push Tokens
+### 7.7 Notificações e Push Tokens
 
-O sistema guarda notificacoes internas e permite registo de push tokens Expo. Eventos de dominio podem originar notificacoes atraves de listeners e jobs. O envio para canais e feito de forma assincrona, separando criacao da notificacao da tentativa de entrega.
+O sistema guarda notificações internas e permite registo de push tokens Expo. Eventos de domínio podem originar notificações através de listeners e jobs. O envio para canais é feito de forma assíncrona, separando criação da notificação da tentativa de entrega.
 
-As notificacoes sao consultadas por GraphQL e tambem publicadas por WebSockets no canal do utilizador.
+As notificações são consultadas por GraphQL e também publicadas por WebSockets no canal do utilizador.
 
 ### 7.8 Chat
 
-O chat esta associado a encomendas e suporta tipos como conversa cliente-restaurante e cliente-estafeta. Cada chat tem participantes e mensagens. O envio de mensagem pode ser feito via mutation GraphQL ou evento WebSocket, sendo depois persistido e publicado para o canal `chat.{id}`.
+O chat está associado a encomendas e suporta tipos como conversa cliente-restaurante e cliente-estafeta. Cada chat tem participantes e mensagens. O envio de mensagem pode ser feito via mutation GraphQL ou evento WebSocket, sendo depois persistido e publicado para o canal `chat.{id}`.
 
 ### 7.9 GatewayWorker e Eventos Realtime
 
-A pasta `Backend/app/Gateway` contem a logica de mensagens WebSocket. O servidor aceita eventos de cliente como `hello`, `subscribe`, `unsubscribe`, `chat.message.send`, `courier.status.set` e `courier.position.set`. As respostas incluem acknowledgements como `hello.ack`, `subscribe.ack`, `chat.message.send.ack`, `courier.status.ack` e `courier.position.ack`.
+A pasta `Backend/app/Gateway` contém a lógica de mensagens WebSocket. O servidor aceita eventos de cliente como `hello`, `subscribe`, `unsubscribe`, `chat.message.send`, `courier.status.set` e `courier.position.set`. As respostas incluem acknowledgements como `hello.ack`, `subscribe.ack`, `chat.message.send.ack`, `courier.status.ack` e `courier.position.ack`.
 
 Os handlers do GatewayWorker associam sockets a utilizadores e canais, recebem mensagens dos clientes e distribuem eventos enviados pelo backend.
 
-## 8. Implementacao dos Frontends
+## 8. Implementação dos Frontends
 
 ### 8.1 Frontend Web do Restaurante
 
-A aplicacao web do restaurante esta em `Frontend/web`. O seu objetivo e apoiar a operacao diaria do restaurante. A interface inclui:
+A aplicação web do restaurante está em `Frontend/web`. O seu objetivo é apoiar a operação diaria do restaurante. A interface inclui:
 
 - login do restaurante/gestor;
-- shell com navegacao lateral;
+- shell com navegação lateral;
 - fila de encomendas ativas;
 - detalhe da encomenda;
-- historico;
+- histórico;
 - cozinha virtual;
-- catalogo e produtos;
-- catalogo da cadeia;
-- campanhas e cupoes;
-- notificacoes;
-- avaliacoes;
+- catálogo e produtos;
+- catálogo da cadeia;
+- campanhas e cupões;
+- notificações;
+- avaliações;
 - chat;
-- perfil e estatisticas.
+- perfil e estatísticas.
 
-O frontend usa services para encapsular comunicacao com a API e modulos realtime para subscrever canais de encomendas, notificacoes, tracking e chat.
+O frontend usa services para encapsular comunicação com a API e módulos realtime para subscrever canais de encomendas, notificações, tracking e chat.
 
 ### 8.2 Experiencia Mobile do Cliente
 
-No mobile, o cliente pode autenticar-se de forma simplificada, consultar restaurantes, abrir menus, escolher produtos, configurar opcoes, gerir carrinho, fazer preview de checkout, aplicar cupoes e criar encomenda.
+No mobile, o cliente pode autenticar-se de forma simplificada, consultar restaurantes, abrir menus, escolher produtos, configurar opções, gerir carrinho, fazer preview de checkout, aplicar cupões e criar encomenda.
 
-Depois do checkout, pode acompanhar a encomenda, ver eventos de estado, receber notificacoes e seguir a localizacao do estafeta quando a entrega esta ativa. O historico permite consultar encomendas anteriores e repetir uma encomenda.
+Depois do checkout, pode acompanhar a encomenda, ver eventos de estado, receber notificações e seguir a localização do estafeta quando a entrega está ativa. O histórico permite consultar encomendas anteriores e repetir uma encomenda.
 
 ### 8.3 Experiencia Mobile do Estafeta
 
-O fluxo do estafeta esta concentrado em disponibilidade, ofertas e execucao da entrega. O estafeta pode ficar disponivel, receber uma oferta, aceitar ou rejeitar, ver detalhes da entrega, marcar recolha, iniciar entrega, concluir ou reportar falha.
+O fluxo do estafeta está concentrado em disponibilidade, ofertas e execução da entrega. O estafeta pode ficar disponível, receber uma oferta, aceitar ou rejeitar, ver detalhes da entrega, marcar recolha, iniciar entrega, concluir ou reportar falha.
 
-A aplicacao tambem envia localizacao para o backend, permitindo atualizar tracking e ETA para o cliente.
+A aplicação também envia localização para o backend, permitindo atualizar tracking e ETA para o cliente.
 
 ### 8.4 Componentes Reutilizaveis
 
-Os frontends usam componentes comuns para reduzir repeticao e manter consistencia visual. Exemplos incluem:
+Os frontends usam componentes comuns para reduzir repetição e manter consistência visual. Exemplos incluem:
 
 - `StatusBadge`;
 - `MoneyText`;
@@ -577,45 +577,45 @@ Os frontends usam componentes comuns para reduzir repeticao e manter consistenci
 - componentes de mapa para web e mobile;
 - cards de realtime e tracking.
 
-### 8.5 Gestao de Estado e Integracao com API
+### 8.5 Gestão de Estado e Integração com API
 
-A integracao com a API esta organizada por services. No mobile, `commerceService.js` funciona como fachada sobre modulos em `src/services/commerce/`, separados por dominio: restaurantes, carrinho, encomendas, estafeta, tracking, chat, notificacoes, avaliacoes, moradas e pagamentos.
+A integração com a API está organizada por services. No mobile, `commerceService.js` funciona como fachada sobre módulos em `src/services/commerce/`, separados por domínio: restaurantes, carrinho, encomendas, estafeta, tracking, chat, notificações, avaliações, moradas e pagamentos.
 
-No web, os services como `restaurantOpsService.js`, `chatService.js`, `healthService.js` e `apiClient.js` concentram as chamadas ao backend. A camada realtime fornece funcoes de subscricao para canais e eventos, atualizando a interface quando chegam mensagens.
+No web, os services como `restaurantOpsService.js`, `chatService.js`, `healthService.js` e `apiClient.js` concentram as chamadas ao backend. A camada realtime fornece funções de subscrição para canais e eventos, atualizando a interface quando chegam mensagens.
 
-### 8.6 Mapas, Tracking e Localizacao
+### 8.6 Mapas, Tracking e Localização
 
-O frontend web usa Leaflet e React Leaflet para mapas. O mobile usa React Native Maps. A localizacao do estafeta e enviada para o backend, persistida como historico e publicada para os clientes ligados.
+O frontend web usa Leaflet e React Leaflet para mapas. O mobile usa React Native Maps. A localização do estafeta é enviada para o backend, persistida como histórico e publicada para os clientes ligados.
 
-O tracking inclui pontos de rota, distancia, duracao estimada, distancia restante, ETA e identificacao do provider de rota. Quando OSRM nao esta disponivel, o backend usa fallback baseado em distancia geodesica.
+O tracking inclui pontos de rota, distância, duração estimada, distância restante, ETA e identificação do provider de rota. Quando OSRM não está disponível, o backend usa fallback baseado em distância geodésica.
 
-## 9. Validacao e Testes
+## 9. Validação e Testes
 
 ### 9.1 Estrategia de Testes
 
-A validacao combina testes unitarios, testes de feature/GraphQL e testes manuais ponta-a-ponta. Os testes unitarios focam regras de negocio isoladas, enquanto os testes de feature validam operacoes integradas expostas por GraphQL.
+A validação combina testes unitários, testes de feature/GraphQL e testes manuais ponta-a-ponta. Os testes unitários focam regras de negócio isoladas, enquanto os testes de feature validam operações integradas expostas por GraphQL.
 
 ### 9.2 Testes Unitarios
 
-O projeto contem testes unitarios para:
+O projeto contém testes unitários para:
 
-- maquinas de estados de encomendas;
-- maquinas de estados de pagamentos;
-- maquinas de estados de entregas;
-- calculo de precos em `PricingCalculator`;
-- validacoes de carrinho;
-- validacoes de encomenda;
-- validacoes de utilizadores e moradas;
-- calculo geoespacial em `GeoMath`;
-- mapeamento de notificacoes;
+- máquinas de estados de encomendas;
+- máquinas de estados de pagamentos;
+- máquinas de estados de entregas;
+- cálculo de preços em `PricingCalculator`;
+- validações de carrinho;
+- validações de encomenda;
+- validações de utilizadores e moradas;
+- cálculo geoespacial em `GeoMath`;
+- mapeamento de notificações;
 - regras de delivery e routing;
-- validacoes de reviews e cadeias de restaurantes.
+- validações de reviews e cadeias de restaurantes.
 
 Exemplos de ficheiros incluem `OrderStateMachineTest.php`, `PaymentServiceTransitionTest.php`, `DeliveryStateMachineTest.php`, `PricingCalculatorTest.php`, `GeoMathTest.php` e `NotificationMapperTest.php`.
 
 ### 9.3 Testes de Integracao / Feature
 
-Os testes de feature GraphQL validam fluxos de maior nivel. Existem testes para operacoes de restaurante, operacoes de estafeta, tracking, notificacoes, campanhas e atualizacao de estado da entrega.
+Os testes de feature GraphQL validam fluxos de maior nível. Existem testes para operações de restaurante, operações de estafeta, tracking, notificações, campanhas e atualização de estado da entrega.
 
 Exemplos:
 
@@ -629,20 +629,20 @@ Exemplos:
 
 ### 9.4 Testes Manuais E2E
 
-Os cenarios manuais recomendados para demonstracao sao:
+Os cenários manuais recomendados para demonstração são:
 
 1. o cliente abre a app mobile e cria uma encomenda;
 2. o restaurante ve o pedido aparecer na fila web;
-3. o restaurante inicia preparacao;
+3. o restaurante inicia preparação;
 4. o sistema cria entrega e envia oferta a um estafeta;
 5. o estafeta aceita a oferta no mobile;
 6. o cliente acompanha eventos e tracking;
-7. o estafeta marca recolha, transito e entrega;
-8. as notificacoes e mensagens de chat sao refletidas nas interfaces.
+7. o estafeta marca recolha, trânsito e entrega;
+8. as notificações e mensagens de chat são refletidas nas interfaces.
 
-### 9.5 Limitacoes dos Testes
+### 9.5 Limitações dos Testes
 
-Nao foram realizados testes profundos de carga com muitos utilizadores simultaneos. Tambem nao foi validada seguranca de producao, integracao com pagamentos reais, autorizacao fina de canais WebSocket ou comportamento em redes moveis instaveis. Estas limitacoes sao coerentes com o ambito academico do projeto.
+Não foram realizados testes profundos de carga com muitos utilizadores simultâneos. Também não foi validada segurança de produção, integração com pagamentos reais, autorização fina de canais WebSocket ou comportamento em redes móveis instáveis. Estas limitações são coerentes com o âmbito académico do projeto.
 
 ## 10. Resultados Obtidos
 
@@ -650,117 +650,117 @@ Nao foram realizados testes profundos de carga com muitos utilizadores simultane
 
 O projeto implementa os principais fluxos pretendidos:
 
-- gestao de restaurantes, cadeias e catalogo;
+- gestão de restaurantes, cadeias e catálogo;
 - carrinho e checkout;
-- preview de precos, taxa de entrega, descontos e cupoes;
+- preview de preços, taxa de entrega, descontos e cupões;
 - encomendas e ciclo de estados;
 - pagamentos simulados;
-- preparacao pelo restaurante;
-- atribuicao de estafeta;
-- ofertas de entrega com expiracao;
-- tracking com localizacao;
-- notificacoes internas e push tokens;
+- preparação pelo restaurante;
+- atribuição de estafeta;
+- ofertas de entrega com expiração;
+- tracking com localização;
+- notificações internas e push tokens;
 - chat;
-- promocoes e cupoes;
-- avaliacoes;
+- promoções e cupões;
+- avaliações;
 - auditoria por eventos;
-- sincronizacao realtime via GatewayWorker/Workerman.
+- sincronização realtime via GatewayWorker/Workerman.
 
 ### 10.2 Demonstracao dos Fluxos Principais
 
-A demonstracao ideal deve mostrar as tres perspetivas em simultaneo:
+A demonstração ideal deve mostrar as três perspetivas em simultâneo:
 
 - app mobile como cliente;
 - frontend web como restaurante;
 - app mobile como estafeta.
 
-O ciclo demonstrado deve comecar com o cliente a criar uma encomenda, seguir para o restaurante a receber e preparar o pedido, mostrar a oferta ao estafeta, acompanhar a localizacao em tempo real e terminar com a entrega concluida. Durante o processo, devem ser visiveis notificacoes, eventos e, se possivel, mensagens de chat.
+O ciclo demonstrado deve começar com o cliente a criar uma encomenda, seguir para o restaurante a receber e preparar o pedido, mostrar a oferta ao estafeta, acompanhar a localização em tempo real e terminar com a entrega concluída. Durante o processo, devem ser visíveis notificações, eventos e, se possível, mensagens de chat.
 
 ### 10.3 Discussao Tecnica
 
-GraphQL revelou-se adequado para a comunicacao estruturada porque as interfaces precisam de dados compostos, como encomendas com itens, pagamentos, entrega e eventos. WebSockets complementam GraphQL ao enviar atualizacoes de forma imediata.
+GraphQL revelou-se adequado para a comunicação estruturada porque as interfaces precisam de dados compostos, como encomendas com itens, pagamentos, entrega e eventos. WebSockets complementam GraphQL ao enviar atualizações de forma imediata.
 
-As maquinas de estados ajudam a manter consistencia e reduzem erros em transicoes. O outbox melhora a fiabilidade da publicacao de eventos. A separacao em services e repositories torna a base de codigo mais facil de manter e testar.
+As máquinas de estados ajudam a manter consistência e reduzem erros em transições. O outbox melhora a fiabilidade da publicação de eventos. A separação em services e repositories torna a base de código mais fácil de manter e testar.
 
 ### 10.4 Dificuldades Encontradas
 
-As maiores dificuldades estiveram na coordenacao de estados entre cliente, restaurante e estafeta. Um unico fluxo de encomenda envolve pagamento, preparacao, entrega, notificacoes, tracking e possiveis falhas. Garantir que cada evento chega ao publico correto tambem exigiu uma modelacao cuidadosa de canais.
+As maiores dificuldades estiveram na coordenação de estados entre cliente, restaurante e estafeta. Um único fluxo de encomenda envolve pagamento, preparação, entrega, notificações, tracking e possíveis falhas. Garantir que cada evento chega ao público correto também exigiu uma modelação cuidadosa de canais.
 
-Outra dificuldade foi alinhar GraphQL com as necessidades reais das interfaces, especialmente quando o frontend precisava de dados agregados. A integracao web, mobile, backend, queues e GatewayWorker exigiu tambem configuracao cuidada do ambiente local.
+Outra dificuldade foi alinhar GraphQL com as necessidades reais das interfaces, especialmente quando o frontend precisava de dados agregados. A integração web, mobile, backend, queues e GatewayWorker exigiu também configuração cuidada do ambiente local.
 
-## 11. Gestao do Projeto
+## 11. Gestão do Projeto
 
-### 11.1 Organizacao da Equipa
+### 11.1 Organização da Equipa
 
-O trabalho foi organizado por areas: backend, frontend web, frontend mobile, modelacao, testes e documentacao. Esta divisao permitiu desenvolver partes em paralelo, mantendo o fluxo principal de encomenda como prioridade comum.
+O trabalho foi organizado por áreas: backend, frontend web, frontend mobile, modelação, testes e documentação. Esta divisão permitiu desenvolver partes em paralelo, mantendo o fluxo principal de encomenda como prioridade comum.
 
 ### 11.2 Planeamento e Metodologia
 
-A metodologia seguida foi incremental. Primeiro foram definidos os modelos principais e o fluxo base de encomenda. Depois foram acrescentados pagamentos simulados, entrega, tracking, notificacoes, chat, campanhas e avaliacoes. A validacao foi sendo feita de forma progressiva com testes automatizados e verificacao manual dos fluxos.
+A metodologia seguida foi incremental. Primeiro foram definidos os modelos principais e o fluxo base de encomenda. Depois foram acrescentados pagamentos simulados, entrega, tracking, notificações, chat, campanhas e avaliações. A validação foi sendo feita de forma progressiva com testes automatizados e verificação manual dos fluxos.
 
-### 11.3 Controlo de Versoes
+### 11.3 Controlo de Versões
 
-O projeto foi gerido em Git, com organizacao por pastas principais: `Backend`, `Frontend` e `Documentacao`. Esta estrutura facilita perceber que artefactos pertencem a cada parte da solucao.
+O projeto foi gerido em Git, com organização por pastas principais: `Backend`, `Frontend` e `Documentacao`. Esta estrutura facilita perceber que artefactos pertencem a cada parte da solução.
 
-## 12. Limitacoes e Decisoes Assumidas
+## 12. Limitações e Decisões Assumidas
 
-### 12.1 Autenticacao e Autorizacao
+### 12.1 Autenticação e Autorização
 
-A autenticacao e simplificada por decisao de ambito. Em producao seria necessario implementar JWT, OAuth ou outro mecanismo robusto, alem de roles, policies, protecao de dados sensiveis e autorizacao rigorosa de queries, mutations e canais WebSocket.
+A autenticação é simplificada por decisão de âmbito. Em produção seria necessário implementar JWT, OAuth ou outro mecanismo robusto, além de roles, policies, proteção de dados sensíveis e autorização rigorosa de queries, mutations e canais WebSocket.
 
 ### 12.2 Pagamentos
 
-O pagamento e simulado. O sistema representa metodos, estados, eventos e expiracao, mas nao comunica com gateways reais. Em producao seria necessario integrar um fornecedor externo e tratar webhooks, reconciliacao e seguranca transacional.
+O pagamento é simulado. O sistema representa métodos, estados, eventos e expiração, mas não comunica com gateways reais. Em produção seria necessário integrar um fornecedor externo e tratar webhooks, reconciliação e segurança transacional.
 
 ### 12.3 WebSockets
 
-A comunicacao realtime usa GatewayWorker/Workerman. A autorizacao fina de canais ficou fora de ambito. Em producao, cada subscricao teria de validar se o utilizador pode aceder ao canal solicitado.
+A comunicação realtime usa GatewayWorker/Workerman. A autorização fina de canais ficou fora de âmbito. Em produção, cada subscrição teria de validar se o utilizador pode aceder ao canal solicitado.
 
 ### 12.4 Escalabilidade
 
-A arquitetura foi desenhada para evoluir, mas nao foi testada em carga elevada. Evolucoes possiveis incluem multiplas instancias de workers, filas separadas por prioridade, cache, balanceamento de carga, monitorizacao e testes de carga.
+A arquitetura foi desenhada para evoluir, mas não foi testada em carga elevada. Evoluções possíveis incluem múltiplas instâncias de workers, filas separadas por prioridade, cache, balanceamento de carga, monitorização e testes de carga.
 
 ## 13. Trabalho Futuro
 
-### 13.1 Seguranca
+### 13.1 Segurança
 
-Como trabalho futuro, seria importante implementar autenticacao robusta, autorizacao por roles, policies por recurso, protecao de canais WebSocket, rate limiting e auditoria de acessos.
+Como trabalho futuro, seria importante implementar autenticação robusta, autorização por roles, policies por recurso, proteção de canais WebSocket, rate limiting e auditoria de acessos.
 
 ### 13.2 Pagamentos Reais
 
-A integracao com pagamentos reais permitiria aproximar o projeto de um cenario de producao. Isto incluiria gateways externos, callbacks, webhooks, validacao de assinaturas, reconciliacao de pagamentos e tratamento de reembolsos reais.
+A integração com pagamentos reais permitiria aproximar o projeto de um cenário de produção. Isto incluiria gateways externos, callbacks, webhooks, validação de assinaturas, reconciliação de pagamentos e tratamento de reembolsos reais.
 
-### 13.3 Otimizacao de Rotas
+### 13.3 Otimização de Rotas
 
-O sistema pode evoluir com atribuicao de estafetas mais inteligente, calculo de ETA mais preciso, otimizacao de multiplas entregas, janelas de tempo e integracao mais profunda com APIs de mapas.
+O sistema pode evoluir com atribuição de estafetas mais inteligente, cálculo de ETA mais preciso, otimização de múltiplas entregas, janelas de tempo e integração mais profunda com APIs de mapas.
 
 ### 13.4 Escalabilidade e Observabilidade
 
-Seria util acrescentar logs estruturados, metricas, dashboards, tracing distribuido, alertas e testes de carga. Estes mecanismos permitiriam avaliar desempenho e diagnosticar problemas em cenarios mais proximos de producao.
+Seria útil acrescentar logs estruturados, métricas, dashboards, tracing distribuído, alertas e testes de carga. Estes mecanismos permitiriam avaliar desempenho e diagnosticar problemas em cenários mais próximos de produção.
 
 ### 13.5 Melhorias de Produto
 
-Possiveis melhorias incluem favoritos, recomendacoes, programas de fidelizacao, painel administrativo, suporte a multiplas lojas por cadeia, analitica para restaurantes e melhor gestao de incidentes de entrega.
+Possíveis melhorias incluem favoritos, recomendações, programas de fidelização, painel administrativo, suporte a múltiplas lojas por cadeia, analítica para restaurantes e melhor gestão de incidentes de entrega.
 
-## 14. Conclusao
+## 14. Conclusão
 
-O FastBite cumpre os objetivos centrais do projeto ao apresentar uma solucao web e mobile integrada, com backend funcional, API GraphQL, persistencia relacional, comunicacao em tempo real, eventos, outbox, maquinas de estados, programacao orientada a aspetos, ideias de programacao funcional e padroes de desenho aplicados.
+O FastBite cumpre os objetivos centrais do projeto ao apresentar uma solução web e mobile integrada, com backend funcional, API GraphQL, persistência relacional, comunicação em tempo real, eventos, outbox, máquinas de estados, programação orientada a aspetos, ideias de programação funcional e padrões de desenho aplicados.
 
-Mais do que uma aplicacao de encomendas, o projeto demonstra a complexidade de coordenar varios atores num sistema distribuido. A necessidade de manter estados consistentes, publicar eventos, atualizar interfaces e registar auditoria mostrou a importancia de uma boa modelacao e de uma separacao clara de responsabilidades.
+Mais do que uma aplicação de encomendas, o projeto demonstra a complexidade de coordenar vários atores num sistema distribuído. A necessidade de manter estados consistentes, publicar eventos, atualizar interfaces e registar auditoria mostrou a importância de uma boa modelação e de uma separação clara de responsabilidades.
 
-O desenvolvimento permitiu consolidar conhecimentos de backend, frontend web, mobile, GraphQL, WebSockets, filas, estado e testes. As limitacoes identificadas sao sobretudo decisoes de ambito adequadas ao contexto academico, e apontam caminhos claros para evolucao futura.
+O desenvolvimento permitiu consolidar conhecimentos de backend, frontend web, mobile, GraphQL, WebSockets, filas, estado e testes. As limitações identificadas são sobretudo decisões de âmbito adequadas ao contexto académico, e apontam caminhos claros para evolução futura.
 
 ## 15. Bibliografia
 
-- Laravel Documentation. Disponivel em: https://laravel.com/docs
-- Lighthouse GraphQL for Laravel. Disponivel em: https://lighthouse-php.com
-- GraphQL Documentation. Disponivel em: https://graphql.org/learn/
-- React Documentation. Disponivel em: https://react.dev
-- React Native Documentation. Disponivel em: https://reactnative.dev
-- Expo Documentation. Disponivel em: https://docs.expo.dev
-- Workerman Documentation. Disponivel em: https://www.workerman.net
-- GatewayWorker Documentation. Disponivel em: https://www.workerman.net/doc/gateway-worker
-- PostgreSQL Documentation. Disponivel em: https://www.postgresql.org/docs/
+- Laravel Documentation. Disponível em: https://laravel.com/docs
+- Lighthouse GraphQL for Laravel. Disponível em: https://lighthouse-php.com
+- GraphQL Documentation. Disponível em: https://graphql.org/learn/
+- React Documentation. Disponível em: https://react.dev
+- React Native Documentation. Disponível em: https://reactnative.dev
+- Expo Documentation. Disponível em: https://docs.expo.dev
+- Workerman Documentation. Disponível em: https://www.workerman.net
+- GatewayWorker Documentation. Disponível em: https://www.workerman.net/doc/gateway-worker
+- PostgreSQL Documentation. Disponível em: https://www.postgresql.org/docs/
 - Fowler, Martin. Patterns of Enterprise Application Architecture.
 - Gamma, Erich et al. Design Patterns: Elements of Reusable Object-Oriented Software.
 
@@ -786,15 +786,15 @@ Os diagramas PlantUML encontram-se em `Documentacao/Diagramas`:
 
 ### Anexo C - Schema GraphQL
 
-O schema GraphQL esta em `Backend/graphql`, dividido por dominios. Os ficheiros principais incluem `schema.graphql`, `common.graphql`, `orders.graphql`, `payments.graphql`, `deliveries.graphql`, `tracking.graphql`, `notifications.graphql`, `campaigns.graphql` e `chat.graphql`.
+O schema GraphQL está em `Backend/graphql`, dividido por domínios. Os ficheiros principais incluem `schema.graphql`, `common.graphql`, `orders.graphql`, `payments.graphql`, `deliveries.graphql`, `tracking.graphql`, `notifications.graphql`, `campaigns.graphql` e `chat.graphql`.
 
-### Anexo D - Capturas de Ecra
+### Anexo D - Capturas de Ecrã
 
-Devem ser incluidas capturas da aplicacao web do restaurante, app mobile cliente, app mobile estafeta, tracking, notificacoes, chat, campanhas e cupoes.
+Devem ser incluídas capturas da aplicação web do restaurante, app mobile cliente, app mobile estafeta, tracking, notificações, chat, campanhas e cupões.
 
-### Anexo E - Excerto de Codigo
+### Anexo E - Excerto de Código
 
-Excertos recomendados para apresentacao:
+Excertos recomendados para apresentação:
 
 - `Backend/app/Aspects/TransactionInterceptor.php`;
 - `Backend/app/Domain/Pricing/PricingCalculator.php`;
@@ -805,7 +805,7 @@ Excertos recomendados para apresentacao:
 - `Backend/app/Domain/StateMachines/Payments/PaymentStateFactory.php`;
 - `Backend/app/Domain/StateMachines/Deliveries/DeliveryStateFactory.php`;
 - exemplo de mutation GraphQL em `Backend/graphql/orders.graphql`;
-- exemplo de subscricao realtime em `Frontend/web/src/services/realtime/topicsRealtime.js` ou `Frontend/mobile/src/services/realtime/topicsRealtime.js`.
+- exemplo de subscrição realtime em `Frontend/web/src/services/realtime/topicsRealtime.js` ou `Frontend/mobile/src/services/realtime/topicsRealtime.js`.
 
 ### Anexo F - Testes
 
