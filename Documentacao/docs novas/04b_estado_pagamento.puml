@@ -16,9 +16,4 @@ FAILED --> [*]
 CANCELLED --> [*]
 REFUNDED --> [*]
 
-note right of FAILED
-  Quando cascadeToOrder=true,
-  FAILED/CANCELLED/REFUNDED cancela a encomenda.
-end note
-
 @enduml

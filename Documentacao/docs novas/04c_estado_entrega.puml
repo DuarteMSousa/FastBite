@@ -17,9 +17,4 @@ IN_TRANSIT --> FAILED : morada, cliente ou outro problema\nimpede entrega final
 DELIVERED --> [*]
 FAILED --> [*]
 
-note right of PENDING
-  A atribuição do estafeta é feita por delivery_offers.
-  Aceitar oferta preenche courier_id e marca o estafeta BUSY.
-end note
-
 @enduml

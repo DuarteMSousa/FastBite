@@ -26,10 +26,4 @@ OUT_FOR_DELIVERY --> CANCELLED : entrega falha e o sistema\ncancela a encomenda
 DELIVERED --> [*]
 CANCELLED --> [*]
 
-note right of CONFIRMED
-  CONFIRMED significa que o restaurante já aceitou.
-  A atribuição do estafeta é registada antes,
-  no estado COURIER_ASSIGNED.
-end note
-
 @enduml
