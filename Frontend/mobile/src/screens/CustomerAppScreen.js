@@ -235,6 +235,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
     () => addresses.find((address) => address.id === selectedAddressId) ?? null,
     [addresses, selectedAddressId],
   )
+  const trackingOrderId = activeOrderId || tracking?.order_id || lastCheckout?.order_id || ''
 
   const userId = session?.userId || session?.devUserId
 
@@ -855,14 +856,29 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
   async function confirmDeleteAddress() {
     if (!deleteAddressTarget) return
+    const deletedAddressId = deleteAddressTarget.id
+
     try {
       setIsSavingAddress(true)
-      await deleteClientAddress({ session, addressId: deleteAddressTarget.id })
-      const refreshed = addresses.filter((address) => address.id !== deleteAddressTarget.id)
+      await deleteClientAddress({ session, addressId: deletedAddressId })
+      const refreshed = addresses.filter((address) => address.id !== deletedAddressId)
+      const fallback = refreshed.find((address) => address.is_default) ?? refreshed[0] ?? null
+
       setAddresses(refreshed)
-      if (selectedAddressId === deleteAddressTarget.id) {
-        const fallback = refreshed.find((address) => address.is_default) ?? refreshed[0] ?? null
-        setSelectedAddressId(fallback?.id ?? null)
+      setSelectedAddressId((current) => {
+        if (!current || current === deletedAddressId) {
+          return fallback?.id ?? null
+        }
+
+        return refreshed.some((address) => address.id === current)
+          ? current
+          : fallback?.id ?? null
+      })
+      if (editingAddressId === deletedAddressId) {
+        resetAddressForm()
+      }
+      if (addressDraft.is_default && !fallback) {
+        setAddressDraft((current) => ({ ...current, is_default: false }))
       }
       setDeleteAddressTarget(null)
       setSuccessText('Morada apagada.')
@@ -873,6 +889,17 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
       setIsSavingAddress(false)
     }
   }
+
+  useEffect(() => {
+    if (!selectedAddressId || addresses.length === 0) {
+      return
+    }
+
+    if (!addresses.some((address) => address.id === selectedAddressId)) {
+      const fallback = addresses.find((address) => address.is_default) ?? addresses[0]
+      setSelectedAddressId(fallback?.id ?? null)
+    }
+  }, [addresses, selectedAddressId])
 
   async function handleSetDefaultAddress(addressId) {
     try {
@@ -1052,7 +1079,9 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
   }
 
   async function openChatForCurrentOrder(targetType) {
-    if (!activeOrderId) {
+    const orderId = trackingOrderId
+
+    if (!orderId) {
       setErrorText('Sem pedido ativo para iniciar chat.')
       return
     }
@@ -1060,7 +1089,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
     try {
       setChatLoading(true)
-      let existingChats = await fetchOrderChats({ session, orderId: activeOrderId })
+      let existingChats = await fetchOrderChats({ session, orderId })
       let target = existingChats.find((chat) => chat.type === targetType) ?? null
 
       if (!target) {
@@ -1074,7 +1103,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
 
         target = await createOrderChat({
           session,
-          orderId: activeOrderId,
+          orderId,
           type: targetType,
           participantUserIds: participantIds,
         })
@@ -1863,7 +1892,7 @@ export function CustomerAppScreen({ session, pushStatus, onLogout, deepLink, onC
         realtimeLastUpdateMs: trackingLastUpdateMs,
         isOnline,
         onBack: back,
-        onRefresh: () => activeOrderId && loadTracking(activeOrderId),
+        onRefresh: () => trackingOrderId && loadTracking(trackingOrderId),
         onOpenChatRestaurant: () => openChatForCurrentOrder('CUSTOMER_RESTAURANT'),
         onOpenChatCourier: () => openChatForCurrentOrder('CUSTOMER_COURIER'),
         chatLoading,

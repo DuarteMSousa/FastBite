@@ -91,27 +91,6 @@ function formatDeliveryItems(items) {
   return mappedItems.length > 0 ? mappedItems.join(', ') : '-'
 }
 
-function realtimeStatusLabel(status) {
-  if (status === 'live') return 'ativo'
-  if (status === 'connecting') return 'a ligar'
-  if (status === 'error') return 'erro'
-  return 'offline'
-}
-
-function permissionStatusLabel(status) {
-  if (status === 'granted') return 'permitido'
-  if (status === 'denied') return 'negado'
-  if (status === 'undetermined') return 'por decidir'
-  return 'desconhecido'
-}
-
-function pushStatusLabel(status) {
-  if (status === 'registered') return 'ativo'
-  if (status === 'permission_denied') return 'sem permissão'
-  if (status === 'error') return 'erro'
-  return status || 'desconhecido'
-}
-
 function errorMessage(error) {
   return String(error?.message ?? error ?? 'erro desconhecido')
 }
@@ -132,7 +111,7 @@ function domainOrderEventName(socketEventName, payload) {
   return payload?.eventName ?? payload?.event_name ?? socketEventName
 }
 
-export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onConsumeDeepLink }) {
+export function CourierAppScreen({ session, onLogout, deepLink, onConsumeDeepLink }) {
   const [courierStatus, setCourierStatus] = useState('OFFLINE')
   const [phase, setPhase] = useState('offer')
   const [availableOffers, setAvailableOffers] = useState([])
@@ -142,10 +121,10 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
   const [toast, setToast] = useState('')
   const [errorText, setErrorText] = useState('')
   const [isOnline, setIsOnline] = useState(true)
-  const [jobsRealtimeState, setJobsRealtimeState] = useState('offline')
+  const [, setJobsRealtimeState] = useState('offline')
   const [, setTrackingRealtimeState] = useState('offline')
-  const [locationPermission, setLocationPermission] = useState('unknown')
-  const [backgroundLocationPermission, setBackgroundLocationPermission] = useState('unknown')
+  const [, setLocationPermission] = useState('unknown')
+  const [, setBackgroundLocationPermission] = useState('unknown')
   const [jobsRetryTick, setJobsRetryTick] = useState(0)
   const [loading, setLoading] = useState(false)
   const [activeOfferId, setActiveOfferId] = useState(null)
@@ -1183,38 +1162,6 @@ export function CourierAppScreen({ session, pushStatus, onLogout, deepLink, onCo
           <View style={styles.statusRow}>
             <Text style={[styles.statusChip, isOnline ? styles.statusChipOk : styles.statusChipWarn]}>
               Net: {isOnline ? 'online' : 'offline'}
-            </Text>
-            <Text
-              style={[
-                styles.statusChip,
-                jobsRealtimeState === 'live' ? styles.statusChipOk : styles.statusChipWarn,
-              ]}
-            >
-              Tempo real: {realtimeStatusLabel(jobsRealtimeState)}
-            </Text>
-            <Text
-              style={[
-                styles.statusChip,
-                locationPermission === 'granted' ? styles.statusChipOk : styles.statusChipWarn,
-              ]}
-            >
-              GPS: {permissionStatusLabel(locationPermission)}
-            </Text>
-            <Text
-              style={[
-                styles.statusChip,
-                backgroundLocationPermission === 'granted' ? styles.statusChipOk : styles.statusChipWarn,
-              ]}
-            >
-              Segundo plano: {permissionStatusLabel(backgroundLocationPermission)}
-            </Text>
-            <Text
-              style={[
-                styles.statusChip,
-                pushStatus === 'registered' ? styles.statusChipOk : styles.statusChipWarn,
-              ]}
-            >
-              Push: {pushStatusLabel(pushStatus)}
             </Text>
           </View>
 
