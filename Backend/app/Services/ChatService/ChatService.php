@@ -112,13 +112,23 @@ class ChatService implements ChatServiceInterface
         }
 
         $message = $this->chatRepository->createMessage($data->chat_id, $senderUserId, $data->content);
+        $participantUserIds = $this->chatRepository
+            ->findParticipants($data->chat_id)
+            ->pluck('user_id')
+            ->map(static fn ($userId): string => (string) $userId)
+            ->unique()
+            ->values()
+            ->all();
 
         app(OutboxService::class)->enqueue(OutboxAggregateType::CHAT, $chat->id, OutboxEventType::CHAT_MESSAGE_SENT, [
             'event_id' => (string) Str::uuid(),
             'event_name' => OutboxEventType::CHAT_MESSAGE_SENT->value,
             'chat_id' => $chat->id,
+            'order_id' => $chat->order_id,
+            'chat_type' => $chat->type?->value,
             'message_id' => $message->id,
             'user_id' => $senderUserId,
+            'participant_user_ids' => $participantUserIds,
             'content' => $message->content,
             'timestamp' => $message->timestamp?->toIso8601String(),
         ]);

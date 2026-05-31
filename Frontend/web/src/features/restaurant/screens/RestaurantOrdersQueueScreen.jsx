@@ -22,7 +22,7 @@ function statusTone(status) {
 
 function reconcileActiveOrderList(current, order) {
   if (!order?.order_id) return current;
-  if (!order.courier_id) {
+  if (order.payment_status === "PENDING") {
     return current.filter((entry) => entry.order_id !== order.order_id);
   }
   if (["CANCELLED", "DELIVERED"].includes(order.order_status)) {
@@ -117,8 +117,14 @@ export function RestaurantOrdersQueueScreen({
               reconcileActiveOrderList(current, realtimeOrder),
             );
           }
+          if (domainEventName === "ORDER_CREATED") {
+            setInfoText("Novo pedido recebido.");
+          }
+          if (domainEventName === "ORDER_PAYMENT_COMPLETED") {
+            setInfoText("Pedido pago recebido.");
+          }
           if (domainEventName === "ORDER_COURIER_ASSIGNED") {
-            setInfoText("Novo pedido com estafeta atribuído.");
+            setInfoText("Pedido com estafeta atribuído.");
           }
         },
         onError: () => {
@@ -193,8 +199,8 @@ export function RestaurantOrdersQueueScreen({
   }
 
   const stats = useMemo(() => {
-    const pending = orders.filter(
-      (order) => order.order_status === "COURIER_ASSIGNED",
+    const pending = orders.filter((order) =>
+      ["PENDING", "COURIER_ASSIGNED"].includes(order.order_status),
     ).length;
     const preparing = orders.filter(
       (order) => order.order_status === "PREPARING",

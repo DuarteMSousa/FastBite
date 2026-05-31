@@ -249,6 +249,7 @@ const RESTAURANT_ACTIVE_ORDERS_QUERY = `
       created_at
       user { id name }
       address { street city }
+      payment { method status }
       delivery { id courier_id status }
       events { event_type timestamp }
       items {

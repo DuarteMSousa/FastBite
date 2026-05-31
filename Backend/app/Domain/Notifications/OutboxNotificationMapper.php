@@ -7,6 +7,7 @@ use App\Enums\DeliveryEventType;
 use App\Enums\DeliveryOfferEventType;
 use App\Enums\NotificationType;
 use App\Enums\OrderEventType;
+use App\Enums\OutboxEventType;
 use App\Repositories\ChainManagerRepository\ChainManagerRepositoryInterface;
 use App\Repositories\LocalManagerRepository\LocalManagerRepositoryInterface;
 use App\Repositories\RestaurantRepository\RestaurantRepositoryInterface;
@@ -16,7 +17,7 @@ use Closure;
 class OutboxNotificationMapper
 {
     /**
-     * @var array<string, Closure(array<string, mixed>): ?CreateNotificationDTO>
+     * @var array<string, Closure(array<string, mixed>): CreateNotificationDTO|array|null>
      */
     private array $notificationDelegates;
 
@@ -71,6 +72,7 @@ class OutboxNotificationMapper
                 'Problema na entrega',
                 'teve uma falha na entrega e sera acompanhado pelo restaurante.'
             ),
+            OutboxEventType::CHAT_MESSAGE_SENT->value => fn (array $payload): array => $this->chatMessage($payload),
         ];
 
         $this->restaurantDelegates = [
@@ -107,9 +109,11 @@ class OutboxNotificationMapper
 
         $customerDelegate = $this->notificationDelegates[$eventType->value] ?? null;
         if ($customerDelegate) {
-            $dto = $customerDelegate($payload);
-            if ($dto) {
-                $notifications[] = $dto;
+            $dtos = $customerDelegate($payload);
+            foreach (is_array($dtos) ? $dtos : [$dtos] as $dto) {
+                if ($dto) {
+                    $notifications[] = $dto;
+                }
             }
         }
 
@@ -134,7 +138,13 @@ class OutboxNotificationMapper
     {
         $delegate = $this->notificationDelegates[$eventType->value] ?? null;
 
-        return $delegate ? $delegate($payload) : null;
+        if (! $delegate) {
+            return null;
+        }
+
+        $dto = $delegate($payload);
+
+        return is_array($dto) ? ($dto[0] ?? null) : $dto;
     }
 
     private function orderUpdateDelegate(string $title, string|Closure $message): Closure
@@ -250,6 +260,49 @@ class OutboxNotificationMapper
                 'event_name' => $payload['eventName'] ?? DeliveryOfferEventType::JOB_OFFERED->value,
                 'expires_at' => $payload['expiresAt'] ?? null,
             ],
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return CreateNotificationDTO[]
+     */
+    private function chatMessage(array $payload): array
+    {
+        $senderId = (string) ($payload['user_id'] ?? $payload['sender_user_id'] ?? '');
+        $participantIds = $payload['participant_user_ids'] ?? [];
+
+        if (! is_array($participantIds) || $participantIds === []) {
+            return [];
+        }
+
+        $recipientIds = collect($participantIds)
+            ->filter()
+            ->map(static fn (mixed $userId): string => (string) $userId)
+            ->reject(static fn (string $userId): bool => $userId === '' || $userId === $senderId)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($recipientIds === []) {
+            return [];
+        }
+
+        return array_map(
+            fn (string $recipientId): CreateNotificationDTO => new CreateNotificationDTO(
+                userId: $recipientId,
+                type: NotificationType::SYSTEM,
+                title: 'Nova mensagem',
+                message: sprintf('Tem uma nova mensagem no chat do %s.', $this->orderReference($payload)),
+                data: [
+                    'chat_id' => $payload['chat_id'] ?? null,
+                    'message_id' => $payload['message_id'] ?? null,
+                    'order_id' => $payload['order_id'] ?? $payload['orderId'] ?? null,
+                    'chat_type' => $payload['chat_type'] ?? null,
+                    'event_name' => $payload['event_name'] ?? OutboxEventType::CHAT_MESSAGE_SENT->value,
+                ],
+            ),
+            $recipientIds
         );
     }
 

@@ -46,7 +46,7 @@ class NotificationMapperRestaurantRecipientsTest extends TestCase
             'chain_id' => $chain->id,
         ]);
 
-        $notifications = (new OutboxNotificationMapper)->mapAll(OrderEventType::ORDER_CONFIRMED, [
+        $notifications = app(OutboxNotificationMapper::class)->mapAll(OrderEventType::ORDER_CONFIRMED, [
             'eventName' => OrderEventType::ORDER_CONFIRMED->value,
             'orderId' => 'order-1',
             'customerId' => 'customer-1',
@@ -79,7 +79,7 @@ class NotificationMapperRestaurantRecipientsTest extends TestCase
             'chain_id' => $chain->id,
         ]);
 
-        $notifications = (new OutboxNotificationMapper)->mapAll(OrderEventType::ORDER_CONFIRMED, [
+        $notifications = app(OutboxNotificationMapper::class)->mapAll(OrderEventType::ORDER_CONFIRMED, [
             'eventName' => OrderEventType::ORDER_CONFIRMED->value,
             'orderId' => 'order-1',
             'customerId' => 'customer-1',

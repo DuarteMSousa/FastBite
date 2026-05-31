@@ -5,6 +5,7 @@ namespace App\Repositories\OrderRepository;
 use App\DTOs\Order\CreateOrderDTO;
 use App\DTOs\Order\UpdateOrderDTO;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Order;
 use App\Models\OrderEvent;
 use App\Models\OrderItem;
@@ -60,7 +61,6 @@ class OrderRepository implements OrderRepositoryInterface
     {
         return Order::with($this->defaultRelations)
             ->where('restaurant_id', $restaurantId)
-            ->whereHas('delivery', fn ($query) => $query->whereNotNull('courier_id'))
             ->find($orderId);
     }
 
@@ -77,7 +77,6 @@ class OrderRepository implements OrderRepositoryInterface
     {
         return Order::with($this->defaultRelations)
             ->where('restaurant_id', $restaurantId)
-            ->whereHas('delivery', fn ($query) => $query->whereNotNull('courier_id'))
             ->when($statuses, fn ($query) => $query->whereIn('status', $statuses))
             ->orderByDesc('created_at')
             ->paginate($pageSize, ['*'], 'page', $pageNumber);
@@ -87,7 +86,7 @@ class OrderRepository implements OrderRepositoryInterface
     {
         return Order::with($this->defaultRelations)
             ->where('restaurant_id', $restaurantId)
-            ->whereHas('delivery', fn ($query) => $query->whereNotNull('courier_id'))
+            ->whereHas('payment', fn ($query) => $query->where('status', PaymentStatus::COMPLETED->value))
             ->whereNotIn('status', [OrderStatus::DELIVERED->value, OrderStatus::CANCELLED->value])
             ->orderBy('created_at')
             ->get();
