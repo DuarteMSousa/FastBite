@@ -126,6 +126,8 @@ export function subscribeToRestaurantOrdersTopic({
 
   const eventNames = [
     'ORDER_STATUS_UPDATED',
+    'ORDER_CREATED',
+    'ORDER_PAYMENT_COMPLETED',
     'ORDER_CONFIRMED',
     'ORDER_REJECTED',
     'ORDER_PREPARING',

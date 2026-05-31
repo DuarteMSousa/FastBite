@@ -26,6 +26,7 @@ class DispatchLaravelEventFromOutbox
         OutboxEventType::JOB_OFFERED->value => DeliveryOfferedOutboxEventHandler::class,
         OutboxEventType::ORDER_COURIER_ASSIGNED->value => CourierAssignedOutboxEventHandler::class,
         OutboxEventType::ORDER_CREATED->value => OrderStatusUpdatedOutboxEventHandler::class,
+        OutboxEventType::ORDER_PAYMENT_COMPLETED->value => OrderStatusUpdatedOutboxEventHandler::class,
         OutboxEventType::ORDER_CONFIRMED->value => OrderStatusUpdatedOutboxEventHandler::class,
         OutboxEventType::ORDER_PREPARING->value => OrderStatusUpdatedOutboxEventHandler::class,
         OutboxEventType::ORDER_READY->value => OrderStatusUpdatedOutboxEventHandler::class,
