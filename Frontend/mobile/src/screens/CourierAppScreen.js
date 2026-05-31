@@ -95,6 +95,10 @@ function errorMessage(error) {
   return String(error?.message ?? error ?? 'erro desconhecido')
 }
 
+function isMissingIosLocationUsageDescription(error) {
+  return /ns location usage description keys|info\.plist/i.test(errorMessage(error))
+}
+
 function socketDeliveryId(payload) {
   return payload?.deliveryId ?? payload?.delivery_id ?? payload?.data?.delivery_id ?? null
 }
@@ -487,24 +491,40 @@ export function CourierAppScreen({ session, onLogout, deepLink, onConsumeDeepLin
         }
 
         try {
-          const backgroundPermission = await Location.requestBackgroundPermissionsAsync()
-        if (isStopped) return
+          const backgroundAvailable =
+            typeof Location.isBackgroundLocationAvailableAsync === 'function'
+              ? await Location.isBackgroundLocationAvailableAsync()
+              : true
 
-        setBackgroundLocationPermission(backgroundPermission.status)
+          if (isStopped) return
 
-        if (backgroundPermission.status !== 'granted') {
-          setToast('Permissão de localização em segundo plano negada. O acompanhamento fica ativo apenas com a app aberta.')
-        } else {
-          startBackgroundLocation({
-            session,
-            deliveryId: activeDelivery.delivery_id,
-          }).catch((err) => {
-            setToast(`Background tracking falhou: ${errorMessage(err)}`)
-          })
-        }
+          if (!backgroundAvailable) {
+            setBackgroundLocationPermission('denied')
+            setToast('Acompanhamento ativo apenas com a app aberta.')
+          } else {
+            const backgroundPermission = await Location.requestBackgroundPermissionsAsync()
+            if (isStopped) return
 
+            setBackgroundLocationPermission(backgroundPermission.status)
+
+            if (backgroundPermission.status !== 'granted') {
+              setToast('Permissão de localização em segundo plano negada. O acompanhamento fica ativo apenas com a app aberta.')
+            } else {
+              startBackgroundLocation({
+                session,
+                deliveryId: activeDelivery.delivery_id,
+              }).catch((err) => {
+                setToast(`Background tracking falhou: ${errorMessage(err)}`)
+              })
+            }
+          }
         } catch (error) {
-          setToast(`Background tracking indisponÃ­vel: ${errorMessage(error)}`)
+          setBackgroundLocationPermission('denied')
+          setToast(
+            isMissingIosLocationUsageDescription(error)
+              ? 'Acompanhamento ativo apenas com a app aberta.'
+              : `Background tracking indisponivel: ${errorMessage(error)}`,
+          )
         }
 
         async function handleLocation(location, forceSend = false) {
