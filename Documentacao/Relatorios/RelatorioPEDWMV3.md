@@ -662,7 +662,7 @@ Service (transação)
   - `CourierPositionUpdated` — específico para o tracking, otimizado para alta frequência;
   - `UserNotificationCreated` — disparado quando uma notificação destinada a um utilizador é criada;
   - `ChatMessageSent` — disparado quando uma nova mensagem de chat é criada;
-  - `CourierLastSocketDisconnected` / `NotificationEventRecorded` — eventos auxiliares de auditoria.
+  - `CourierSocketDisconnected` / `NotificationEventRecorded` — eventos auxiliares de auditoria.
 
 - **Listeners** (`Backend/app/Listeners/`):
   - `DispatchSocketMessage` — listener universal subscrito aos quatro eventos acima. A sua responsabilidade é encaminhar o evento ao `SocketMessageDispatcher`;

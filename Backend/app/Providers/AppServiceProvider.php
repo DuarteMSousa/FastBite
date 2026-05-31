@@ -5,7 +5,7 @@ namespace App\Providers;
 use App\Enums\CampaignMorphType;
 use App\Events\ChatMessageSent;
 use App\Events\CourierAssigned;
-use App\Events\CourierLastSocketDisconnected;
+use App\Events\CourierSocketDisconnected;
 use App\Events\CourierPositionUpdated;
 use App\Events\DeliveryOffered;
 use App\Events\OrderStatusUpdated;
@@ -112,7 +112,7 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(OrderStatusUpdated::class, DispatchSocketMessage::class);
         Event::listen(UserNotificationCreated::class, DispatchNotificationChannelsFromUserNotificationCreated::class);
         Event::listen(UserNotificationCreated::class, DispatchSocketMessage::class);
-        Event::listen(CourierLastSocketDisconnected::class, CourierConnectionStatusListener::class);
+        Event::listen(CourierSocketDisconnected::class, CourierConnectionStatusListener::class);
         Event::listen(RestaurantRatingThresholdReached::class, HandleRestaurantRatingThreshold::class);
         Event::listen(UserOrderMilestoneReached::class, HandleUserOrderMilestone::class);
     }

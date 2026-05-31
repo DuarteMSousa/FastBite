@@ -2,7 +2,7 @@
 
 namespace App\Gateway;
 
-use App\Events\CourierLastSocketDisconnected;
+use App\Events\CourierSocketDisconnected;
 use App\Gateway\ClientEvents\ClientEventDispatcher;
 use App\Gateway\Responses\GatewayReadyResponse;
 use GatewayWorker\Lib\Gateway;
@@ -67,7 +67,7 @@ class GatewayWorkerEvents
                 return;
             }
 
-            CourierLastSocketDisconnected::dispatch($courierId);
+            CourierSocketDisconnected::dispatch($courierId);
         } catch (Throwable $exception) {
             report($exception);
         }
