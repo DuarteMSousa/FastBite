@@ -6,8 +6,9 @@ skinparam shadowing false
 skinparam roundCorner 6
 skinparam linetype ortho
 left to right direction
-skinparam nodesep 55
-skinparam ranksep 45
+skinparam nodesep 38
+skinparam ranksep 70
+hide circle
 
 ' =========================================================
 ' USERS E PERFIS
@@ -622,65 +623,65 @@ enum DeliveryOfferEventType {
 ' RELACOES
 ' =========================================================
 
-User "1" -- "0..1" Courier : perfil
-User "1" -- "0..1" ChainManager : perfil
-User "1" -- "0..1" LocalManager : perfil
-User "1" -- "0..*" UserAddress : moradas
-User "1" -- "0..*" UserPushToken : push tokens
-User "1" -- "0..*" Cart : carrinhos
-User "1" -- "0..*" Order : encomendas
-User "1" -- "0..*" Review : avaliacoes
-User "1" -- "0..*" Notification : notificacoes
-User "1" -- "0..*" ChatParticipant : participa
+User "1" -- "0..1" Courier
+User "1" -- "0..1" ChainManager
+User "1" -- "0..1" LocalManager
+User "1" -- "0..*" UserAddress
+User "1" -- "0..*" UserPushToken
+User "1" -- "0..*" Cart
+User "1" -- "0..*" Order
+User "1" -- "0..*" Review
+User "1" -- "0..*" Notification
+User "1" -- "0..*" ChatParticipant
 
-RestaurantChain "1" -- "0..*" Restaurant : restaurantes
-RestaurantChain "1" -- "0..*" Category : categorias
-RestaurantChain "1" -- "0..*" ChainManager : gestores cadeia
-RestaurantChain "1" -- "0..*" Promotion : promocoes
-RestaurantChain "1" -- "0..*" Coupon : cupoes
+RestaurantChain "1" -- "0..*" Restaurant
+RestaurantChain "1" -- "0..*" Category
+RestaurantChain "1" -- "0..*" ChainManager
+RestaurantChain "1" -- "0..*" Promotion
+RestaurantChain "1" -- "0..*" Coupon
 
-Restaurant "1" -- "0..*" LocalManager : gestores locais
-Restaurant "1" -- "1" RestaurantAddress : morada
-Restaurant "1" -- "0..*" RestaurantProduct : menu local
-Restaurant "1" -- "0..*" Order : recebe
+Restaurant "1" -- "0..*" LocalManager
+Restaurant "1" -- "1" RestaurantAddress
+Restaurant "1" -- "0..*" RestaurantProduct
+Restaurant "1" -- "0..*" Order
 
-Category "1" -- "0..*" Product : produtos
-Product "1" -- "0..*" RestaurantProduct : disponibilizado em
-Product "1" -- "0..*" ProductOptionGroup : grupos opcoes
-ProductOptionGroup "1" -- "0..*" ProductOption : opcoes
+Category "1" -- "0..*" Product
+Product "1" -- "0..*" RestaurantProduct
+Product "1" -- "0..*" ProductOptionGroup
+ProductOptionGroup "1" -- "0..*" ProductOption
 
-Cart "1" -- "0..*" CartItem : itens
-CartItem "1" -- "0..*" CartItemOption : opcoes escolhidas
-RestaurantProduct "1" -- "0..*" CartItem : item de carrinho
-ProductOption "1" -- "0..*" CartItemOption : opcao
+Cart "1" -- "0..*" CartItem
+CartItem "1" -- "0..*" CartItemOption
+RestaurantProduct "1" -- "0..*" CartItem
+ProductOption "1" -- "0..*" CartItemOption
 
-Order "1" -- "1..*" OrderItem : itens
-Order "1" -- "1" OrderAddress : snapshot morada
-Order "1" -- "0..*" OrderDiscount : descontos
-Order "1" -- "0..*" OrderEvent : auditoria
-Order "1" -- "1" Payment : pagamento
-Order "1" -- "1" Delivery : entrega
-Order "1" -- "0..*" Chat : conversas
+Order "1" -- "1..*" OrderItem
+Order "1" -- "1" OrderAddress
+Order "1" -- "0..*" OrderDiscount
+Order "1" -- "0..*" OrderEvent
+Order "1" -- "1" Payment
+Order "1" -- "1" Delivery
+Order "1" -- "0..*" Chat
 
-RestaurantProduct "1" -- "0..*" OrderItem : produto comprado
-OrderItem "1" -- "0..*" OrderItemOption : opcoes snapshot
-ProductOption "1" -- "0..*" OrderItemOption : opcao original
-OrderItem "1" -- "0..*" OrderDiscount : desconto por item
+RestaurantProduct "1" -- "0..*" OrderItem
+OrderItem "1" -- "0..*" OrderItemOption
+ProductOption "1" -- "0..*" OrderItemOption
+OrderItem "1" -- "0..*" OrderDiscount
 
-Payment "1" -- "0..*" PaymentEvent : auditoria
+Payment "1" -- "0..*" PaymentEvent
 
-Delivery "1" -- "0..*" DeliveryOffer : ofertas
-Delivery "1" -- "0..*" DeliveryEvent : auditoria
-Delivery "1" -- "0..*" CourierPositionHistory : tracking
-Courier "1" -- "0..*" Delivery : entregas
-Courier "1" -- "0..*" DeliveryOffer : recebe
+Delivery "1" -- "0..*" DeliveryOffer
+Delivery "1" -- "0..*" DeliveryEvent
+Delivery "1" -- "0..*" CourierPositionHistory
+Courier "1" -- "0..*" Delivery
+Courier "1" -- "0..*" DeliveryOffer
 
-Promotion "1" -- "0..*" PromotionItem : alvos
-Coupon "1" -- "0..*" PromotionItem : alvos
+Promotion "1" -- "0..*" PromotionItem
+Coupon "1" -- "0..*" PromotionItem
 
-Chat "1" -- "2..*" ChatParticipant : participantes
-Chat "1" -- "0..*" Message : mensagens
-ChatParticipant "1" -- "0..*" Message : envia via user_id
+Chat "1" -- "2..*" ChatParticipant
+Chat "1" -- "0..*" Message
+ChatParticipant "1" -- "0..*" Message
 
 ' Relacoes polimorficas / por tipo
 Review ..> Restaurant : target_type=RESTAURANT
@@ -696,11 +697,43 @@ OutboxEvent ..> DeliveryOffer : aggregate_type=delivery_offer
 OutboxEvent ..> Notification : aggregate_type=notification
 OutboxEvent ..> Chat : aggregate_type=chat
 
-' Ajuda de layout invisivel: organiza os blocos principais da esquerda para a direita.
-User -[hidden]right- RestaurantChain
-RestaurantChain -[hidden]right- Cart
-Cart -[hidden]right- Order
-Order -[hidden]right- Payment
-Payment -[hidden]right- Promotion
+' Ajuda de layout invisivel: organiza em faixas horizontais sem criar grupos visuais.
+User -[hidden]down- RestaurantChain
+RestaurantChain -[hidden]down- Cart
+Cart -[hidden]down- Order
+Order -[hidden]down- Payment
+Payment -[hidden]down- Promotion
+
+Courier -[hidden]right- UserAddress
+UserAddress -[hidden]right- UserPushToken
+
+Restaurant -[hidden]right- Category
+Category -[hidden]right- Product
+Product -[hidden]right- RestaurantProduct
+RestaurantProduct -[hidden]right- ProductOptionGroup
+ProductOptionGroup -[hidden]right- ProductOption
+
+Cart -[hidden]right- CartItem
+CartItem -[hidden]right- CartItemOption
+
+Order -[hidden]right- OrderItem
+OrderItem -[hidden]right- OrderItemOption
+OrderItemOption -[hidden]right- OrderDiscount
+OrderDiscount -[hidden]right- OrderEvent
+
+Payment -[hidden]right- PaymentEvent
+PaymentEvent -[hidden]right- Delivery
+Delivery -[hidden]right- DeliveryOffer
+DeliveryOffer -[hidden]right- DeliveryEvent
+DeliveryEvent -[hidden]right- CourierPositionHistory
+
+Promotion -[hidden]right- Coupon
+Coupon -[hidden]right- PromotionItem
+PromotionItem -[hidden]right- Review
+Review -[hidden]right- Notification
+Notification -[hidden]right- Chat
+Chat -[hidden]right- ChatParticipant
+ChatParticipant -[hidden]right- Message
+Message -[hidden]right- OutboxEvent
 
 @enduml

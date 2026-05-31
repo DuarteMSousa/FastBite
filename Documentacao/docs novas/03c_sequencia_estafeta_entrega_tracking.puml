@@ -16,8 +16,8 @@ participant "Mobile Cliente" as CustomerApp
 participant "Web Restaurante" as RestaurantWeb
 
 Estafeta -> CourierApp: aceita oferta
-CourierApp -> GQL: mutation acceptDeliveryOffer(offerId)
-GQL -> DeliverySvc: acceptDeliveryOffer(offerId)
+CourierApp -> GQL: mutation acceptDeliveryOffer(offer_id)
+GQL -> DeliverySvc: acceptDeliveryOffer(offer_id)
 DeliverySvc -> DB: bloqueia offer e delivery
 DeliverySvc -> DB: offer PENDING -> ACCEPTED
 DeliverySvc -> DB: delivery.courier_id = courierId
@@ -32,35 +32,44 @@ GW -> CustomerApp: customer.{userId}.orders
 GW -> RestaurantWeb: restaurant.{restaurantId}.orders
 
 Estafeta -> CourierApp: recolhe pedido
-CourierApp -> GQL: mutation markDeliveryPickedUp(deliveryId)
-GQL -> DeliverySvc: markDeliveryPickedUp(deliveryId, courierId)
+CourierApp -> GQL: mutation markDeliveryPickedUp(delivery_id, courier_id)
+GQL -> DeliverySvc: markDeliveryPickedUp(delivery_id, courier_id)
 DeliverySvc -> DB: delivery PENDING -> PICKED_UP
+DeliverySvc -> DB: delivery_events DELIVERY_PICKED_UP
+DeliverySvc -> Outbox: enqueue DELIVERY_PICKED_UP
 DeliverySvc -> OrderSvc: recordOrderPickedUp(order)
-OrderSvc -> DB: ORDER_PICKED_UP
+OrderSvc -> DB: order_events ORDER_PICKED_UP
+OrderSvc -> Outbox: enqueue ORDER_PICKED_UP
 GW -> CustomerApp: order.{orderId}.tracking
 
 Estafeta -> CourierApp: inicia caminho para cliente
-CourierApp -> GQL: mutation markDeliveryInTransit(deliveryId)
-GQL -> DeliverySvc: markDeliveryInTransit(...)
+CourierApp -> GQL: mutation markDeliveryInTransit(delivery_id, courier_id)
+GQL -> DeliverySvc: markDeliveryInTransit(delivery_id, courier_id)
 DeliverySvc -> DB: delivery PICKED_UP -> IN_TRANSIT
+DeliverySvc -> DB: delivery_events DELIVERY_IN_TRANSIT
+DeliverySvc -> Outbox: enqueue DELIVERY_IN_TRANSIT
 DeliverySvc -> OrderSvc: markOrderOutForDelivery(order)
 OrderSvc -> DB: order READY -> OUT_FOR_DELIVERY
+OrderSvc -> Outbox: enqueue ORDER_OUT_FOR_DELIVERY
 GW -> CustomerApp: tracking + order update
 
 loop localizacao periodica
   CourierApp -> GQL: mutation updateCourierLocation(input)
-  GQL -> TrackingSvc: updateCourierLocation(courierId, lat, lng, deliveryId)
+  GQL -> TrackingSvc: updateCourierLocation(UpdateCourierLocationDTO)
   TrackingSvc -> DB: atualiza couriers + courier_position_history
   TrackingSvc -> Outbox: enqueue COURIER_POSITION_UPDATED
   GW -> CustomerApp: order.{orderId}.tracking
 end
 
 Estafeta -> CourierApp: entrega concluida
-CourierApp -> GQL: mutation markDeliveryDelivered(deliveryId)
-GQL -> DeliverySvc: markDeliveryDelivered(...)
+CourierApp -> GQL: mutation markDeliveryDelivered(delivery_id, courier_id)
+GQL -> DeliverySvc: markDeliveryDelivered(delivery_id, courier_id)
 DeliverySvc -> DB: delivery IN_TRANSIT -> DELIVERED
+DeliverySvc -> DB: delivery_events DELIVERY_DELIVERED
+DeliverySvc -> Outbox: enqueue DELIVERY_DELIVERED
 DeliverySvc -> OrderSvc: markOrderDelivered(order)
 OrderSvc -> DB: order OUT_FOR_DELIVERY -> DELIVERED
+OrderSvc -> Outbox: enqueue ORDER_DELIVERED
 DeliverySvc -> CourierSvc: status BUSY -> AVAILABLE
 GW -> CustomerApp: ORDER_DELIVERED
 GW -> RestaurantWeb: restaurant.{restaurantId}.orders

@@ -24,15 +24,19 @@ Mobile -> GQL: mutation createReview(input)
 GQL -> ReviewSvc: createReview(CreateReviewDTO)
 ReviewSvc -> DB: valida user, target_type e target_id
 ReviewSvc -> DB: valida rating entre 1 e 5
+ReviewSvc -> DB: valida encomenda DELIVERED para esse target
+ReviewSvc -> DB: valida que nao existe avaliacao duplicada
 ReviewSvc -> ReviewRepo: cria reviews
 ReviewRepo -> DB: insert reviews
 
 alt target_type = RESTAURANT
   ReviewSvc -> Target: atualiza rating_sum/rating_count do restaurante
   Target -> DB: update restaurants
+  opt media cruza limiar baixo/alto
+    ReviewSvc -> DB: enqueue RESTAURANT_RATING_THRESHOLD_REACHED
+  end
 else target_type = COURIER
-  ReviewSvc -> Target: atualiza rating_sum/rating_count do estafeta
-  Target -> DB: update couriers
+  ReviewSvc -> DB: review fica registada para o estafeta
 end
 
 ReviewSvc --> GQL: Review criada
@@ -51,8 +55,6 @@ Cliente -> Mobile: edita/apaga avaliacao
 Mobile -> GQL: mutation updateReview/deleteReview(userId, reviewId)
 GQL -> ReviewSvc: valida dono da avaliacao
 ReviewSvc -> DB: update/delete reviews
-ReviewSvc -> Target: recalcula rating agregado
-Target -> DB: update rating_sum/rating_count
 GQL --> Mobile: historico atualizado
 
 @enduml
