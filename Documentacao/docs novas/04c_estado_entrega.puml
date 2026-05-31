@@ -12,7 +12,7 @@ PICKED_UP --> IN_TRANSIT : estafeta sai do restaurante\na caminho do cliente
 PICKED_UP --> FAILED : problema após recolha impede\na continuação da entrega
 
 IN_TRANSIT --> DELIVERED : cliente recebe o pedido\ne a entrega é concluída
-IN_TRANSIT --> FAILED : morada, cliente ou outro problema\nimpede entrega final
+IN_TRANSIT --> FAILED : algum problema\nimpede entrega final
 
 DELIVERED --> [*]
 FAILED --> [*]

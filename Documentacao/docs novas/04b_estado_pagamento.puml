@@ -4,7 +4,6 @@ title FastBite - Estados de Pagamento (PaymentStatus)
 skinparam shadowing false
 
 [*] --> PENDING : pagamento é criado e fica\na aguardar confirmação/expiração
-[*] --> COMPLETED : pagamento é considerado concluído\nno momento do checkout
 
 PENDING --> COMPLETED : confirmação do pagamento recebida\ne o valor fica aceite
 PENDING --> FAILED : pagamento recusado ou prazo expirou\nsem confirmação

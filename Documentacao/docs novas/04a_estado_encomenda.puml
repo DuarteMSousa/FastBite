@@ -6,7 +6,7 @@ skinparam shadowing false
 [*] --> PENDING : cliente conclui checkout\ne a encomenda aguarda pagamento/estafeta
 
 PENDING --> COURIER_ASSIGNED : estafeta aceita a entrega\ne fica associado à encomenda
-PENDING --> CANCELLED : cliente cancela ou o sistema anula\nantes da confirmação
+PENDING --> CANCELLED : cliente cancela ou o sistema anula\nantes da confirmação por falta de estafeta
 
 COURIER_ASSIGNED --> CONFIRMED : restaurante aceita o pedido\ncom estafeta já atribuído
 COURIER_ASSIGNED --> CANCELLED : restaurante rejeita ou pedido é cancelado\nantes de iniciar preparação
