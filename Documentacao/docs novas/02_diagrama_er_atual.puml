@@ -1,10 +1,20 @@
 @startuml FastBite_ER_Atual
 title FastBite - Diagrama Entidade-Relacao Atual
 
-hide methods
-hide stereotypes
-skinparam shadowing false
-skinparam linetype ortho
+' hide methods
+' hide stereotypes
+' skinparam shadowing false
+skinparam nodesep 24
+skinparam ranksep 38
+skinparam packageStyle rectangle
+
+skinparam entity {
+  BorderColor #4b5563
+  BackgroundColor #f8fafc
+  FontColor #111827
+  FontSize 11
+  AttributeFontSize 10
+}
 
 entity users {
   *id : uuid <<PK>>
@@ -388,12 +398,12 @@ entity outbox_events {
 users ||--o| couriers
 users ||--o| chain_managers
 users ||--o| local_managers
-users ||--o{ user_addresses
+users ||-up-o{ user_addresses
 users ||--o{ carts
 users ||--o{ orders
-users ||--o{ reviews
-users ||--o{ notifications
-users ||--o{ user_push_tokens
+users ||-up-o{ reviews
+users ||-up-o{ notifications
+users ||-up-o{ user_push_tokens
 users ||--o{ chat_participants
 
 restaurant_chains ||--o{ restaurants
@@ -412,9 +422,9 @@ products ||--o{ product_option_groups
 product_option_groups ||--o{ product_options
 
 carts ||--o{ cart_items
-restaurant_products ||--o{ cart_items
+restaurant_products ||-down-o{ cart_items
 cart_items ||--o{ cart_item_options
-product_options ||--o{ cart_item_options
+product_options ||-down-o{ cart_item_options
 
 orders ||--o{ order_items
 orders ||--|| order_addresses
@@ -423,10 +433,10 @@ orders ||--|| payments
 orders ||--o| deliveries
 orders ||--o{ order_events
 orders ||--o{ chats
-restaurant_products ||--o{ order_items
+restaurant_products ||-down-o{ order_items
 order_items ||--o{ order_item_options
 order_items ||--o{ order_discounts
-product_options ||--o{ order_item_options
+product_options ||-down-o{ order_item_options
 
 payments ||--o{ payment_events
 deliveries ||--o{ delivery_offers
@@ -439,5 +449,59 @@ chats ||--o{ chat_participants
 chats ||--o{ messages
 users ||--o{ messages
 chat_participants ||--o{ messages : "(chat_id,user_id)"
+
+' =========================================================
+' AJUDA DE LAYOUT
+' Mantem o ER em faixas compactas sem alterar as relacoes.
+' =========================================================
+
+' users -[hidden]right- couriers
+' couriers -[hidden]right- chain_managers
+' chain_managers -[hidden]right- local_managers
+' local_managers -[hidden]right- user_addresses
+' user_addresses -[hidden]right- user_push_tokens
+
+' restaurant_chains -[hidden]right- restaurants
+' restaurants -[hidden]right- restaurant_addresses
+' restaurants -[hidden]right- categories
+' categories -[hidden]right- products
+' products -[hidden]right- restaurant_products
+' restaurant_products -[hidden]right- product_option_groups
+' product_option_groups -[hidden]right- product_options
+
+' carts -[hidden]right- cart_items
+' cart_items -[hidden]right- cart_item_options
+' restaurant_products -[hidden]down- cart_items
+' product_options -[hidden]down- cart_item_options
+
+' orders -[hidden]right- order_items
+' order_items -[hidden]right- order_item_options
+' order_item_options -[hidden]right- order_discounts
+' order_discounts -[hidden]right- order_events
+' order_events -[hidden]right- order_addresses
+' cart_items -[hidden]down- order_items
+' cart_item_options -[hidden]down- order_item_options
+
+' payments -[hidden]right- payment_events
+' payment_events -[hidden]right- deliveries
+' deliveries -[hidden]right- delivery_offers
+' delivery_offers -[hidden]right- delivery_events
+' delivery_events -[hidden]right- courier_position_history
+
+' promotions -[hidden]right- coupons
+' coupons -[hidden]right- promotion_items
+' promotion_items -[hidden]right- reviews
+' reviews -[hidden]right- notifications
+' notifications -[hidden]right- outbox_events
+
+' chats -[hidden]right- chat_participants
+' chat_participants -[hidden]right- messages
+
+' users -[hidden]down- restaurant_chains
+' restaurant_chains -[hidden]down- carts
+' carts -[hidden]down- orders
+' orders -[hidden]down- payments
+' payments -[hidden]down- promotions
+' promotions -[hidden]down- chats
 
 @enduml

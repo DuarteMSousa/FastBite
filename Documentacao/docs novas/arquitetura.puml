@@ -10,7 +10,7 @@ actor "Estafeta" as Estafeta
 node "Frontend Web\nReact / Vite" as Web
 node "Frontend Mobile\nReact Native / Expo" as Mobile
 
-rectangle "Backend\nLaravel 11 / PHP 8.3" as Backend {
+rectangle "Backend\nLaravel / PHP " as Backend {
   component "API GraphQL\nLighthouse" as GraphQL
   component "Services/Repositories\nGestão de estados\nOrquestração de eventos" as Business
   component "Sistema de Filas\ne Jobs" as Jobs

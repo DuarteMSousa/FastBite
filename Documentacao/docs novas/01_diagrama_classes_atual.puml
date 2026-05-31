@@ -1,15 +1,4 @@
 @startuml FastBite_Dominio_ClassDiagram
-title FastBite - Diagrama de Classes do Dominio
-
-skinparam classAttributeIconSize 0
-skinparam shadowing false
-skinparam roundCorner 6
-skinparam linetype ortho
-left to right direction
-skinparam nodesep 38
-skinparam ranksep 70
-hide circle
-
 ' =========================================================
 ' USERS E PERFIS
 ' =========================================================
@@ -437,187 +426,187 @@ class OutboxEvent {
   +updated_at: timestamp
 }
 
-enum CourierStatus {
-  AVAILABLE
-  BUSY
-  OFFLINE
-}
+' enum CourierStatus {
+'   AVAILABLE
+'   BUSY
+'   OFFLINE
+' }
 
-enum OrderStatus {
-  PENDING
-  COURIER_ASSIGNED
-  CONFIRMED
-  PREPARING
-  READY
-  OUT_FOR_DELIVERY
-  DELIVERED
-  CANCELLED
-}
+' enum OrderStatus {
+'   PENDING
+'   COURIER_ASSIGNED
+'   CONFIRMED
+'   PREPARING
+'   READY
+'   OUT_FOR_DELIVERY
+'   DELIVERED
+'   CANCELLED
+' }
 
-enum OrderItemStatus {
-  PENDING
-  PREPARING
-  READY
-  CANCELLED
-}
+' enum OrderItemStatus {
+'   PENDING
+'   PREPARING
+'   READY
+'   CANCELLED
+' }
 
-enum PaymentMethod {
-  CASH
-  CARD
-  MBWAY
-  PAYPAL
-}
+' enum PaymentMethod {
+'   CASH
+'   CARD
+'   MBWAY
+'   PAYPAL
+' }
 
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  CANCELLED
-  REFUNDED
-}
+' enum PaymentStatus {
+'   PENDING
+'   COMPLETED
+'   FAILED
+'   CANCELLED
+'   REFUNDED
+' }
 
-enum DeliveryStatus {
-  PENDING
-  PICKED_UP
-  IN_TRANSIT
-  DELIVERED
-  FAILED
-}
+' enum DeliveryStatus {
+'   PENDING
+'   PICKED_UP
+'   IN_TRANSIT
+'   DELIVERED
+'   FAILED
+' }
 
-enum DeliveryOfferStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  EXPIRED
-}
+' enum DeliveryOfferStatus {
+'   PENDING
+'   ACCEPTED
+'   REJECTED
+'   EXPIRED
+' }
 
-enum DiscountType {
-  PERCENTAGE
-  FIXED_AMOUNT
-}
+' enum DiscountType {
+'   PERCENTAGE
+'   FIXED_AMOUNT
+' }
 
-enum DiscountTarget {
-  ORDER
-  PRODUCT
-  DELIVERY
-  CATEGORY
-}
+' enum DiscountTarget {
+'   ORDER
+'   PRODUCT
+'   DELIVERY
+'   CATEGORY
+' }
 
-enum CampaignMorphType {
-  PROMOTION
-  COUPON
-}
+' enum CampaignMorphType {
+'   PROMOTION
+'   COUPON
+' }
 
-enum ReviewTargetType {
-  RESTAURANT
-  COURIER
-}
+' enum ReviewTargetType {
+'   RESTAURANT
+'   COURIER
+' }
 
-enum ChatType {
-  CUSTOMER_RESTAURANT
-  CUSTOMER_COURIER
-}
+' enum ChatType {
+'   CUSTOMER_RESTAURANT
+'   CUSTOMER_COURIER
+' }
 
-enum NotificationType {
-  ORDER_UPDATE
-  PROMOTION
-  SYSTEM
-}
+' enum NotificationType {
+'   ORDER_UPDATE
+'   PROMOTION
+'   SYSTEM
+' }
 
-enum PushTokenProvider {
-  expo
-}
+' enum PushTokenProvider {
+'   expo
+' }
 
-enum OutboxStatus {
-  PENDING
-  PROCESSING
-  PUBLISHED
-  FAILED
-}
+' enum OutboxStatus {
+'   PENDING
+'   PROCESSING
+'   PUBLISHED
+'   FAILED
+' }
 
-enum OutboxAggregateType {
-  order
-  payment
-  delivery
-  delivery_offer
-  chat
-  notification
-  restaurant
-  user
-}
+' enum OutboxAggregateType {
+'   order
+'   payment
+'   delivery
+'   delivery_offer
+'   chat
+'   notification
+'   restaurant
+'   user
+' }
 
-enum OutboxEventType {
-  ORDER_CREATED
-  ORDER_PAYMENT_COMPLETED
-  ORDER_CONFIRMED
-  ORDER_REJECTED
-  ORDER_COURIER_ASSIGNED
-  ORDER_PREPARING
-  ORDER_READY
-  ORDER_PICKED_UP
-  ORDER_OUT_FOR_DELIVERY
-  ORDER_DELIVERED
-  ORDER_CANCELLED
-  ORDER_STATUS_UPDATED
-  PAYMENT_CREATED
-  PAYMENT_COMPLETED
-  PAYMENT_FAILED
-  PAYMENT_EXPIRED
-  PAYMENT_CANCELLED
-  PAYMENT_REFUNDED
-  DELIVERY_ACCEPTED
-  DELIVERY_PICKED_UP
-  DELIVERY_IN_TRANSIT
-  DELIVERY_DELIVERED
-  DELIVERY_FAILED
-  JOB_OFFERED
-  JOB_ACCEPTED
-  JOB_REJECTED
-  JOB_EXPIRED
-  COURIER_POSITION_UPDATED
-  CHAT_MESSAGE_SENT
-  USER_NOTIFICATION_CREATED
-  RESTAURANT_RATING_THRESHOLD_REACHED
-  USER_ORDER_MILESTONE_REACHED
-}
+' enum OutboxEventType {
+'   ORDER_CREATED
+'   ORDER_PAYMENT_COMPLETED
+'   ORDER_CONFIRMED
+'   ORDER_REJECTED
+'   ORDER_COURIER_ASSIGNED
+'   ORDER_PREPARING
+'   ORDER_READY
+'   ORDER_PICKED_UP
+'   ORDER_OUT_FOR_DELIVERY
+'   ORDER_DELIVERED
+'   ORDER_CANCELLED
+'   ORDER_STATUS_UPDATED
+'   PAYMENT_CREATED
+'   PAYMENT_COMPLETED
+'   PAYMENT_FAILED
+'   PAYMENT_EXPIRED
+'   PAYMENT_CANCELLED
+'   PAYMENT_REFUNDED
+'   DELIVERY_ACCEPTED
+'   DELIVERY_PICKED_UP
+'   DELIVERY_IN_TRANSIT
+'   DELIVERY_DELIVERED
+'   DELIVERY_FAILED
+'   JOB_OFFERED
+'   JOB_ACCEPTED
+'   JOB_REJECTED
+'   JOB_EXPIRED
+'   COURIER_POSITION_UPDATED
+'   CHAT_MESSAGE_SENT
+'   USER_NOTIFICATION_CREATED
+'   RESTAURANT_RATING_THRESHOLD_REACHED
+'   USER_ORDER_MILESTONE_REACHED
+' }
 
-enum OrderEventType {
-  ORDER_CREATED
-  ORDER_PAYMENT_COMPLETED
-  ORDER_CONFIRMED
-  ORDER_REJECTED
-  ORDER_COURIER_ASSIGNED
-  ORDER_PREPARING
-  ORDER_READY
-  ORDER_PICKED_UP
-  ORDER_OUT_FOR_DELIVERY
-  ORDER_DELIVERED
-  ORDER_CANCELLED
-}
+' enum OrderEventType {
+'   ORDER_CREATED
+'   ORDER_PAYMENT_COMPLETED
+'   ORDER_CONFIRMED
+'   ORDER_REJECTED
+'   ORDER_COURIER_ASSIGNED
+'   ORDER_PREPARING
+'   ORDER_READY
+'   ORDER_PICKED_UP
+'   ORDER_OUT_FOR_DELIVERY
+'   ORDER_DELIVERED
+'   ORDER_CANCELLED
+' }
 
-enum PaymentEventType {
-  PAYMENT_CREATED
-  PAYMENT_COMPLETED
-  PAYMENT_FAILED
-  PAYMENT_EXPIRED
-  PAYMENT_CANCELLED
-  PAYMENT_REFUNDED
-}
+' enum PaymentEventType {
+'   PAYMENT_CREATED
+'   PAYMENT_COMPLETED
+'   PAYMENT_FAILED
+'   PAYMENT_EXPIRED
+'   PAYMENT_CANCELLED
+'   PAYMENT_REFUNDED
+' }
 
-enum DeliveryEventType {
-  DELIVERY_ACCEPTED
-  DELIVERY_PICKED_UP
-  DELIVERY_IN_TRANSIT
-  DELIVERY_DELIVERED
-  DELIVERY_FAILED
-}
+' enum DeliveryEventType {
+'   DELIVERY_ACCEPTED
+'   DELIVERY_PICKED_UP
+'   DELIVERY_IN_TRANSIT
+'   DELIVERY_DELIVERED
+'   DELIVERY_FAILED
+' }
 
-enum DeliveryOfferEventType {
-  JOB_OFFERED
-  JOB_ACCEPTED
-  JOB_REJECTED
-  JOB_EXPIRED
-}
+' enum DeliveryOfferEventType {
+'   JOB_OFFERED
+'   JOB_ACCEPTED
+'   JOB_REJECTED
+'   JOB_EXPIRED
+' }
 
 ' =========================================================
 ' RELACOES
@@ -684,56 +673,56 @@ Chat "1" -- "0..*" Message
 ChatParticipant "1" -- "0..*" Message
 
 ' Relacoes polimorficas / por tipo
-Review ..> Restaurant : target_type=RESTAURANT
-Review ..> Courier : target_type=COURIER
-PromotionItem ..> Product : item_id quando target=PRODUCT
-PromotionItem ..> Category : item_id quando target=CATEGORY
-OrderDiscount ..> Promotion : origin_type=PROMOTION
-OrderDiscount ..> Coupon : origin_type=COUPON
-OutboxEvent ..> Order : aggregate_type=order
-OutboxEvent ..> Payment : aggregate_type=payment
-OutboxEvent ..> Delivery : aggregate_type=delivery
-OutboxEvent ..> DeliveryOffer : aggregate_type=delivery_offer
-OutboxEvent ..> Notification : aggregate_type=notification
-OutboxEvent ..> Chat : aggregate_type=chat
+' Review ..> Restaurant : target_type=RESTAURANT
+' Review ..> Courier : target_type=COURIER
+' PromotionItem ..> Product : item_id quando target=PRODUCT
+' PromotionItem ..> Category : item_id quando target=CATEGORY
+' OrderDiscount ..> Promotion : origin_type=PROMOTION
+' OrderDiscount ..> Coupon : origin_type=COUPON
+' OutboxEvent ..> Order : aggregate_type=order
+' OutboxEvent ..> Payment : aggregate_type=payment
+' OutboxEvent ..> Delivery : aggregate_type=delivery
+' OutboxEvent ..> DeliveryOffer : aggregate_type=delivery_offer
+' OutboxEvent ..> Notification : aggregate_type=notification
+' OutboxEvent ..> Chat : aggregate_type=chat
 
 ' Ajuda de layout invisivel: organiza em faixas horizontais sem criar grupos visuais.
-User -[hidden]down- RestaurantChain
-RestaurantChain -[hidden]down- Cart
-Cart -[hidden]down- Order
-Order -[hidden]down- Payment
-Payment -[hidden]down- Promotion
+' User -[hidden]down- RestaurantChain
+' RestaurantChain -[hidden]down- Cart
+' Cart -[hidden]down- Order
+' Order -[hidden]down- Payment
+' Payment -[hidden]down- Promotion
 
-Courier -[hidden]right- UserAddress
-UserAddress -[hidden]right- UserPushToken
+' Courier -[hidden]right- UserAddress
+' UserAddress -[hidden]right- UserPushToken
 
-Restaurant -[hidden]right- Category
-Category -[hidden]right- Product
-Product -[hidden]right- RestaurantProduct
-RestaurantProduct -[hidden]right- ProductOptionGroup
-ProductOptionGroup -[hidden]right- ProductOption
+' Restaurant -[hidden]right- Category
+' Category -[hidden]right- Product
+' Product -[hidden]right- RestaurantProduct
+' RestaurantProduct -[hidden]right- ProductOptionGroup
+' ProductOptionGroup -[hidden]right- ProductOption
 
-Cart -[hidden]right- CartItem
-CartItem -[hidden]right- CartItemOption
+' Cart -[hidden]right- CartItem
+' CartItem -[hidden]right- CartItemOption
 
-Order -[hidden]right- OrderItem
-OrderItem -[hidden]right- OrderItemOption
-OrderItemOption -[hidden]right- OrderDiscount
-OrderDiscount -[hidden]right- OrderEvent
+' Order -[hidden]right- OrderItem
+' OrderItem -[hidden]right- OrderItemOption
+' OrderItemOption -[hidden]right- OrderDiscount
+' OrderDiscount -[hidden]right- OrderEvent
 
-Payment -[hidden]right- PaymentEvent
-PaymentEvent -[hidden]right- Delivery
-Delivery -[hidden]right- DeliveryOffer
-DeliveryOffer -[hidden]right- DeliveryEvent
-DeliveryEvent -[hidden]right- CourierPositionHistory
+' Payment -[hidden]right- PaymentEvent
+' PaymentEvent -[hidden]right- Delivery
+' Delivery -[hidden]right- DeliveryOffer
+' DeliveryOffer -[hidden]right- DeliveryEvent
+' DeliveryEvent -[hidden]right- CourierPositionHistory
 
-Promotion -[hidden]right- Coupon
-Coupon -[hidden]right- PromotionItem
-PromotionItem -[hidden]right- Review
-Review -[hidden]right- Notification
-Notification -[hidden]right- Chat
-Chat -[hidden]right- ChatParticipant
-ChatParticipant -[hidden]right- Message
-Message -[hidden]right- OutboxEvent
+' Promotion -[hidden]right- Coupon
+' Coupon -[hidden]right- PromotionItem
+' PromotionItem -[hidden]right- Review
+' Review -[hidden]right- Notification
+' Notification -[hidden]right- Chat
+' Chat -[hidden]right- ChatParticipant
+' ChatParticipant -[hidden]right- Message
+' Message -[hidden]right- OutboxEvent
 
 @enduml
