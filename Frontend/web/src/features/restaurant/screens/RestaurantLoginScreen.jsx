@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   bootstrapRestaurantSession,
   completeRestaurantOnboarding,
@@ -27,6 +27,8 @@ const INITIAL_RESTAURANT_FORM = {
   latitude: 41.1496,
   longitude: -8.6109,
 }
+
+const CHAIN_PAGE_SIZE = 20
 
 function PasswordField({ value, onChange, visible, onToggle, placeholder = 'Palavra-passe' }) {
   return (
@@ -74,9 +76,11 @@ export function RestaurantLoginScreen({ onLogin }) {
   const [setupMode, setSetupMode] = useState('existing-chain')
   const [restaurantForm, setRestaurantForm] = useState(INITIAL_RESTAURANT_FORM)
   const [chainName, setChainName] = useState('')
-  const [chainSearch, setChainSearch] = useState('')
   const [selectedChainId, setSelectedChainId] = useState('')
   const [chains, setChains] = useState([])
+  const [chainPage, setChainPage] = useState(1)
+  const [hasMoreChains, setHasMoreChains] = useState(false)
+  const [loadingChains, setLoadingChains] = useState(false)
   const [loadingAction, setLoadingAction] = useState('')
   const [errorText, setErrorText] = useState('')
   const [setupErrorText, setSetupErrorText] = useState('')
@@ -94,37 +98,61 @@ export function RestaurantLoginScreen({ onLogin }) {
       : 'Ao criar um restaurante numa cadeia existente, este utilizador passa a ser gestor local.'
   }, [pendingUser, setupMode])
 
-  useEffect(() => {
-    let cancelled = false
+  const dialogOpen = Boolean(pendingUser)
 
-    const timeoutId = window.setTimeout(async () => {
-      try {
-        const nextChains = await searchRestaurantChains({ q: chainSearch, pageSize: 20 })
-        if (cancelled) return
-        setChains(nextChains)
-        setSelectedChainId((current) => {
-          if (nextChains.some((chain) => chain.id === current)) {
-            return current
-          }
+  const loadChains = useCallback(async ({ append = false, page = 1, syncMode = false } = {}) => {
+    try {
+      setLoadingChains(true)
+      const nextChains = await searchRestaurantChains({
+        pageNumber: page,
+        pageSize: CHAIN_PAGE_SIZE,
+      })
 
-          return nextChains[0]?.id || ''
-        })
-        if (chainSearch.trim() === '' && nextChains.length === 0) {
-          setSetupMode('new-chain')
-        }
-      } catch {
-        if (!cancelled) {
-          setChains([])
+      setChains((current) => {
+        return append
+          ? [
+              ...current,
+              ...nextChains.filter((chain) => !current.some((entry) => entry.id === chain.id)),
+            ]
+          : nextChains
+      })
+
+      if (!append && nextChains.length === 0) {
+        setSetupMode('new-chain')
+      } else if (syncMode) {
+        setSetupMode(nextChains.length > 0 ? 'existing-chain' : 'new-chain')
+      }
+
+      setChainPage(page)
+      setHasMoreChains(nextChains.length === CHAIN_PAGE_SIZE)
+    } catch {
+      if (!append) {
+        setChains([])
+        setSelectedChainId('')
+        setHasMoreChains(false)
+
+        if (syncMode) {
           setSetupMode('new-chain')
         }
       }
-    }, 250)
-
-    return () => {
-      cancelled = true
-      window.clearTimeout(timeoutId)
+    } finally {
+      setLoadingChains(false)
     }
-  }, [chainSearch])
+  }, [])
+
+  useEffect(() => {
+    loadChains({ append: false, page: 1, syncMode: !dialogOpen })
+  }, [dialogOpen, loadChains])
+
+  useEffect(() => {
+    setSelectedChainId((current) => {
+      if (current && (dialogOpen || chains.some((chain) => chain.id === current))) {
+        return current
+      }
+
+      return chains[0]?.id || ''
+    })
+  }, [chains, dialogOpen])
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -353,26 +381,39 @@ export function RestaurantLoginScreen({ onLogin }) {
 
               <div className="rb-login-form rb-create-product-modal-form">
                 {setupMode === 'existing-chain' ? (
-                  <label>
-                    Cadeia existente
-                    <input
-                      value={chainSearch}
-                      onChange={(event) => setChainSearch(event.target.value)}
-                      type="search"
-                      placeholder="Pesquisar cadeia"
-                    />
-                    <select
-                      value={selectedChainId}
-                      onChange={(event) => setSelectedChainId(event.target.value)}
-                      required
-                    >
-                      {chains.map((chain) => (
-                        <option key={chain.id} value={chain.id}>
-                          {chain.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <>
+                    <label>
+                      Cadeia existente
+                      <select
+                        value={selectedChainId}
+                        onChange={(event) => setSelectedChainId(event.target.value)}
+                        required
+                      >
+                        {chains.length === 0 ? (
+                          <option value="">
+                            {loadingChains ? 'A carregar cadeias...' : 'Sem cadeias disponiveis'}
+                          </option>
+                        ) : null}
+                        {chains.map((chain) => (
+                          <option key={chain.id} value={chain.id}>
+                            {chain.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {hasMoreChains ? (
+                      <div style={{ marginTop: 8 }}>
+                        <button
+                          type="button"
+                          className="rb-btn-outline"
+                          onClick={() => loadChains({ append: true, page: chainPage + 1 })}
+                          disabled={loadingChains}
+                        >
+                          {loadingChains ? 'A carregar...' : 'Carregar mais'}
+                        </button>
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <label>
                     Nome da cadeia

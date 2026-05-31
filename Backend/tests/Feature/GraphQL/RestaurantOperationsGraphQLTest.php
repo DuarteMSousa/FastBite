@@ -19,6 +19,42 @@ class RestaurantOperationsGraphQLTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_can_page_restaurant_chain_search_without_name_filter(): void
+    {
+        RestaurantChain::query()->create(['name' => 'Zeta Foods']);
+        RestaurantChain::query()->create(['name' => 'Alpha Eats']);
+        RestaurantChain::query()->create(['name' => 'Bravo Kitchen']);
+
+        $query = <<<'GRAPHQL'
+query SearchRestaurantChains($input: SearchRestaurantChainsInput) {
+  searchRestaurantChains(input: $input) {
+    name
+  }
+}
+GRAPHQL;
+
+        $firstPageResponse = $this->postJson('/graphql', [
+            'query' => $query,
+            'variables' => ['input' => ['q' => null, 'pageNumber' => 1, 'pageSize' => 2]],
+        ]);
+
+        $firstPageResponse
+            ->assertOk()
+            ->assertJsonCount(2, 'data.searchRestaurantChains')
+            ->assertJsonPath('data.searchRestaurantChains.0.name', 'Alpha Eats')
+            ->assertJsonPath('data.searchRestaurantChains.1.name', 'Bravo Kitchen');
+
+        $secondPageResponse = $this->postJson('/graphql', [
+            'query' => $query,
+            'variables' => ['input' => ['pageNumber' => 2, 'pageSize' => 2]],
+        ]);
+
+        $secondPageResponse
+            ->assertOk()
+            ->assertJsonCount(1, 'data.searchRestaurantChains')
+            ->assertJsonPath('data.searchRestaurantChains.0.name', 'Zeta Foods');
+    }
+
     public function test_local_manager_can_query_active_orders_for_own_restaurant(): void
     {
         $customer = User::query()->create([

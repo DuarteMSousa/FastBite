@@ -17,14 +17,17 @@ class RestaurantChainRepository implements RestaurantChainRepositoryInterface
     public function searchRestaurantChains(SearchRestaurantChainsDTO $filters)
     {
         $query = RestaurantChain::query();
+        $q = trim((string) ($filters->q ?? ''));
+        $pageNumber = max(1, (int) ($filters->pageNumber ?? 1));
+        $pageSize = max(1, (int) ($filters->pageSize ?? 20));
 
-        if ($filters->q !== '') {
-            $query->where('name', 'like', "%{$filters->q}%");
+        if ($q !== '') {
+            $query->where('name', 'like', "%{$q}%");
         }
 
         return $query
             ->orderBy('name')
-            ->paginate($filters->pageSize, ['*'], 'page', $filters->pageNumber);
+            ->paginate($pageSize, ['*'], 'page', $pageNumber);
     }
 
     public function exists(string $id): bool
