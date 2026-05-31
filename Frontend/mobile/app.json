@@ -44,7 +44,10 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "FastBite precisa da sua localizacao para entregar pedidos em tempo real.",
+          "locationWhenInUsePermission": "FastBite precisa da sua localizacao para entregar pedidos em tempo real.",
+          "locationAlwaysPermission": "FastBite precisa da sua localizacao para entregar pedidos em tempo real, mesmo com a app em segundo plano.",
+          "locationAlwaysAndWhenInUsePermission": "FastBite precisa da sua localizacao para entregar pedidos em tempo real, mesmo com a app em segundo plano.",
+          "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
