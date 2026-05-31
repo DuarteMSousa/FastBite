@@ -49,16 +49,6 @@ class NotificationService implements NotificationServiceInterface
         ));
     }
 
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    #[Transactional]
-    public function createFromEvent(BackedEnum $eventType, array $payload): ?Notification
-    {
-        $dto = $this->mapper->map($eventType, $payload);
-
-        return $dto ? $this->createFromDTO($dto) : null;
-    }
 
     /**
      * @param  array<string, mixed>  $payload
